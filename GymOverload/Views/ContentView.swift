@@ -9,12 +9,18 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var workoutSets: [WorkoutSet]
-
     var body: some View {
-        ExerciseListView()
-            .modelContainer(for: Exercise.self)
+        TabView {
+            ExerciseListView()
+                .tabItem {
+                    Label("Exercises", systemImage: "dumbbell")
+                }
+            
+            WorkoutTemplateListView()
+                .tabItem {
+                    Label("Templates", systemImage: "list.bullet.clipboard")
+                }
+        }
     }
 }
 

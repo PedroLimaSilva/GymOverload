@@ -10,25 +10,21 @@ import SwiftData
 struct WorkoutTemplateListView: View {
     @Query private var templates: [WorkoutTemplate]
     @Environment(\.modelContext) private var modelContext
-    @State private var showingEditor = false
-    @State private var templateToEdit: WorkoutTemplate? = nil
+    @State private var path: [WorkoutTemplate] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 ForEach(templates) { template in
-                    VStack(alignment: .leading) {
-                        Text(template.name).font(.headline)
-                        if !template.plannedExercises.isEmpty {
-                            Text("Exercises: \(template.plannedExercises.count)")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                    NavigationLink(value: template) {
+                        VStack(alignment: .leading) {
+                            Text(template.name).font(.headline)
+                            if !template.plannedExercises.isEmpty {
+                                Text("Exercises: \(template.plannedExercises.count)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
                         }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        templateToEdit = template
-                        showingEditor = true
                     }
                 }
                 .onDelete(perform: deleteTemplates)
@@ -37,18 +33,20 @@ struct WorkoutTemplateListView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        templateToEdit = nil
-                        showingEditor = true
+                        let newTemplate = WorkoutTemplate(name: "New Template")
+                        modelContext.insert(newTemplate)
+                        path.append(newTemplate)
                     } label: {
                         Label("New Template", systemImage: "plus")
                     }
                 }
             }
-            .sheet(isPresented: $showingEditor) {
-                Text("Editing workout")
+            .navigationDestination(for: WorkoutTemplate.self) { template in
+                Text(template.name)
             }
         }
     }
+
     private func deleteTemplates(at offsets: IndexSet) {
         for index in offsets {
             let template = templates[index]
@@ -58,5 +56,6 @@ struct WorkoutTemplateListView: View {
 }
 
 #Preview {
-    WorkoutTemplateListView().modelContainer(PreviewData.container)
+    WorkoutTemplateListView()
+        .modelContainer(PreviewData.container)
 }

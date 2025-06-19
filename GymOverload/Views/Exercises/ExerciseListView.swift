@@ -13,12 +13,22 @@ struct ExerciseListView: View {
     @State private var searchText = ""
     @State private var selectedCategories: [ExerciseCategory] = []
     @State private var isCategoryFilterPresented = false
-
+    
+    private var filteredExercises: [Exercise] {
+        exercises.filter { exercise in
+            let matchesSearch = searchText.isEmpty || exercise.name.localizedCaseInsensitiveContains(searchText)
+            let matchesCategory = selectedCategories.isEmpty || !Set(exercise.categories).isDisjoint(with: selectedCategories)
+            return matchesSearch && matchesCategory
+        }
+        .sorted { $0.createdAt > $1.createdAt }
+    }
+    
     @Environment(\.modelContext) private var modelContext
-    @State private var draftExercise: Exercise? = nil
+
+    @State private var path: [Exercise] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 if !selectedCategories.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -37,14 +47,8 @@ struct ExerciseListView: View {
                 }
 
                 Group {
-                    ForEach(exercises.filter { exercise in
-                        let matchesSearch = searchText.isEmpty || exercise.name.localizedCaseInsensitiveContains(searchText)
-                        let matchesCategory = selectedCategories.isEmpty || !Set(exercise.categories).isDisjoint(with: selectedCategories)
-                        return matchesSearch && matchesCategory
-                    }) { exercise in
-                        NavigationLink {
-                            ExerciseDetailView(exercise: exercise)
-                        } label: {
+                    ForEach(filteredExercises) { exercise in
+                        NavigationLink(value: exercise) {
                             VStack(alignment: .leading) {
                                 Text(exercise.name).font(.headline)
                                 Text(exercise.categories.map(\.rawValue).joined(separator: ", "))
@@ -54,6 +58,7 @@ struct ExerciseListView: View {
                             .transition(.move(edge: .leading).combined(with: .opacity))
                         }
                     }
+                    .onDelete(perform: deleteExercises)
                 }
             }
             .animation(.default, value: searchText)
@@ -65,33 +70,11 @@ struct ExerciseListView: View {
                     set: { selectedCategories = $0 }
                 ))
             }
-            .sheet(item: $draftExercise) { exercise in
-                NavigationStack {
-                    ExerciseDetailView(exercise: exercise)
-                        .toolbar {
-                            ToolbarItem(placement: .confirmationAction) {
-                                Button {
-                                    modelContext.insert(exercise)
-                                    draftExercise = nil
-                                } label: {
-                                    Label("Done", systemImage:"checkmark")
-                                }
-                            }
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button {
-                                    draftExercise = nil
-                                } label: {
-                                    Label("Clear", systemImage:"trash")
-                                }
-                            }
-                        }
-                }
-            }
             .navigationTitle("Exercises")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        draftExercise = Exercise(
+                        let newExercise = Exercise(
                             name: "New Exercise",
                             categories: [],
                             defaultRestSeconds: 60,
@@ -102,6 +85,8 @@ struct ExerciseListView: View {
                             doubleWeightForVolume: false,
                             notes: nil
                         )
+                        modelContext.insert(newExercise)
+                        path.append(newExercise)
                     } label: {
                         Label("New Exercise", systemImage: "plus")
                     }
@@ -115,6 +100,16 @@ struct ExerciseListView: View {
                     }
                 }
             }
+            .navigationDestination(for: Exercise.self) { exercise in
+                ExerciseDetailView(exercise: exercise)
+            }
+        }
+    }
+    
+    private func deleteExercises(at offsets: IndexSet) {
+        for index in offsets {
+            let exercise = filteredExercises[index]
+            modelContext.delete(exercise)
         }
     }
 }

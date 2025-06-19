@@ -29,6 +29,7 @@ final class Exercise {
     var kind: String // e.g. "Weight, Reps"
     var doubleWeightForVolume: Bool
     var notes: String?
+    var createdAt: Date // ← Add this line
     
     var categories: [ExerciseCategory] {
         get {
@@ -48,7 +49,8 @@ final class Exercise {
         weightUnit: String,
         kind: String,
         doubleWeightForVolume: Bool,
-        notes: String? = nil
+        notes: String? = nil,
+        createdAt: Date = Date() // ← Default to now
     ) {
         self.name = name
         self.categoryRawValues = categories.map { $0.rawValue }
@@ -59,6 +61,7 @@ final class Exercise {
         self.kind = kind
         self.doubleWeightForVolume = doubleWeightForVolume
         self.notes = notes
+        self.createdAt = createdAt
     }
 }
 
