@@ -113,13 +113,7 @@ struct ExerciseListView: View {
                     Button {
                         isCategoryFilterPresented = true
                     } label: {
-                        Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(
-                                Capsule()
-                                    .fill(selectedCategories.isEmpty ? Color(.systemGray5) : Color.accentColor.opacity(0.2))
-                            )
+                        Label("Filter", systemImage: "line.3.horizontal.decrease")
                     }
                 }
             }

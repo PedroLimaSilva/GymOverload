@@ -33,19 +33,31 @@ struct MultiCategoryPicker: View {
             .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
+                    Button {
                         dismiss()
+                    } label: {
+                        Label("Done", systemImage: "checkmark")
                     }
                 }
                 if showClear {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Clear") {
+                        Button {
                             selectedCategories.removeAll()
                             dismiss()
+                        } label: {
+                            Label("Clear", systemImage: "xmark")
                         }
                     }
                 }
             }
         }
     }
+}
+
+#Preview{
+    var selectedCategories: [ExerciseCategory] = []
+    return MultiCategoryPicker(title: "Title", showClear: true, selectedCategories: Binding(
+        get: { selectedCategories },
+        set: { selectedCategories = $0 }
+    ))
 }
