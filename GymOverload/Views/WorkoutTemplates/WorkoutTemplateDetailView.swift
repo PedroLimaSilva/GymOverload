@@ -11,42 +11,48 @@ import SwiftData
 struct WorkoutTemplateDetailView: View {
     @Bindable var template: WorkoutTemplate
     @State private var isPickingExercise = false
-    
+    @State private var isOrderingExercises = false
+
     var body: some View {
-        Form {
-            Section(header: Text("Template Name")) {
-                TextField("Name", text: $template.name)
-            }
-            
-            Section(header: Text("Exercises")) {
-                if template.plannedExercises.isEmpty {
-                    Text("No exercises added yet").foregroundColor(.secondary)
-                } else {
-                    ForEach(Array(template.plannedExercises.enumerated()), id: \.element.id) { index, _ in
-                        let binding = $template.plannedExercises[index]
-                        VStack(alignment: .leading) {
-                            Text(binding.exerciseName.wrappedValue)
-                                .font(.headline)
-                            HStack {
-                                Stepper("Sets: \(binding.sets.wrappedValue)", value: binding.sets, in: 1...10)
-                                Spacer()
-                                Stepper("Reps: \(binding.reps.wrappedValue)", value: binding.reps, in: 1...30)
-                            }
+        Group{
+            if isOrderingExercises {
+                EditExerciseOrderView(plannedExercises: $template.plannedExercises)
+            } else {
+                Form {
+                    Section(header: Text("Template Name")) {
+                        TextField("Name", text: $template.name)
+                    }
+                    
+                    if template.plannedExercises.isEmpty {
+                        Section {
+                            Text("No exercises added yet").foregroundColor(.secondary)
                         }
-                        .padding(.vertical, 4)
+                    } else {
+                        ForEach(template.plannedExercises.indices, id: \.self) { index in
+                            PlannedExerciseSection(plannedExercise: $template.plannedExercises[index])
+                        }
                     }
-                    .onMove { indices, newOffset in
-                        template.plannedExercises.move(fromOffsets: indices, toOffset: newOffset)
-                    }
-                    .onDelete { indices in
-                        template.plannedExercises.remove(atOffsets: indices)
+                    
+                    Section {
+                        Button {
+                            isPickingExercise = true
+                        } label: {
+                            Label("Add Exercise", systemImage: "plus")
+                        }
                     }
                 }
                 
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    isPickingExercise = true
+                    isOrderingExercises.toggle()
                 } label: {
-                    Label("Add Exercise", systemImage: "plus")
+                    Label(
+                        isOrderingExercises ? "Done" : "Order Exercises",
+                        systemImage: isOrderingExercises ? "checkmark" : "arrow.up.arrow.down"
+                    )
                 }
             }
         }
@@ -55,7 +61,10 @@ struct WorkoutTemplateDetailView: View {
                 onSelectMultiple: { selected in
                     for exercise in selected {
                         template.plannedExercises.append(
-                            PlannedExercise(exerciseName: exercise.name, sets: 3, reps: 10)
+                            PlannedExercise(
+                                exerciseName: exercise.name,
+                                sets: []
+                            )
                         )
                     }
                     isPickingExercise = false
@@ -70,14 +79,24 @@ struct WorkoutTemplateDetailView: View {
     let sample = WorkoutTemplate(
         name: "Leg Day",
         plannedExercises: [
-            PlannedExercise(exerciseName: "Squat", sets: 4, reps: 8),
-            PlannedExercise(exerciseName: "Lunge", sets: 3, reps: 12),
-            PlannedExercise(exerciseName: "Romanian Deadlift", sets: 4, reps: 10)
+            PlannedExercise(
+                exerciseName: "Squat",
+                sets: [
+                    PlannedSet(reps: 8, weight: 60, restSeconds: 90),
+                    PlannedSet(reps: 6, weight: 80, restSeconds: 120)
+                ]
+            ),
+            PlannedExercise(
+                exerciseName: "Lunge",
+                sets: [
+                    PlannedSet(reps: 12, weight: 20, restSeconds: 60)
+                ]
+            )
         ]
     )
-    
+
     return NavigationStack {
-        WorkoutTemplateDetailView(template: sample)
-    }
-    .modelContainer(PreviewData.container)
+            WorkoutTemplateDetailView(template: sample)
+        }
+        .modelContainer(PreviewData.container)
 }

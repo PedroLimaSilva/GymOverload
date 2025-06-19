@@ -1,30 +1,56 @@
+//
+//  PlannedExerciseSection.swift
+//  GymOverload
+//
+//  Created by Pedro Lima e Silva on 19/06/2025.
+//
+
+import SwiftUI
+
 struct PlannedExerciseSection: View {
     @Binding var plannedExercise: PlannedExercise
 
     var body: some View {
         Section(header: Text(plannedExercise.exerciseName)) {
-            ForEach(Array(plannedExercise.sets.enumerated()), id: \.element.id) { index, _ in
-                let binding = $plannedExercise.sets[index]
+            ForEach(Array($plannedExercise.sets.enumerated()), id: \.element.id) { index, $set in
                 HStack {
-                    Stepper(
-                        "\(binding.weight.wrappedValue, specifier: "%.1f") kg",
-                        value: binding.weight,
-                        in: 0...500,
-                        step: 2.5
-                    )
+                    Text("\(index + 1)")
+                        .fontWeight(.bold)
+                        .foregroundColor(.accentColor)
+                        .frame(width: 20, alignment: .leading)
+
+                    // Editable weight
+                    TextField("kg", value: $set.weight, format: .number)
+                        .keyboardType(.decimalPad)
+                        .multilineTextAlignment(.center)
+                        .font(.system(.body, design: .monospaced).bold())
+                        .frame(width: 60)
+
+                    Text("kg")
+                        .foregroundColor(.secondary)
+
+                    // Editable reps
+                    TextField("reps", value: $set.reps, format: .number)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.center)
+                        .font(.system(.body, design: .monospaced).bold())
+                        .frame(width: 50)
+
+                    Text("reps")
+                        .foregroundColor(.secondary)
+
                     Spacer()
-                    Stepper(
-                        "\(binding.reps.wrappedValue) reps",
-                        value: binding.reps,
-                        in: 1...30
-                    )
-                    Spacer()
-                    Stepper(
-                        "\(binding.seconds.wrappedValue)s rest",
-                        value: binding.seconds,
-                        in: 0...300,
-                        step: 15
-                    )
+
+                    /*
+                    TextField("rest", value: $set.restSeconds, format: .number)
+                        .keyboardType(.numberPad)
+                        .multilineTextAlignment(.center)
+                        .font(.system(.body, design: .monospaced).bold())
+                        .frame(width: 50)
+                    
+                    Text("rest")
+                        .foregroundColor(.secondary)
+                     */
                 }
             }
             .onDelete { offsets in
@@ -33,11 +59,33 @@ struct PlannedExerciseSection: View {
 
             Button {
                 plannedExercise.sets.append(
-                    PlannedSet(reps: 10, weight: 0, seconds: 60)
+                    PlannedSet(reps: 10, weight: 0, restSeconds: 60)
                 )
             } label: {
                 Label("Add Set", systemImage: "plus")
             }
         }
     }
+}
+
+#Preview {
+    struct Wrapper: View {
+        @State var plannedExercise = PlannedExercise(
+            exerciseName: "Squat",
+            sets: [
+                PlannedSet(reps: 10, weight: 60, restSeconds: 60),
+                PlannedSet(reps: 8, weight: 80, restSeconds: 90)
+            ]
+        )
+
+        var body: some View {
+            NavigationStack {
+                Form {
+                    PlannedExerciseSection(plannedExercise: $plannedExercise)
+                }
+            }
+        }
+    }
+
+    return Wrapper()
 }

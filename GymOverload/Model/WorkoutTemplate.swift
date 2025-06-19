@@ -21,9 +21,15 @@ final class WorkoutTemplate {
     }
 }
 
+struct PlannedSet: Codable, Hashable, Identifiable {
+    var id: UUID = UUID()
+    var reps: Int
+    var weight: Double
+    var restSeconds: Int
+}
+
 struct PlannedExercise: Codable, Hashable, Identifiable {
     var id: UUID = UUID()
     var exerciseName: String
-    var sets: Int
-    var reps: Int
+    var sets: [PlannedSet]
 }
