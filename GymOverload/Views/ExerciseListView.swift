@@ -15,7 +15,6 @@ struct ExerciseListView: View {
     @State private var isCategoryFilterPresented = false
 
     @Environment(\.modelContext) private var modelContext
-    @State private var isPresentingNewExerciseSheet = false
     @State private var draftExercise: Exercise? = nil
 
     var body: some View {
@@ -66,26 +65,26 @@ struct ExerciseListView: View {
                     set: { selectedCategories = $0 }
                 ))
             }
-            .sheet(isPresented: $isPresentingNewExerciseSheet) {
-                if let exercise = draftExercise {
-                    NavigationStack {
-                        ExerciseDetailView(exercise: exercise)
-                            .toolbar {
-                                ToolbarItem(placement: .confirmationAction) {
-                                    Button("Done") {
-                                        modelContext.insert(exercise)
-                                        isPresentingNewExerciseSheet = false
-                                        draftExercise = nil
-                                    }
-                                }
-                                ToolbarItem(placement: .cancellationAction) {
-                                    Button("Cancel") {
-                                        isPresentingNewExerciseSheet = false
-                                        draftExercise = nil
-                                    }
+            .sheet(item: $draftExercise) { exercise in
+                NavigationStack {
+                    ExerciseDetailView(exercise: exercise)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button {
+                                    modelContext.insert(exercise)
+                                    draftExercise = nil
+                                } label: {
+                                    Label("Done", systemImage:"checkmark")
                                 }
                             }
-                    }
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button {
+                                    draftExercise = nil
+                                } label: {
+                                    Label("Clear", systemImage:"trash")
+                                }
+                            }
+                        }
                 }
             }
             .navigationTitle("Exercises")
@@ -103,7 +102,6 @@ struct ExerciseListView: View {
                             doubleWeightForVolume: false,
                             notes: nil
                         )
-                        isPresentingNewExerciseSheet = true
                     } label: {
                         Label("New Exercise", systemImage: "plus")
                     }
