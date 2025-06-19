@@ -45,7 +45,7 @@ struct WorkoutTemplateListView: View {
                 }
             }
             .sheet(isPresented: $showingEditor) {
-                WorkoutTemplateEditorView(template: templateToEdit)
+                Text("Editing workout")
             }
         }
     }
