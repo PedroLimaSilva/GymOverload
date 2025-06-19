@@ -12,12 +12,23 @@ import SwiftData
 struct GymOverloadApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            WorkoutSet.self,
+            Exercise.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let context = container.mainContext
+            
+            // ⬇️ Seed Exercises if database is empty
+            let hasExercises = try context.fetchCount(FetchDescriptor<Exercise>()) > 0
+            if !hasExercises {
+                let dtos: [ExerciseDTO] = ModelDataLoader.loadDTOs(from: "exercises")
+                dtos.map { $0.toModel() }.forEach { context.insert($0) }
+            }
+            
+            return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }

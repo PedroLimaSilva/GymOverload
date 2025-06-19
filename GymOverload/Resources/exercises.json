@@ -1,0 +1,123 @@
+[
+    {
+        "name": "Incline Dumbbell Press",
+        "categories": ["Chest", "Shoulders"],
+        "defaultRestSeconds": 90,
+        "weightIncrementKg": 2.5,
+        "weightIncrementLb": 5,
+        "weightUnit": "kg",
+        "kind": "Weight, Reps",
+        "doubleWeightForVolume": false,
+        "notes": "Targets upper chest and anterior deltoid"
+    },
+    {
+        "name": "Barbell Flat Hip Thrust",
+        "categories": ["Legs"],
+        "defaultRestSeconds": 60,
+        "weightIncrementKg": 2.5,
+        "weightIncrementLb": 5,
+        "weightUnit": "kg",
+        "kind": "Weight, Reps",
+        "doubleWeightForVolume": false,
+        "notes": "Glute-focused movement"
+    },
+    {
+        "name": "Incline Dumbbell Press",
+        "categories": ["Chest", "Shoulders"],
+        "defaultRestSeconds": 90,
+        "weightIncrementKg": 2.5,
+        "weightIncrementLb": 5,
+        "weightUnit": "kg",
+        "kind": "Weight, Reps",
+        "doubleWeightForVolume": false,
+        "notes": "Targets upper chest and anterior deltoid"
+    },
+    {
+        "name": "Barbell Back Squat",
+        "categories": ["Legs", "Abs"],
+        "defaultRestSeconds": 120,
+        "weightIncrementKg": 5,
+        "weightIncrementLb": 10,
+        "weightUnit": "kg",
+        "kind": "Weight, Reps",
+        "doubleWeightForVolume": false,
+        "notes": "Primary compound movement for quads and glutes"
+    },
+    {
+        "name": "Pull-Up",
+        "categories": ["Back", "Biceps"],
+        "defaultRestSeconds": 90,
+        "weightIncrementKg": 1,
+        "weightIncrementLb": 2.5,
+        "weightUnit": "kg",
+        "kind": "Bodyweight",
+        "doubleWeightForVolume": false,
+        "notes": "Can be weighted or assisted"
+    },
+    {
+        "name": "Overhead Barbell Press",
+        "categories": ["Shoulders"],
+        "defaultRestSeconds": 90,
+        "weightIncrementKg": 2.5,
+        "weightIncrementLb": 5,
+        "weightUnit": "kg",
+        "kind": "Weight, Reps",
+        "doubleWeightForVolume": false,
+        "notes": "Focus on vertical pressing strength"
+    },
+    {
+        "name": "Romanian Deadlift",
+        "categories": ["Legs", "Back"],
+        "defaultRestSeconds": 90,
+        "weightIncrementKg": 5,
+        "weightIncrementLb": 10,
+        "weightUnit": "kg",
+        "kind": "Weight, Reps",
+        "doubleWeightForVolume": false,
+        "notes": "Hamstring-dominant hinge movement"
+    },
+    {
+        "name": "Dumbbell Lateral Raise",
+        "categories": ["Shoulders"],
+        "defaultRestSeconds": 45,
+        "weightIncrementKg": 1,
+        "weightIncrementLb": 2.5,
+        "weightUnit": "kg",
+        "kind": "Weight, Reps",
+        "doubleWeightForVolume": false,
+        "notes": "Isolation movement for lateral delts"
+    },
+    {
+        "name": "Cable Triceps Pushdown",
+        "categories": ["Triceps"],
+        "defaultRestSeconds": 60,
+        "weightIncrementKg": 1,
+        "weightIncrementLb": 2.5,
+        "weightUnit": "kg",
+        "kind": "Weight, Reps",
+        "doubleWeightForVolume": false,
+        "notes": "Focuses on triceps isolation"
+    },
+    {
+        "name": "Barbell Bench Press",
+        "categories": ["Chest"],
+        "defaultRestSeconds": 120,
+        "weightIncrementKg": 2.5,
+        "weightIncrementLb": 5,
+        "weightUnit": "kg",
+        "kind": "Weight, Reps",
+        "doubleWeightForVolume": false,
+        "notes": "Main compound press for chest development"
+    },
+    {
+        "name": "Plank",
+        "categories": ["Abs"],
+        "defaultRestSeconds": 60,
+        "weightIncrementKg": 0,
+        "weightIncrementLb": 0,
+        "weightUnit": "kg",
+        "kind": "Time",
+        "doubleWeightForVolume": false,
+        "notes": "Timed hold for core endurance"
+    }
+]
