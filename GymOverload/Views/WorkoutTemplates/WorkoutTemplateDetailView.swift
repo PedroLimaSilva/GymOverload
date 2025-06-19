@@ -11,34 +11,38 @@ import SwiftData
 struct WorkoutTemplateDetailView: View {
     @Bindable var template: WorkoutTemplate
     @State private var isPickingExercise = false
-
+    
     var body: some View {
         Form {
             Section(header: Text("Template Name")) {
                 TextField("Name", text: $template.name)
             }
-
+            
             Section(header: Text("Exercises")) {
                 if template.plannedExercises.isEmpty {
                     Text("No exercises added yet").foregroundColor(.secondary)
                 } else {
-                    ForEach($template.plannedExercises) { $exercise in
+                    ForEach(Array(template.plannedExercises.enumerated()), id: \.element.id) { index, _ in
+                        let binding = $template.plannedExercises[index]
                         VStack(alignment: .leading) {
-                            Text(exercise.exerciseName)
+                            Text(binding.exerciseName.wrappedValue)
                                 .font(.headline)
                             HStack {
-                                Stepper("Sets: \(exercise.sets)", value: $exercise.sets, in: 1...10)
+                                Stepper("Sets: \(binding.sets.wrappedValue)", value: binding.sets, in: 1...10)
                                 Spacer()
-                                Stepper("Reps: \(exercise.reps)", value: $exercise.reps, in: 1...30)
+                                Stepper("Reps: \(binding.reps.wrappedValue)", value: binding.reps, in: 1...30)
                             }
                         }
                         .padding(.vertical, 4)
+                    }
+                    .onMove { indices, newOffset in
+                        template.plannedExercises.move(fromOffsets: indices, toOffset: newOffset)
                     }
                     .onDelete { indices in
                         template.plannedExercises.remove(atOffsets: indices)
                     }
                 }
-
+                
                 Button {
                     isPickingExercise = true
                 } label: {
@@ -71,9 +75,9 @@ struct WorkoutTemplateDetailView: View {
             PlannedExercise(exerciseName: "Romanian Deadlift", sets: 4, reps: 10)
         ]
     )
-
+    
     return NavigationStack {
         WorkoutTemplateDetailView(template: sample)
     }
-        .modelContainer(PreviewData.container)
+    .modelContainer(PreviewData.container)
 }
