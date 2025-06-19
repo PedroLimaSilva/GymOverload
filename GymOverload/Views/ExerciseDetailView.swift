@@ -5,58 +5,81 @@
 //  Created by Pedro Lima e Silva on 19/06/2025.
 //
 
-
 import SwiftUI
 import SwiftData
 
 struct ExerciseDetailView: View {
-    let exercise: Exercise
-
+    @Bindable var exercise: Exercise
+    @State private var isCategoryPickerPresented = false
+    
     var body: some View {
         Form {
             Section(header: Text("Name")) {
-                Text(exercise.name)
+                TextField("Name", text: $exercise.name)
             }
 
-            Section(header: Text("Categories")) {
-                Text(exercise.categories.map(\.rawValue).joined(separator: ", "))
+            Button {
+                isCategoryPickerPresented = true
+            } label: {
+                HStack {
+                    Text("Categories")
+                    Spacer()
+                    Text(exercise.categories.map(\.rawValue).joined(separator: ", "))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
             }
 
             Section(header: Text("Defaults")) {
                 HStack {
-                    Text("Rest Time")
+                    Text("Rest Time (seconds)")
                     Spacer()
-                    Text("\(exercise.defaultRestSeconds) seconds")
+                    TextField("seconds", value: $exercise.defaultRestSeconds, format: .number)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.numberPad)
                 }
-                HStack {
-                    Text("Weight Unit")
-                    Spacer()
-                    Text(exercise.weightUnit)
+                
+                Picker("Weight Unit", selection: $exercise.weightUnit) {
+                    Text("kg").tag("kg")
+                    Text("lb").tag("lb")
                 }
+
                 HStack {
                     Text("Increment (kg)")
                     Spacer()
-                    Text("\(exercise.weightIncrementKg, specifier: "%.1f")")
+                    TextField("kg", value: $exercise.weightIncrementKg, format: .number)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.decimalPad)
                 }
+
                 HStack {
                     Text("Increment (lb)")
                     Spacer()
-                    Text("\(exercise.weightIncrementLb, specifier: "%.1f")")
+                    TextField("lb", value: $exercise.weightIncrementLb, format: .number)
+                        .multilineTextAlignment(.trailing)
+                        .keyboardType(.decimalPad)
                 }
             }
 
             Section(header: Text("Kind")) {
-                Text(exercise.kind)
+                TextField("Kind", text: $exercise.kind)
             }
 
-            Toggle("Double Weight For Volume", isOn: .constant(exercise.doubleWeightForVolume))
-                .disabled(true)
+            Toggle("Double Weight For Volume", isOn: $exercise.doubleWeightForVolume)
 
-            if let notes = exercise.notes, !notes.isEmpty {
-                Section(header: Text("Notes")) {
-                    Text(notes)
-                }
+            Section(header: Text("Notes")) {
+                TextEditor(text: Binding(
+                    get: { exercise.notes ?? "" },
+                    set: { exercise.notes = $0 }
+                ))
+                .frame(minHeight: 100)
             }
+        }
+        .sheet(isPresented: $isCategoryPickerPresented) {
+            MultiCategoryPicker(selectedCategories: Binding(
+                get: { exercise.categories },
+                set: { exercise.categories = $0 }
+            ))
         }
         .navigationTitle(exercise.name)
     }
@@ -69,5 +92,3 @@ struct ExerciseDetailView: View {
     return ExerciseDetailView(exercise: exercise)
         .modelContainer(PreviewData.container)
 }
-
-
