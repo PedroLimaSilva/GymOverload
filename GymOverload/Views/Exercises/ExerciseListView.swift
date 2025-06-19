@@ -14,6 +14,10 @@ struct ExerciseListView: View {
     @State private var selectedCategories: [ExerciseCategory] = []
     @State private var isCategoryFilterPresented = false
     
+    var onSelect: ((Exercise) -> Void)? = nil
+    var onSelectMultiple: (([Exercise]) -> Void)? = nil
+    @State private var selectedExercises: Set<Exercise> = []
+    
     private var filteredExercises: [Exercise] {
         exercises.filter { exercise in
             let matchesSearch = searchText.isEmpty || exercise.name.localizedCaseInsensitiveContains(searchText)
@@ -48,14 +52,33 @@ struct ExerciseListView: View {
 
                 Group {
                     ForEach(filteredExercises) { exercise in
-                        NavigationLink(value: exercise) {
-                            VStack(alignment: .leading) {
-                                Text(exercise.name).font(.headline)
-                                Text(exercise.categories.map(\.rawValue).joined(separator: ", "))
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                        if let onSelect {
+                            Button {
+                                onSelect(exercise)
+                            } label: {
+                                ExerciseRow(exercise: exercise)
                             }
-                            .transition(.move(edge: .leading).combined(with: .opacity))
+                        } else if onSelectMultiple != nil {
+                            Button {
+                                if selectedExercises.contains(exercise) {
+                                    selectedExercises.remove(exercise)
+                                } else {
+                                    selectedExercises.insert(exercise)
+                                }
+                            } label: {
+                                HStack {
+                                    ExerciseRow(exercise: exercise)
+                                    Spacer()
+                                    if selectedExercises.contains(exercise) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(.accentColor)
+                                    }
+                                }
+                            }
+                        } else {
+                            NavigationLink(value: exercise) {
+                                ExerciseRow(exercise: exercise)
+                            }
                         }
                     }
                     .onDelete(perform: deleteExercises)
@@ -90,6 +113,16 @@ struct ExerciseListView: View {
                     } label: {
                         Label("New Exercise", systemImage: "plus")
                     }
+                }
+                
+                if onSelectMultiple != nil {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button("Add \(selectedExercises.count) Exercises") {
+                            onSelectMultiple?(Array(selectedExercises))
+                        }
+                        .disabled(selectedExercises.isEmpty)
+                    }
+
                 }
 
                 ToolbarItem(placement: .navigationBarLeading) {

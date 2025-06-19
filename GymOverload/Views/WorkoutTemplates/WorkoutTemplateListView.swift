@@ -42,7 +42,7 @@ struct WorkoutTemplateListView: View {
                 }
             }
             .navigationDestination(for: WorkoutTemplate.self) { template in
-                Text(template.name)
+                WorkoutTemplateDetailView(template: template)
             }
         }
     }
