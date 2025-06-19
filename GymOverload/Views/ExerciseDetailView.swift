@@ -76,7 +76,7 @@ struct ExerciseDetailView: View {
             }
         }
         .sheet(isPresented: $isCategoryPickerPresented) {
-            MultiCategoryPicker(selectedCategories: Binding(
+            MultiCategoryPicker(title: "Select Categories", showClear: false, selectedCategories: Binding(
                 get: { exercise.categories },
                 set: { exercise.categories = $0 }
             ))

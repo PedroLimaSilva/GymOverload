@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct MultiCategoryPicker: View {
+    let title: String
+    let showClear: Bool
     @Binding var selectedCategories: [ExerciseCategory]
     @Environment(\.dismiss) private var dismiss
 
@@ -28,11 +30,19 @@ struct MultiCategoryPicker: View {
                     ))
                 }
             }
-            .navigationTitle("Select Categories")
+            .navigationTitle(title)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {
                         dismiss()
+                    }
+                }
+                if showClear {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Clear") {
+                            selectedCategories.removeAll()
+                            dismiss()
+                        }
                     }
                 }
             }

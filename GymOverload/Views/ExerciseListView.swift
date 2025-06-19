@@ -11,9 +11,13 @@ import SwiftData
 struct ExerciseListView: View {
     @Query private var exercises: [Exercise]
     @State private var searchText = ""
-    @State private var selectedCategories: Set<ExerciseCategory> = []
+    @State private var selectedCategories: [ExerciseCategory] = []
     @State private var isCategoryFilterPresented = false
-    
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var isPresentingNewExerciseSheet = false
+    @State private var draftExercise: Exercise? = nil
+
     var body: some View {
         NavigationStack {
             List {
@@ -32,6 +36,7 @@ struct ExerciseListView: View {
                         .padding(.horizontal)
                     }
                 }
+
                 Group {
                     ForEach(exercises.filter { exercise in
                         let matchesSearch = searchText.isEmpty || exercise.name.localizedCaseInsensitiveContains(searchText)
@@ -56,34 +61,30 @@ struct ExerciseListView: View {
             .animation(.default, value: selectedCategories)
             .searchable(text: $searchText, prompt: "Search Exercises")
             .sheet(isPresented: $isCategoryFilterPresented) {
-                NavigationStack {
-                    List {
-                        ForEach(ExerciseCategory.allCases, id: \.self) { category in
-                            Toggle(category.rawValue, isOn: Binding(
-                                get: { selectedCategories.contains(category) },
-                                set: { isSelected in
-                                    if isSelected {
-                                        selectedCategories.insert(category)
-                                    } else {
-                                        selectedCategories.remove(category)
+                MultiCategoryPicker(title: "Filter by Category", showClear: true, selectedCategories: Binding(
+                    get: { selectedCategories },
+                    set: { selectedCategories = $0 }
+                ))
+            }
+            .sheet(isPresented: $isPresentingNewExerciseSheet) {
+                if let exercise = draftExercise {
+                    NavigationStack {
+                        ExerciseDetailView(exercise: exercise)
+                            .toolbar {
+                                ToolbarItem(placement: .confirmationAction) {
+                                    Button("Done") {
+                                        modelContext.insert(exercise)
+                                        isPresentingNewExerciseSheet = false
+                                        draftExercise = nil
                                     }
                                 }
-                            ))
-                        }
-                    }
-                    .navigationTitle("Filter by Category")
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") {
-                                isCategoryFilterPresented = false
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Cancel") {
+                                        isPresentingNewExerciseSheet = false
+                                        draftExercise = nil
+                                    }
+                                }
                             }
-                        }
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Clear") {
-                                selectedCategories.removeAll()
-                                isCategoryFilterPresented = false
-                            }
-                        }
                     }
                 }
             }
@@ -91,13 +92,32 @@ struct ExerciseListView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
+                        draftExercise = Exercise(
+                            name: "New Exercise",
+                            categories: [],
+                            defaultRestSeconds: 60,
+                            weightIncrementKg: 2.5,
+                            weightIncrementLb: 5,
+                            weightUnit: "kg",
+                            kind: "Weight, Reps",
+                            doubleWeightForVolume: false,
+                            notes: nil
+                        )
+                        isPresentingNewExerciseSheet = true
+                    } label: {
+                        Label("New Exercise", systemImage: "plus")
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
                         isCategoryFilterPresented = true
                     } label: {
                         Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(
-                                RoundedRectangle(cornerRadius: 10)
+                                Capsule()
                                     .fill(selectedCategories.isEmpty ? Color(.systemGray5) : Color.accentColor.opacity(0.2))
                             )
                     }
