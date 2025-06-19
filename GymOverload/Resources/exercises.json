@@ -22,17 +22,6 @@
         "notes": "Glute-focused movement"
     },
     {
-        "name": "Incline Dumbbell Press",
-        "categories": ["Chest", "Shoulders"],
-        "defaultRestSeconds": 90,
-        "weightIncrementKg": 2.5,
-        "weightIncrementLb": 5,
-        "weightUnit": "kg",
-        "kind": "Weight, Reps",
-        "doubleWeightForVolume": false,
-        "notes": "Targets upper chest and anterior deltoid"
-    },
-    {
         "name": "Barbell Back Squat",
         "categories": ["Legs", "Abs"],
         "defaultRestSeconds": 120,

@@ -12,7 +12,6 @@ import SwiftData
 struct GymOverloadApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            WorkoutSet.self,
             Exercise.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
