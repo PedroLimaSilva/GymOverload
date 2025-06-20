@@ -20,6 +20,7 @@ enum ExerciseCategory: String, CaseIterable, Codable, Hashable {
 
 @Model
 final class Exercise {
+    var id: UUID = UUID()
     var name: String
     var categoryRawValues: [String]
     var defaultRestSeconds: Int // in seconds

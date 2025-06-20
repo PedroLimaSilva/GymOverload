@@ -29,7 +29,7 @@ struct ExerciseListView: View {
     
     @Environment(\.modelContext) private var modelContext
 
-    @State private var path: [Exercise] = []
+    @State private var path: [UUID] = []
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -76,7 +76,7 @@ struct ExerciseListView: View {
                                 }
                             }
                         } else {
-                            NavigationLink(value: exercise) {
+                            NavigationLink(value: exercise.id) {
                                 ExerciseRow(exercise: exercise)
                             }
                         }
@@ -109,7 +109,7 @@ struct ExerciseListView: View {
                             notes: nil
                         )
                         modelContext.insert(newExercise)
-                        path.append(newExercise)
+                        path.append(newExercise.id)
                     } label: {
                         Label("New Exercise", systemImage: "plus")
                     }
@@ -133,8 +133,10 @@ struct ExerciseListView: View {
                     }
                 }
             }
-            .navigationDestination(for: Exercise.self) { exercise in
-                ExerciseDetailView(exercise: exercise)
+            .navigationDestination(for: UUID.self) { id in
+                if let exercise = exercises.first(where: { $0.id == id }) {
+                    ExerciseDetailView(exercise: exercise)
+                }
             }
         }
     }

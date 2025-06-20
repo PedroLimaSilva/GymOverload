@@ -11,60 +11,67 @@ struct PlannedExerciseSection: View {
     @Binding var plannedExercise: PlannedExercise
 
     var body: some View {
-        Section(header: Text(plannedExercise.exerciseName)) {
+        Section {
             ForEach(Array($plannedExercise.sets.enumerated()), id: \.element.id) { index, $set in
-                HStack {
-                    Text("\(index + 1)")
-                        .fontWeight(.bold)
-                        .foregroundColor(.accentColor)
-                        .frame(width: 20, alignment: .leading)
-
-                    // Editable weight
-                    TextField("kg", value: $set.weight, format: .number)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.center)
-                        .font(.system(.body, design: .monospaced).bold())
-                        .frame(width: 60)
-
-                    Text("kg")
-                        .foregroundColor(.secondary)
-
-                    // Editable reps
-                    TextField("reps", value: $set.reps, format: .number)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.center)
-                        .font(.system(.body, design: .monospaced).bold())
-                        .frame(width: 50)
-
-                    Text("reps")
-                        .foregroundColor(.secondary)
-
-                    Spacer()
-
-                    /*
-                    TextField("rest", value: $set.restSeconds, format: .number)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.center)
-                        .font(.system(.body, design: .monospaced).bold())
-                        .frame(width: 50)
-                    
-                    Text("rest")
-                        .foregroundColor(.secondary)
-                     */
+                VStack(spacing: 8) {
+                    SetRow(index: index, set: $set) {
+                        plannedExercise.sets.remove(at: index)
+                    }
                 }
             }
             .onDelete { offsets in
                 plannedExercise.sets.remove(atOffsets: offsets)
             }
 
-            Button {
-                plannedExercise.sets.append(
-                    PlannedSet(reps: 10, weight: 0, restSeconds: 60)
-                )
-            } label: {
-                Label("Add Set", systemImage: "plus")
+            HStack {
+                Spacer()
+                Button {
+                    plannedExercise.sets.append(
+                        PlannedSet(reps: 10, weight: 0, restSeconds: 60)
+                    )
+                } label: {
+                    Label("Add Set", systemImage: "plus")
+                        .foregroundColor(.green)
+                        .padding(.vertical, 6)
+                }
+                Spacer()
             }
+        } header: {
+            Text(plannedExercise.exerciseName)
+                .font(.headline)
         }
+        .listRowInsets(EdgeInsets())
+        .listRowBackground(Color.clear)
+    }
+}
+
+struct SetRow: View {
+    let index: Int
+    @Binding var set: PlannedSet
+    let onDelete: () -> Void
+
+    var body: some View {
+        HStack {
+            Text("\(index + 1)")
+                .fontWeight(.bold)
+                .foregroundColor(.accentColor)
+
+            TextField("kg", value: $set.weight, format: .number)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.center)
+                .frame(width: 60)
+            Text("kg").foregroundColor(.secondary)
+
+            TextField("reps", value: $set.reps, format: .number)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .frame(width: 50)
+            Text("reps").foregroundColor(.secondary)
+            Spacer()
+        }
+        .font(.system(.body, design: .monospaced))
+        .padding(.horizontal)
+        .padding(.vertical, 6)
     }
 }
 
@@ -80,7 +87,7 @@ struct PlannedExerciseSection: View {
 
         var body: some View {
             NavigationStack {
-                Form {
+                List {
                     PlannedExerciseSection(plannedExercise: $plannedExercise)
                 }
             }

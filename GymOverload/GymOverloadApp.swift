@@ -20,14 +20,34 @@ struct GymOverloadApp: App {
         do {
             let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
             let context = container.mainContext
-            
-            // ⬇️ Seed Exercises if database is empty
-            let hasExercises = try context.fetchCount(FetchDescriptor<Exercise>()) > 0
-            if !hasExercises {
-                let dtos: [ExerciseDTO] = ModelDataLoader.loadDTOs(from: "exercises")
-                dtos.map { $0.toModel() }.forEach { context.insert($0) }
+
+            // Insert some base exercises if needed
+            let exercises = ModelDataLoader.loadExercises()
+            for exercise in exercises {
+                context.insert(exercise)
             }
-            
+
+            // Create and insert a template with inline embedded data
+            let template = WorkoutTemplate(
+                name: "Leg Day",
+                plannedExercises: [
+                    PlannedExercise(
+                        exerciseName: "Squat",
+                        sets: [
+                            PlannedSet(reps: 8, weight: 60, restSeconds: 90),
+                            PlannedSet(reps: 6, weight: 80, restSeconds: 120)
+                        ]
+                    ),
+                    PlannedExercise(
+                        exerciseName: "Lunge",
+                        sets: [
+                            PlannedSet(reps: 12, weight: 20, restSeconds: 60)
+                        ]
+                    )
+                ]
+            )
+            context.insert(template)
+
             return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
