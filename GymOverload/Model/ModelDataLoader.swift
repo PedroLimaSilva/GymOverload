@@ -14,6 +14,10 @@ enum ModelDataLoader {
         loadDTOs(from: "exercises").map { ($0 as ExerciseDTO).toModel() }
     }
     
+    static func loadWorkoutTemplates() -> [WorkoutTemplate] {
+        loadDTOs(from: "templates").map {($0 as WorkoutTemplateDTO).toModel()}
+    }
+    
     /// Loads and decodes an array of DTOs from a JSON file in the app bundle.
     static func loadDTOs<T: Decodable>(from filename: String) -> [T] {
         guard let url = Bundle.main.url(forResource: filename, withExtension: "json"),

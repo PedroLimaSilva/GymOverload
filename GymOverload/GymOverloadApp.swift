@@ -28,25 +28,28 @@ struct GymOverloadApp: App {
             }
 
             // Create and insert a template with inline embedded data
-            let template = WorkoutTemplate(
-                name: "Leg Day",
-                plannedExercises: [
-                    PlannedExercise(
-                        exerciseName: "Squat",
-                        sets: [
-                            PlannedSet(reps: 8, weight: 60, restSeconds: 90),
-                            PlannedSet(reps: 6, weight: 80, restSeconds: 120)
-                        ]
-                    ),
-                    PlannedExercise(
-                        exerciseName: "Lunge",
-                        sets: [
-                            PlannedSet(reps: 12, weight: 20, restSeconds: 60)
-                        ]
-                    )
-                ]
-            )
-            context.insert(template)
+            let existingTemplates = try context.fetch(FetchDescriptor<WorkoutTemplate>())
+            if existingTemplates.isEmpty {
+                let template = WorkoutTemplate(
+                    name: "Leg Day",
+                    plannedExercises: [
+                        PlannedExercise(
+                            exerciseName: "Squat",
+                            sets: [
+                                PlannedSet(reps: 8, weight: 60, restSeconds: 90),
+                                PlannedSet(reps: 6, weight: 80, restSeconds: 120)
+                            ]
+                        ),
+                        PlannedExercise(
+                            exerciseName: "Lunge",
+                            sets: [
+                                PlannedSet(reps: 12, weight: 20, restSeconds: 60)
+                            ]
+                        )
+                    ]
+                )
+                context.insert(template)
+            }
 
             return container
         } catch {

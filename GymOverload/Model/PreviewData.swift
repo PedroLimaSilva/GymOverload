@@ -18,29 +18,15 @@ enum PreviewData {
         // Insert some base exercises
         let exercises = ModelDataLoader.loadExercises()
         for exercise in exercises {
+            print("Loaded exercise", exercise.name)
             context.insert(exercise)
         }
-
-        // Insert a preview workout template
-        let template = WorkoutTemplate(
-            name: "Leg Day",
-            plannedExercises: [
-                PlannedExercise(
-                    exerciseName: "Squat",
-                    sets: [
-                        PlannedSet(reps: 8, weight: 60, restSeconds: 90),
-                        PlannedSet(reps: 6, weight: 80, restSeconds: 120)
-                    ]
-                ),
-                PlannedExercise(
-                    exerciseName: "Lunge",
-                    sets: [
-                        PlannedSet(reps: 12, weight: 20, restSeconds: 60)
-                    ]
-                )
-            ]
-        )
-        context.insert(template)
+        
+        let templates = ModelDataLoader.loadWorkoutTemplates()
+        for template in templates {
+            print("Loaded template", template.name)
+            context.insert(template)
+        }
 
         return container
     }()

@@ -24,3 +24,38 @@ final class WorkoutTemplate {
         self.plannedExercises = plannedExercises
     }
 }
+
+
+// DTOs used only for decoding
+struct PlannedSetDTO: Codable {
+    let reps: Int
+    let weight: Double
+    let restSeconds: Int
+    func toModel() -> PlannedSet {
+        PlannedSet(reps: reps, weight: weight, restSeconds: restSeconds)
+    }
+}
+
+struct PlannedExerciseDTO: Codable {
+    let exerciseName: String
+    let sets: [PlannedSetDTO]
+    
+    func toModel() -> PlannedExercise {
+        PlannedExercise(
+            exerciseName: exerciseName,
+            sets: sets.map { $0.toModel() }
+        )
+    }
+}
+
+struct WorkoutTemplateDTO: Decodable {
+    let name: String
+    let plannedExercises: [PlannedExerciseDTO]
+    
+    func toModel() -> WorkoutTemplate {
+        WorkoutTemplate(
+            name: name,
+            plannedExercises: plannedExercises.map { $0.toModel() }
+        )
+    }
+}
