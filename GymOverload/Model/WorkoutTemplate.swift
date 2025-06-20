@@ -2,14 +2,14 @@ import SwiftData
 import Foundation
 
 struct PlannedSet: Codable, Hashable, Identifiable {
-    let id = UUID()
+    var id = UUID()
     var reps: Int
     var weight: Double
     var restSeconds: Int
 }
 
 struct PlannedExercise: Codable, Hashable, Identifiable {
-    let id = UUID()
+    var id = UUID()
     var exerciseName: String
     var sets: [PlannedSet] = []
 }

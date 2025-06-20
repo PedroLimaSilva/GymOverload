@@ -12,12 +12,8 @@ struct PlannedExerciseSection: View {
 
     var body: some View {
         Section {
-            ForEach(Array($plannedExercise.sets.enumerated()), id: \.element.id) { index, $set in
-                VStack(spacing: 8) {
-                    SetRow(index: index, set: $set) {
-                        plannedExercise.sets.remove(at: index)
-                    }
-                }
+            ForEach(Array(zip(plannedExercise.sets.indices, $plannedExercise.sets)), id: \.1.id) { index, $set in
+                SetRow(index: index, set: $set)
             }
             .onDelete { offsets in
                 plannedExercise.sets.remove(atOffsets: offsets)
@@ -48,7 +44,6 @@ struct PlannedExerciseSection: View {
 struct SetRow: View {
     let index: Int
     @Binding var set: PlannedSet
-    let onDelete: () -> Void
 
     var body: some View {
         HStack {

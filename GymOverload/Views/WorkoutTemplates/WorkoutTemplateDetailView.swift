@@ -14,7 +14,7 @@ struct WorkoutTemplateDetailView: View {
     @State private var editMode: EditMode = .inactive
 
     var body: some View {
-        NavigationStack {
+        Group {
             content
                 .navigationTitle(template.name)
                 .navigationBarTitleDisplayMode(.inline)
