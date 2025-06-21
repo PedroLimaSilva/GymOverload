@@ -20,18 +20,23 @@ enum SharedModelContainer {
             let container = try ModelContainer(for: schema, configurations: [configuration])
             let context = container.mainContext
 
-            // Load exercises from JSON
-            let exercises = ModelDataLoader.loadExercises()
-            for exercise in exercises {
-                context.insert(exercise)
+            // Only insert exercises if none exist
+            let existingExercises = try context.fetch(FetchDescriptor<Exercise>())
+            if existingExercises.isEmpty {
+                let exercises = ModelDataLoader.loadExercises()
+                for exercise in exercises {
+                    context.insert(exercise)
+                }
             }
 
-            // Insert one workout template if none exist
-            let templates = ModelDataLoader.loadWorkoutTemplates()
-            for template in templates {
-                context.insert(template)
+            // Only insert templates if none exist
+            let existingTemplates = try context.fetch(FetchDescriptor<WorkoutTemplate>())
+            if existingTemplates.isEmpty {
+                let templates = ModelDataLoader.loadWorkoutTemplates()
+                for template in templates {
+                    context.insert(template)
+                }
             }
-
 
             return container
         } catch {
