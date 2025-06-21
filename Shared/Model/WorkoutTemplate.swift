@@ -31,31 +31,48 @@ struct PlannedSetDTO: Codable {
     let reps: Int
     let weight: Double
     let restSeconds: Int
+
     func toModel() -> PlannedSet {
         PlannedSet(reps: reps, weight: weight, restSeconds: restSeconds)
+    }
+
+    init(from model: PlannedSet) {
+        self.reps = model.reps
+        self.weight = model.weight
+        self.restSeconds = model.restSeconds
     }
 }
 
 struct PlannedExerciseDTO: Codable {
     let name: String
     let sets: [PlannedSetDTO]
-    
+
     func toModel() -> PlannedExercise {
         PlannedExercise(
             name: name,
             sets: sets.map { $0.toModel() }
         )
     }
+
+    init(from model: PlannedExercise) {
+        self.name = model.name
+        self.sets = model.sets.map { PlannedSetDTO(from: $0) }
+    }
 }
 
-struct WorkoutTemplateDTO: Decodable {
+struct WorkoutTemplateDTO: Codable {
     let name: String
     let plannedExercises: [PlannedExerciseDTO]
-    
+
     func toModel() -> WorkoutTemplate {
         WorkoutTemplate(
             name: name,
             plannedExercises: plannedExercises.map { $0.toModel() }
         )
+    }
+
+    init(from model: WorkoutTemplate) {
+        self.name = model.name
+        self.plannedExercises = model.plannedExercises.map { PlannedExerciseDTO(from: $0) }
     }
 }

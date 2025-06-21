@@ -45,6 +45,7 @@
 			membershipExceptions = (
 				Assets.xcassets,
 				Model/Exercise.swift,
+				Model/InitialDataLoader.swift,
 				Model/ModelDataLoader.swift,
 				Model/PreviewData.swift,
 				Model/SharedModelContainer.swift,
@@ -55,11 +56,21 @@
 			);
 			target = 2952ECCC2E0380C60064A000 /* GymOverload */;
 		};
+		29F2B9572E06CCF80097717E /* Exceptions for "GymOverload" folder in "GymOverload" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2952ECCC2E0380C60064A000 /* GymOverload */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2952ECCF2E0380C60064A000 /* GymOverload */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				29F2B9572E06CCF80097717E /* Exceptions for "GymOverload" folder in "GymOverload" target */,
+			);
 			path = GymOverload;
 			sourceTree = "<group>";
 		};
@@ -378,6 +389,7 @@
 				DEVELOPMENT_TEAM = KRA6SKWTM9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GymOverload/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -411,6 +423,7 @@
 				DEVELOPMENT_TEAM = KRA6SKWTM9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GymOverload/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -443,6 +456,7 @@
 				DEVELOPMENT_TEAM = KRA6SKWTM9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "GymOverloadWatch-Watch-App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = GymOverloadWatch;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = LimaESilva.GymOverload;
@@ -475,6 +489,7 @@
 				DEVELOPMENT_TEAM = KRA6SKWTM9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "GymOverloadWatch-Watch-App-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = GymOverloadWatch;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = LimaESilva.GymOverload;

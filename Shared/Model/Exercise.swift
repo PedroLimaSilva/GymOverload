@@ -66,7 +66,7 @@ final class Exercise {
     }
 }
 
-struct ExerciseDTO: Decodable {
+struct ExerciseDTO: Codable {
     let name: String
     let categories: [ExerciseCategory]
     let defaultRestSeconds: Int
@@ -89,5 +89,17 @@ struct ExerciseDTO: Decodable {
             doubleWeightForVolume: doubleWeightForVolume,
             notes: notes
         )
+    }
+
+    init(from model: Exercise) {
+        self.name = model.name
+        self.categories = model.categories
+        self.defaultRestSeconds = model.defaultRestSeconds
+        self.weightIncrementKg = model.weightIncrementKg
+        self.weightIncrementLb = model.weightIncrementLb
+        self.weightUnit = model.weightUnit
+        self.kind = model.kind
+        self.doubleWeightForVolume = model.doubleWeightForVolume
+        self.notes = model.notes
     }
 }

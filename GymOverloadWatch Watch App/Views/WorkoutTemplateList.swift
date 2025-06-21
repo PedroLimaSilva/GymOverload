@@ -14,36 +14,42 @@ struct WorkoutTemplateList: View {
     @State private var selected: WorkoutTemplate?
 
     var body: some View {
-        NavigationSplitView {
-            List(selection: $selected) {
-                ForEach(templates) { template in
-                    NavigationLink(value: template){
-                        VStack(alignment: .leading) {
-                            Text(template.name)
-                                .font(.headline)
-
-                            let cats = categories(in: template)
-                            if !cats.isEmpty {
-                                Text(cats.map(\.rawValue).sorted().joined(separator: ", "))
-                                    .font(.caption2)
-                                    .foregroundColor(.gray)
+        if templates.isEmpty {
+            ContentUnavailableView(
+                "No Workouts Available",
+                systemImage: "list.bullet.rectangle",
+                description: Text("Create some on your iPhone")
+            )
+        } else {
+            NavigationSplitView {
+                List(selection: $selected) {
+                    ForEach(templates) { template in
+                        NavigationLink(value: template){
+                            VStack(alignment: .leading) {
+                                Text(template.name)
+                                    .font(.headline)
+                                
+                                let cats = categories(in: template)
+                                if !cats.isEmpty {
+                                    Text(cats.map(\.rawValue).sorted().joined(separator: ", "))
+                                        .font(.caption2)
+                                        .foregroundColor(.gray)
+                                }
                             }
                         }
                     }
                 }
-            }
-            .containerBackground(.background, for: .navigation)
-            .navigationTitle("Workouts")
-            .listStyle(.carousel)
-        } detail: {
-            TabView(selection: $selected) {
-                ForEach(templates) { template in
-                    WorkoutTemplateDetail(template: template)
-                        .tag(Optional(template))
-                        .containerBackground(.background, for: .tabView)
+                .containerBackground(.background, for: .navigation)
+                .navigationTitle("Workouts")
+                .listStyle(.carousel)
+            } detail: {
+                if let selected {
+                    WorkoutTemplateDetail(template: selected)
+                        .containerBackground(.background, for: .navigation)
+                } else {
+                    ContentUnavailableView("No Template Selected", systemImage: "list.bullet.rectangle")
                 }
             }
-            .tabViewStyle(.verticalPage)
         }
     }
     
