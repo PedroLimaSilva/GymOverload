@@ -10,7 +10,7 @@ struct PlannedSet: Codable, Hashable, Identifiable {
 
 struct PlannedExercise: Codable, Hashable, Identifiable {
     var id = UUID()
-    var exerciseName: String
+    var name: String
     var sets: [PlannedSet] = []
 }
 
@@ -37,12 +37,12 @@ struct PlannedSetDTO: Codable {
 }
 
 struct PlannedExerciseDTO: Codable {
-    let exerciseName: String
+    let name: String
     let sets: [PlannedSetDTO]
     
     func toModel() -> PlannedExercise {
         PlannedExercise(
-            exerciseName: exerciseName,
+            name: name,
             sets: sets.map { $0.toModel() }
         )
     }

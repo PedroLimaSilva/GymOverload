@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct WorkoutTemplateDetailView: View {
+struct WorkoutTemplateDetail: View {
     @Bindable var template: WorkoutTemplate
     @State private var isPickingExercise = false
     @State private var editMode: EditMode = .inactive
@@ -28,7 +28,7 @@ struct WorkoutTemplateDetailView: View {
                     ExerciseListView(onSelectMultiple: { selected in
                         for exercise in selected {
                             template.plannedExercises.append(
-                                PlannedExercise(exerciseName: exercise.name, sets: [])
+                                PlannedExercise(name: exercise.name, sets: [])
                             )
                         }
                         isPickingExercise = false
@@ -47,7 +47,7 @@ struct WorkoutTemplateDetailView: View {
 
                 Section(header: Text("Exercises")) {
                     ForEach(template.plannedExercises.indices, id: \.self) { index in
-                        Text(template.plannedExercises[index].exerciseName)
+                        Text(template.plannedExercises[index].name)
                     }
                     .onMove { from, to in
                         template.plannedExercises.move(fromOffsets: from, toOffset: to)
@@ -97,27 +97,11 @@ struct WorkoutTemplateDetailView: View {
 
 
 #Preview {
-    let sample = WorkoutTemplate(
-        name: "Leg Day",
-        plannedExercises: [
-            PlannedExercise(
-                exerciseName: "Squat",
-                sets: [
-                    PlannedSet(reps: 8, weight: 60, restSeconds: 90),
-                    PlannedSet(reps: 6, weight: 80, restSeconds: 120)
-                ]
-            ),
-            PlannedExercise(
-                exerciseName: "Lunge",
-                sets: [
-                    PlannedSet(reps: 12, weight: 20, restSeconds: 60)
-                ]
-            )
-        ]
-    )
+    let context = PreviewData.container.mainContext
+    let template = try! context.fetch(FetchDescriptor<WorkoutTemplate>()).first!
 
     return NavigationStack {
-            WorkoutTemplateDetailView(template: sample)
+            WorkoutTemplateDetail(template: template)
         }
         .modelContainer(PreviewData.container)
 }

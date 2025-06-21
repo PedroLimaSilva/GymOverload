@@ -6,14 +6,74 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		29F2B8612E06296D0097717E /* GymOverloadWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 29F2B8572E06296C0097717E /* GymOverloadWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		29F2B85F2E06296D0097717E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2952ECC52E0380C60064A000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 29F2B8562E06296C0097717E;
+			remoteInfo = "GymOverloadWatch Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		29F2B8652E06296D0097717E /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				29F2B8612E06296D0097717E /* GymOverloadWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		2952ECCD2E0380C60064A000 /* GymOverload.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GymOverload.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		29F2B8572E06296C0097717E /* GymOverloadWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GymOverloadWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		29F2B8972E062B040097717E /* Exceptions for "Shared" folder in "GymOverload" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				Model/Exercise.swift,
+				Model/ModelDataLoader.swift,
+				Model/PreviewData.swift,
+				Model/SharedModelContainer.swift,
+				Model/WorkoutTemplate.swift,
+				Resources/exercises.json,
+				Resources/templates.json,
+				WorkoutApp.icon,
+			);
+			target = 2952ECCC2E0380C60064A000 /* GymOverload */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2952ECCF2E0380C60064A000 /* GymOverload */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = GymOverload;
+			sourceTree = "<group>";
+		};
+		29F2B8582E06296C0097717E /* GymOverloadWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "GymOverloadWatch Watch App";
+			sourceTree = "<group>";
+		};
+		29F2B8962E062AFF0097717E /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				29F2B8972E062B040097717E /* Exceptions for "Shared" folder in "GymOverload" target */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -26,13 +86,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		29F2B8542E06296C0097717E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		2952ECC42E0380C60064A000 = {
 			isa = PBXGroup;
 			children = (
+				29F2B8962E062AFF0097717E /* Shared */,
 				2952ECCF2E0380C60064A000 /* GymOverload */,
+				29F2B8582E06296C0097717E /* GymOverloadWatch Watch App */,
 				2952ECCE2E0380C60064A000 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +110,7 @@
 			isa = PBXGroup;
 			children = (
 				2952ECCD2E0380C60064A000 /* GymOverload.app */,
+				29F2B8572E06296C0097717E /* GymOverloadWatch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,10 +125,12 @@
 				2952ECC92E0380C60064A000 /* Sources */,
 				2952ECCA2E0380C60064A000 /* Frameworks */,
 				2952ECCB2E0380C60064A000 /* Resources */,
+				29F2B8652E06296D0097717E /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				29F2B8602E06296D0097717E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2952ECCF2E0380C60064A000 /* GymOverload */,
@@ -68,6 +140,29 @@
 			);
 			productName = GymOverload;
 			productReference = 2952ECCD2E0380C60064A000 /* GymOverload.app */;
+			productType = "com.apple.product-type.application";
+		};
+		29F2B8562E06296C0097717E /* GymOverloadWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 29F2B8622E06296D0097717E /* Build configuration list for PBXNativeTarget "GymOverloadWatch Watch App" */;
+			buildPhases = (
+				29F2B8532E06296C0097717E /* Sources */,
+				29F2B8542E06296C0097717E /* Frameworks */,
+				29F2B8552E06296C0097717E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				29F2B8582E06296C0097717E /* GymOverloadWatch Watch App */,
+				29F2B8962E062AFF0097717E /* Shared */,
+			);
+			name = "GymOverloadWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "GymOverloadWatch Watch App";
+			productReference = 29F2B8572E06296C0097717E /* GymOverloadWatch Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -81,6 +176,9 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					2952ECCC2E0380C60064A000 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					29F2B8562E06296C0097717E = {
 						CreatedOnToolsVersion = 26.0;
 					};
 				};
@@ -100,12 +198,20 @@
 			projectRoot = "";
 			targets = (
 				2952ECCC2E0380C60064A000 /* GymOverload */,
+				29F2B8562E06296C0097717E /* GymOverloadWatch Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		2952ECCB2E0380C60064A000 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		29F2B8552E06296C0097717E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +228,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		29F2B8532E06296C0097717E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		29F2B8602E06296D0097717E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 29F2B8562E06296C0097717E /* GymOverloadWatch Watch App */;
+			targetProxy = 29F2B85F2E06296D0097717E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		2952ECD82E0380C80064A000 /* Debug */ = {
@@ -312,6 +433,70 @@
 			};
 			name = Release;
 		};
+		29F2B8632E06296D0097717E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = WorkoutApp;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = KRA6SKWTM9;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GymOverloadWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = LimaESilva.GymOverload;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = LimaESilva.GymOverload.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		29F2B8642E06296D0097717E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = WorkoutApp;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = KRA6SKWTM9;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GymOverloadWatch;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = LimaESilva.GymOverload;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = LimaESilva.GymOverload.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -329,6 +514,15 @@
 			buildConfigurations = (
 				2952ECDB2E0380C80064A000 /* Debug */,
 				2952ECDC2E0380C80064A000 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		29F2B8622E06296D0097717E /* Build configuration list for PBXNativeTarget "GymOverloadWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				29F2B8632E06296D0097717E /* Debug */,
+				29F2B8642E06296D0097717E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

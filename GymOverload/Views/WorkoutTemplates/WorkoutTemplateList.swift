@@ -7,7 +7,7 @@
 import SwiftUI
 import SwiftData
 
-struct WorkoutTemplateListView: View {
+struct WorkoutTemplateList: View {
     @Query private var templates: [WorkoutTemplate]
     @Environment(\.modelContext) private var modelContext
     @State private var path: [WorkoutTemplate] = []
@@ -42,7 +42,7 @@ struct WorkoutTemplateListView: View {
                 }
             }
             .navigationDestination(for: WorkoutTemplate.self) { template in
-                WorkoutTemplateDetailView(template: template)
+                WorkoutTemplateDetail(template: template)
             }
         }
     }
@@ -56,6 +56,6 @@ struct WorkoutTemplateListView: View {
 }
 
 #Preview {
-    WorkoutTemplateListView()
+    WorkoutTemplateList()
         .modelContainer(PreviewData.container)
 }

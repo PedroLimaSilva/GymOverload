@@ -33,7 +33,7 @@ struct PlannedExerciseSection: View {
                 Spacer()
             }
         } header: {
-            Text(plannedExercise.exerciseName)
+            Text(plannedExercise.name)
                 .font(.headline)
         }
         .listRowInsets(EdgeInsets())
@@ -73,7 +73,7 @@ struct SetRow: View {
 #Preview {
     struct Wrapper: View {
         @State var plannedExercise = PlannedExercise(
-            exerciseName: "Squat",
+            name: "Squat",
             sets: [
                 PlannedSet(reps: 10, weight: 60, restSeconds: 60),
                 PlannedSet(reps: 8, weight: 80, restSeconds: 90)

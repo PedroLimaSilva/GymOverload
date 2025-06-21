@@ -16,7 +16,7 @@ struct ContentView: View {
                     Label("Exercises", systemImage: "dumbbell")
                 }
             
-            WorkoutTemplateListView()
+            WorkoutTemplateList()
                 .tabItem {
                     Label("Templates", systemImage: "list.bullet.clipboard")
                 }
