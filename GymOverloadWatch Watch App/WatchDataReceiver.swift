@@ -79,13 +79,17 @@ class WatchDataReceiver: NSObject, WCSessionDelegate, ObservableObject {
                 let exerciseModels = exerciseDTOs.map { $0.toModel() }
                 let templateModels = templateDTOs.map { $0.toModel() }
 
-                print("💬 Read data from iOS: ", exerciseModels, templateModels)
+                print("💬 Read data from iOS: ")
+                print("     Exercises: ", exerciseModels.count)
+                print("     Templates: ", templateModels.count)
                 DispatchQueue.main.async {
                     Task {
                         await self.replaceContextData(with: exerciseModels, templates: templateModels)
                         #if DEBUG
                         let storedTemplates = try? self.context.fetch(FetchDescriptor<WorkoutTemplate>())
                             print("📦 Stored templates count: \(storedTemplates?.count ?? 0)")
+                        let storedExercises = try? self.context.fetch(FetchDescriptor<Exercise>())
+                            print("📦 Stored exercises count: \(storedExercises?.count ?? 0)")
                         #endif
                         
                         // Optional: update @Published if UI needs it directly

@@ -28,7 +28,7 @@ struct WorkoutTemplateDetail: View {
                     ExerciseListView(onSelectMultiple: { selected in
                         for exercise in selected {
                             template.plannedExercises.append(
-                                PlannedExercise(name: exercise.name, sets: [])
+                                PlannedExercise(name: exercise.name, sets: 4, targetReps: 10)
                             )
                         }
                         isPickingExercise = false
@@ -80,7 +80,7 @@ struct WorkoutTemplateDetail: View {
                             PlannedExerciseSection(plannedExercise: $template.plannedExercises[index])
                         }
                     }
-                }
+                }.padding(.horizontal)
 
                 Section {
                     Button {

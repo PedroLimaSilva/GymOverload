@@ -4,22 +4,18 @@
     "plannedExercises": [
       {
         "name": "Barbell Back Squat",
-        "sets": [
-          { "reps": 8, "weight": 60, "restSeconds": 90 },
-          { "reps": 6, "weight": 80, "restSeconds": 120 }
-        ]
+        "sets": 4,
+        "targetReps": 10,
       },
       {
         "name": "Lunge",
-        "sets": [
-          { "reps": 12, "weight": 20, "restSeconds": 60 }
-        ]
+        "sets": 4,
+        "targetReps": 10,
       },
       {
         "name": "Seated Leg Curl",
-        "sets": [
-          { "reps": 12, "weight": 20, "restSeconds": 60 }
-        ]
+        "sets": 4,
+        "targetReps": 10,
       }
     ]
   },
@@ -28,27 +24,18 @@
     "plannedExercises": [
       {
         "name": "Incline Dumbbell Press",
-        "sets": [
-          { "reps": 8, "weight": 60, "restSeconds": 90 },
-          { "reps": 6, "weight": 80, "restSeconds": 120 },
-          { "reps": 6, "weight": 80, "restSeconds": 120 }
-        ]
+        "sets": 4,
+        "targetReps": 10,
       },
       {
         "name": "Overhead Barbell Press",
-        "sets": [
-          { "reps": 12, "weight": 20, "restSeconds": 60 },
-          { "reps": 12, "weight": 20, "restSeconds": 60 },
-          { "reps": 12, "weight": 20, "restSeconds": 60 }
-        ]
+        "sets": 4,
+        "targetReps": 10,
       },
       {
         "name": "Dumbbell Lateral Raise",
-        "sets": [
-          { "reps": 12, "weight": 20, "restSeconds": 60 },
-          { "reps": 12, "weight": 20, "restSeconds": 60 },
-          { "reps": 12, "weight": 20, "restSeconds": 60 }
-        ]
+        "sets": 4,
+        "targetReps": 10,
       }
     ]
   }

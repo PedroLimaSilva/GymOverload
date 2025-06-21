@@ -27,7 +27,12 @@ struct WorkoutTemplateDetail: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(exercise.name)
                             .font(.headline)
-
+                        Text(
+                            String(format: "%d sets x %d reps", exercise.sets, exercise.targetReps)
+                        )
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                        /* TODO: Use a logged exercise here, with the last used values
                         if !exercise.sets.isEmpty {
                             Text(
                                 exercise.sets.map {
@@ -37,6 +42,7 @@ struct WorkoutTemplateDetail: View {
                             .font(.caption2)
                             .foregroundColor(.gray)
                         }
+                        */
                     }
                     .padding(.vertical, 8)
                     .padding(.horizontal, 16)
