@@ -22,5 +22,34 @@
         ]
       }
     ]
+  },
+  {
+    "name": "Shoulders",
+    "plannedExercises": [
+      {
+        "name": "Incline Dumbbell Press",
+        "sets": [
+          { "reps": 8, "weight": 60, "restSeconds": 90 },
+          { "reps": 6, "weight": 80, "restSeconds": 120 },
+          { "reps": 6, "weight": 80, "restSeconds": 120 }
+        ]
+      },
+      {
+        "name": "Overhead Barbell Press",
+        "sets": [
+          { "reps": 12, "weight": 20, "restSeconds": 60 },
+          { "reps": 12, "weight": 20, "restSeconds": 60 },
+          { "reps": 12, "weight": 20, "restSeconds": 60 }
+        ]
+      },
+      {
+        "name": "Dumbbell Lateral Raise",
+        "sets": [
+          { "reps": 12, "weight": 20, "restSeconds": 60 },
+          { "reps": 12, "weight": 20, "restSeconds": 60 },
+          { "reps": 12, "weight": 20, "restSeconds": 60 }
+        ]
+      }
+    ]
   }
 ]

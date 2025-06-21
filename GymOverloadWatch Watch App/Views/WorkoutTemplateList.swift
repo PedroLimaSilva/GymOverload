@@ -1,59 +1,66 @@
 //
-//  WorkoutTemplateListView.swift
+//  WorkoutTemplatePager.swift
 //  GymOverload
 //
 //  Created by Pedro Lima e Silva on 21/06/2025.
 //
-
 
 import SwiftUI
 import SwiftData
 
 struct WorkoutTemplateList: View {
     @Query var templates: [WorkoutTemplate]
-    @Query var allExercises: [Exercise] // So we can match by name
+    @Environment(\.modelContext) private var modelContext
+    @State private var selected: WorkoutTemplate?
 
     var body: some View {
-        List {
-            ForEach(templates) { template in
-                NavigationLink(destination: WorkoutTemplateDetail(template: template)) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(template.name)
-                            .font(.headline)
-                            .lineLimit(1)
+        NavigationSplitView {
+            List(selection: $selected) {
+                ForEach(templates) { template in
+                    NavigationLink(value: template){
+                        VStack(alignment: .leading) {
+                            Text(template.name)
+                                .font(.headline)
 
-                        let matchedCategories = categories(in: template)
-
-                        if !matchedCategories.isEmpty {
-                            Text(matchedCategories.map(\.rawValue).sorted().joined(separator: ", "))
-                                .font(.caption2)
-                                .foregroundColor(.gray)
-                                .lineLimit(1)
+                            let cats = categories(in: template)
+                            if !cats.isEmpty {
+                                Text(cats.map(\.rawValue).sorted().joined(separator: ", "))
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                            }
                         }
                     }
-                    .padding(.vertical, 2)
                 }
             }
+            .containerBackground(.background, for: .navigation)
+            .navigationTitle("Workouts")
+            .listStyle(.carousel)
+        } detail: {
+            TabView(selection: $selected) {
+                ForEach(templates) { template in
+                    WorkoutTemplateDetail(template: template)
+                        .tag(Optional(template))
+                        .containerBackground(.background, for: .tabView)
+                }
+            }
+            .tabViewStyle(.verticalPage)
         }
-        .navigationTitle("Workouts")
     }
-
+    
     private func categories(in template: WorkoutTemplate) -> Set<ExerciseCategory> {
         var result = Set<ExerciseCategory>()
+        let allExercises = (try? modelContext.fetch(FetchDescriptor<Exercise>())) ?? []
 
         for planned in template.plannedExercises {
             if let match = allExercises.first(where: { $0.name == planned.name }) {
                 result.formUnion(match.categories)
             }
         }
-
         return result
     }
 }
 
 #Preview {
-    NavigationStack {
-        WorkoutTemplateList()
-    }
-    .modelContainer(PreviewData.container)
+    WorkoutTemplateList()
+        .modelContainer(PreviewData.container)
 }
