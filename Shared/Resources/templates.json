@@ -5,17 +5,17 @@
       {
         "name": "Barbell Back Squat",
         "sets": 4,
-        "targetReps": 10,
+        "targetReps": 10
       },
       {
         "name": "Lunge",
         "sets": 4,
-        "targetReps": 10,
+        "targetReps": 10
       },
       {
         "name": "Seated Leg Curl",
         "sets": 4,
-        "targetReps": 10,
+        "targetReps": 10
       }
     ]
   },
@@ -25,17 +25,17 @@
       {
         "name": "Incline Dumbbell Press",
         "sets": 4,
-        "targetReps": 10,
+        "targetReps": 10
       },
       {
         "name": "Overhead Barbell Press",
         "sets": 4,
-        "targetReps": 10,
+        "targetReps": 10
       },
       {
         "name": "Dumbbell Lateral Raise",
         "sets": 4,
-        "targetReps": 10,
+        "targetReps": 10
       }
     ]
   }
