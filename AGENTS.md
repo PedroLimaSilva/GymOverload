@@ -73,7 +73,9 @@ When adding features, extend `SharedModelContainer` schema deliberately (migrati
 
 ## Testing
 
-- No XCTest targets or CI config are present in this repository as of documentation update. Verify behavior in Xcode on device for WatchConnectivity.
+- **Unit tests**: `GymOverloadTests` target (host app: GymOverload). `SeedJSONTests` decodes bundled `exercises.json` / `templates.json` in the test bundle and checks `ExerciseDTO` round-trip via `Exercise.toModel()`.
+- **CI**: `.github/workflows/ci.yml` — iOS tests + watchOS build on `macos-15`, with an optional Xcode 26 app selection step. Update simulator names or `DEVELOPER_DIR` if GitHub’s runner image changes.
+- **Manual**: WatchConnectivity still needs verification on real hardware.
 
 ## Related docs
 
