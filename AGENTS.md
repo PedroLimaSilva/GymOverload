@@ -2,10 +2,40 @@
 
 Use this file when editing or reviewing this repository in an automated or assistant context.
 
-## What this repo is
+## Product goals (north star)
 
-- **GymOverload**: Native Apple platforms app (iOS + watchOS) written in **Swift** and **SwiftUI**, with **SwiftData** for persistence.
-- **Purpose**: Maintain a catalog of gym **exercises** and **workout templates**; mirror that data to the Watch for quick access.
+GymOverload is an **iOS-native**, **on-device** strength training tracker for users who already program their own training.
+
+They must be able to:
+
+1. **Exercises** — Create and categorize exercises (muscle group and/or **type**: weight + reps, **time** for isometric holds, or **both** where applicable).
+2. **Templates / workout plans** — Define named plans: a group of exercises to perform in a session, with planned structure (sets, targets).
+3. **Session logging** — Run a workout: move exercise by exercise, **log each set** (weight, reps—and time-based metrics when the exercise type requires it), and use a **rest timer** between sets.
+
+**Future / ideal** (not requirements for every MVP slice, but explicit product direction):
+
+- **Export** workout plans (and eventually history) for backup or portability.
+- **Storage**: stay on device by default; **iCloud** (or CloudKit/SwiftData sync) as an optional way to keep data across devices.
+- **Charts** showing progression (e.g. volume, e1RM, or simple trend per exercise) over time.
+
+**Non-goals for positioning**: The app is not aimed at beginners who need program prescription; it supports people who know their exercises and want accurate logging.
+
+## Current implementation vs goals
+
+| Goal | Codebase reality |
+|------|-------------------|
+| Exercise CRUD + categories + kind string | Implemented (`Exercise`, `ExerciseCategory`, `kind`, rest, weight fields). Formal **enum** for modality (weight/reps vs time vs hybrid) may still be needed for UI and logging rules. |
+| Templates with planned sets/reps | Implemented (`WorkoutTemplate`, `PlannedExercise`). |
+| **Logged workouts / sets / rest timer** | **Not implemented**. `GymOverload/Views/Logging/LoggedSet.swift` is commented-out stub; no `WorkoutSession` / `LoggedSet` SwiftData models in schema. |
+| Export / iCloud / charts | **Not implemented**. |
+| Watch companion | Partial: mirror exercises + templates only; no session logging on watch implied yet. |
+
+When adding features, extend `SharedModelContainer` schema deliberately (migrations) and keep DTOs + WatchConnectivity payloads in sync if the watch should receive new entity types.
+
+## What this repo is (technical)
+
+- **GymOverload**: Native Apple platforms app (iOS + watchOS) in **Swift** / **SwiftUI**, **SwiftData** persistence.
+- **Today**: Catalog of exercises and templates; iPhone → Watch sync of that catalog.
 
 ## Architecture
 
@@ -47,4 +77,4 @@ Use this file when editing or reviewing this repository in an automated or assis
 
 ## Related docs
 
-- Human-oriented overview: [`README.md`](README.md).
+- Human-oriented overview and vision table: [`README.md`](README.md).
