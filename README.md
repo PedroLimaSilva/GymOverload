@@ -34,8 +34,18 @@ The sections below describe what exists in the repo **today**; the table is the 
 | `GymOverloadWatch Watch App/` | watchOS app: receives synced data, lists templates |
 | `Shared/` | SwiftData models, bundled JSON seed data, assets shared by both targets |
 | `GymOverload.xcodeproj/` | Xcode project |
+| `GymOverloadTests/` | Unit tests (seed JSON decoding, DTO round-trip) |
 
 Shared code includes `Exercise` and `WorkoutTemplate` models, `SharedModelContainer`, `InitialDataLoader`, and `ModelDataLoader` (loads `Shared/Resources/exercises.json` and `templates.json`).
+
+## Continuous integration
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`:
+
+- **iOS**: `xcodebuild test` for the **GymOverload** scheme (iPhone simulator).
+- **watchOS**: `xcodebuild build` for the **GymOverloadWatch Watch App** scheme (generic watchOS Simulator destination).
+
+Runners must provide **Xcode 26** so the iOS 26 / watchOS 26 SDKs match the project. The workflow tries common `Xcode_26*.app` paths under `/Applications` and falls back to the image default if none match—if CI fails with a SDK or simulator error, align the **Select Xcode** step or simulator name with the [macOS runner image](https://github.com/actions/runner-images/blob/main/images/macos/) your repo uses.
 
 ## Current features
 
