@@ -33,7 +33,7 @@ export function ScreenHeader(props: Props) {
   return (
     <header className="screen-header screen-header--main">
       <div className="screen-header__main-row">
-        <button type="button" className="btn-pill" onClick={props.onCreate}>
+        <button type="button" className="btn-pill glass" onClick={props.onCreate}>
           {props.createLabel}
         </button>
         <h1 className="screen-header__title screen-header__title--main">{props.title}</h1>

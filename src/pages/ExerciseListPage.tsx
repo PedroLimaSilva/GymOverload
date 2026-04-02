@@ -82,7 +82,7 @@ export function ExerciseListPage() {
           menuLabel="Exercise list menu"
           menuItems={menuItems}
         />
-        <label className="search-wrap">
+        <label className="search-wrap glass">
           <IconSearch />
           <input
             className="search"

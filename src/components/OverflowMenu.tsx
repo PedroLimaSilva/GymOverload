@@ -38,7 +38,7 @@ export function OverflowMenu({ label, items }: Props) {
     <div className="overflow-menu" ref={rootRef}>
       <button
         type="button"
-        className="btn-icon-circle"
+        className="btn-icon-circle glass"
         aria-label={label}
         aria-expanded={open}
         aria-haspopup="menu"

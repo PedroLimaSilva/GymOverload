@@ -75,7 +75,7 @@ export function WorkoutDetailPage() {
       <ScreenHeader
         variant="detail"
         leading={
-          <Link to="/workouts" className="btn-pill">
+          <Link to="/workouts" className="btn-pill glass">
             Back
           </Link>
         }

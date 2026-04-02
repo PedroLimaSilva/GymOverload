@@ -83,7 +83,7 @@ export function ActiveWorkoutPage() {
         <ScreenHeader
           variant="detail"
           leading={
-            <Link to={`/workouts/${workout.id}`} className="btn-pill">
+            <Link to={`/workouts/${workout.id}`} className="btn-pill glass">
               Back
             </Link>
           }
@@ -98,7 +98,7 @@ export function ActiveWorkoutPage() {
       <ScreenHeader
         variant="detail"
         leading={
-          <Link to={`/workouts/${workout.id}`} className="btn-pill">
+          <Link to={`/workouts/${workout.id}`} className="btn-pill glass">
             Back
           </Link>
         }
