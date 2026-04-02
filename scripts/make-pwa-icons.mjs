@@ -7,6 +7,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "public");
 const sourcePath = join(__dirname, "app-icon-source.png");
 
+/** Brand green #28cd41 */
+const BR = 0x28;
+const BG = 0xcd;
+const BB = 0x41;
+
 /**
  * Bilinear resize from a decoded pngjs PNG to a new PNG buffer (written by caller).
  */
@@ -46,6 +51,26 @@ function resizePng(src, dstW, dstH) {
   return dst;
 }
 
+/**
+ * Dark-mode favicon: brand green fill, alpha from luminance × source alpha (matches masked header mark).
+ */
+function faviconDarkGreen(src, size) {
+  const r = resizePng(src, size, size);
+  for (let i = 0; i < r.data.length; i += 4) {
+    const sr = r.data[i];
+    const sg = r.data[i + 1];
+    const sb = r.data[i + 2];
+    const sa = r.data[i + 3];
+    const lum = (0.299 * sr + 0.587 * sg + 0.114 * sb) / 255;
+    const outA = Math.min(255, Math.round(lum * sa));
+    r.data[i] = BR;
+    r.data[i + 1] = BG;
+    r.data[i + 2] = BB;
+    r.data[i + 3] = outA;
+  }
+  return r;
+}
+
 function writePng(path, png) {
   writeFileSync(path, PNG.sync.write(png));
 }
@@ -61,5 +86,6 @@ if (source.width !== source.height) {
 
 writePng(join(publicDir, "pwa-192.png"), resizePng(source, 192, 192));
 writePng(join(publicDir, "pwa-512.png"), resizePng(source, 512, 512));
-writePng(join(publicDir, "favicon-32.png"), resizePng(source, 32, 32));
+writePng(join(publicDir, "favicon-32-light.png"), resizePng(source, 32, 32));
+writePng(join(publicDir, "favicon-32-dark.png"), faviconDarkGreen(source, 32));
 writePng(join(publicDir, "apple-touch-icon.png"), resizePng(source, 180, 180));
