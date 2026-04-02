@@ -2,7 +2,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+// GitHub project Pages: https://<user>.github.io/<repo>/ — set VITE_BASE_PATH=/<repo>/
+const rawBase = (process.env.VITE_BASE_PATH || "/").trim();
+const base =
+  rawBase === "" || rawBase === "/"
+    ? "/"
+    : `/${rawBase.replace(/^\/+|\/+$/g, "")}/`;
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     VitePWA({
@@ -23,17 +31,17 @@ export default defineConfig({
         background_color: "#28cd41",
         display: "standalone",
         orientation: "portrait-primary",
-        start_url: "/",
-        scope: "/",
+        start_url: base,
+        scope: base,
         icons: [
           {
-            src: "pwa-192.png",
+            src: `${base}pwa-192.png`,
             sizes: "192x192",
             type: "image/png",
             purpose: "any maskable",
           },
           {
-            src: "pwa-512.png",
+            src: `${base}pwa-512.png`,
             sizes: "512x512",
             type: "image/png",
             purpose: "any maskable",
