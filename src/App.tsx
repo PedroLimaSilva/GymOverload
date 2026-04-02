@@ -22,7 +22,7 @@ function AppLayout() {
           <Outlet />
         </main>
       </div>
-      <nav className="tab-nav" aria-label="Main">
+      <nav className="tab-nav glass" aria-label="Main">
         <span className="tab-nav__disabled" aria-hidden="true">
           <span className="tab-nav__icon-wrap">
             <IconHome />

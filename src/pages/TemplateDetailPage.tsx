@@ -75,7 +75,7 @@ export function TemplateDetailPage() {
       <ScreenHeader
         variant="detail"
         leading={
-          <Link to="/templates" className="btn-pill">
+          <Link to="/templates" className="btn-pill glass">
             Back
           </Link>
         }

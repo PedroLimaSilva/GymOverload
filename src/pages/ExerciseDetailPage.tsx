@@ -127,10 +127,10 @@ export function ExerciseDetailPage() {
   return (
     <div className="exercise-detail-modal">
       <div className="exercise-detail-modal__toolbar">
-        <button type="button" className="btn-circle-icon btn-circle-icon--surface" aria-label="Close" onClick={closeModal}>
+        <button type="button" className="btn-circle-icon glass btn-circle-icon--surface" aria-label="Close" onClick={closeModal}>
           <IconClose />
         </button>
-        <button type="button" className="btn-circle-icon btn-circle-icon--accent" aria-label="Done" onClick={closeModal}>
+        <button type="button" className="btn-circle-icon glass btn-circle-icon--accent" aria-label="Done" onClick={closeModal}>
           <IconCheck />
         </button>
       </div>
@@ -295,7 +295,7 @@ export function ExerciseDetailPage() {
         />
         <button
           type="button"
-          className="btn-circle-icon btn-circle-icon--surface"
+          className="btn-circle-icon glass btn-circle-icon--surface"
           aria-label={draft.imageDataUrl ? "Change exercise photo" : "Add exercise photo"}
           onClick={() => fileRef.current?.click()}
         >
