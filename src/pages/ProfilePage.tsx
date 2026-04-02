@@ -1,10 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import {
   deleteAllUserData,
-  exportCsvBlob,
   exportJsonBlob,
   mergeImportPayload,
-  parseImportPayloadCsv,
   parseImportPayloadJson,
   triggerDownload,
 } from "../db/profileData";
@@ -36,22 +34,7 @@ export function ProfilePage() {
       const blob = await exportJsonBlob();
       const stamp = new Date().toISOString().slice(0, 10);
       triggerDownload(blob, `gymoverload-backup-${stamp}.json`);
-      showSuccess("JSON export downloaded.");
-    } catch (e) {
-      showError(e instanceof Error ? e.message : "Export failed.");
-    } finally {
-      setExportBusy(false);
-    }
-  }
-
-  async function downloadCsv() {
-    setExportBusy(true);
-    setStatus({ kind: "idle", message: "" });
-    try {
-      const blob = await exportCsvBlob();
-      const stamp = new Date().toISOString().slice(0, 10);
-      triggerDownload(blob, `gymoverload-backup-${stamp}.csv`);
-      showSuccess("CSV export downloaded.");
+      showSuccess("Backup downloaded.");
     } catch (e) {
       showError(e instanceof Error ? e.message : "Export failed.");
     } finally {
@@ -64,15 +47,15 @@ export function ProfilePage() {
     setStatus({ kind: "idle", message: "" });
     try {
       const text = await file.text();
-      const lower = file.name.toLowerCase();
-      const payload =
-        lower.endsWith(".csv") || (!lower.endsWith(".json") && text.trimStart().startsWith("type,"))
-          ? parseImportPayloadCsv(text)
-          : parseImportPayloadJson(text);
-      await mergeImportPayload(payload);
-      showSuccess(
-        `Imported ${payload.exercises.length} exercises, ${payload.templates.length} templates, ${payload.workoutSessions.length} sessions (merged into existing data).`
-      );
+      const payload = parseImportPayloadJson(text);
+      const { added } = await mergeImportPayload(payload);
+      const parts = [
+        `${added.exercises} exercise${added.exercises === 1 ? "" : "s"}`,
+        `${added.templates} template${added.templates === 1 ? "" : "s"}`,
+        `${added.workoutSessions} session${added.workoutSessions === 1 ? "" : "s"}`,
+        `${added.loggedExerciseEntries} logged set${added.loggedExerciseEntries === 1 ? "" : "s"}`,
+      ];
+      showSuccess(`Import finished. Added ${parts.join(", ")}. Nothing you already had was removed or overwritten.`);
     } catch (e) {
       showError(e instanceof Error ? e.message : "Import failed.");
     } finally {
@@ -103,34 +86,47 @@ export function ProfilePage() {
   return (
     <div className="form">
       <p className="muted" style={{ marginTop: 0 }}>
-        Back up your data or bring it in from another device. Import always adds records; it does not replace what you
-        already have.
+        Download a JSON backup of everything stored in this app on this device. Use import to copy that data in from a
+        file (for example after switching browsers or devices).
       </p>
 
       <section className="form-section">
         <h2>Export</h2>
         <div className="toolbar" style={{ marginTop: 0, justifyContent: "flex-start", flexWrap: "wrap" }}>
           <button type="button" className="btn btn-primary" disabled={exportBusy} onClick={() => void downloadJson()}>
-            Download JSON
-          </button>
-          <button type="button" className="btn" disabled={exportBusy} onClick={() => void downloadCsv()}>
-            Download CSV
+            Download backup (JSON)
           </button>
         </div>
-        <p className="muted" style={{ marginTop: "0.5rem", marginBottom: 0, fontSize: "0.85rem" }}>
-          JSON is the full backup. CSV uses one row per record with embedded JSON (best for spreadsheets that can store
-          long text).
-        </p>
       </section>
 
       <section className="form-section">
         <h2>Import</h2>
+        <p className="muted" style={{ marginTop: 0, marginBottom: "0.65rem", fontSize: "0.9rem" }}>
+          Choose a JSON file exported from GymOverload (same format as Download backup). Here is what happens:
+        </p>
+        <ul className="profile-import-list muted">
+          <li>
+            The import merges with what is already here: every exercise, template, completed workout session, and logged
+            set in the file is inserted as new data. Nothing you already have is removed or overwritten. Importing the
+            same file twice adds a second copy of everything in that file.
+          </li>
+          <li>
+            Each imported record gets a new ID so it cannot clash with existing rows. References inside the backup are
+            updated accordingly: sessions point at the newly created templates, and logged sets point at the new
+            sessions and planned exercise rows.
+          </li>
+          <li>
+            Sessions are only imported when their template is included in the same file. Logged sets are only imported
+            when they can be tied to a remapped session and planned exercise. Anything in the file that would leave a
+            dangling reference is skipped.
+          </li>
+        </ul>
         <input
           ref={fileInputRef}
           type="file"
-          accept=".json,.csv,application/json,text/csv"
+          accept=".json,application/json"
           className="sr-only"
-          aria-label="Choose backup file to import"
+          aria-label="Choose JSON backup file to import"
           onChange={(ev) => {
             const f = ev.target.files?.[0];
             if (f) void handleFile(f);
@@ -142,7 +138,7 @@ export function ProfilePage() {
           disabled={importBusy}
           onClick={() => fileInputRef.current?.click()}
         >
-          {importBusy ? "Importing…" : "Choose file…"}
+          {importBusy ? "Importing…" : "Choose JSON file…"}
         </button>
       </section>
 
