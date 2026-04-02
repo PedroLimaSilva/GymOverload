@@ -5,6 +5,7 @@ import { ExerciseDetailPage } from "./pages/ExerciseDetailPage";
 import { ExerciseListPage } from "./pages/ExerciseListPage";
 import { ActiveWorkoutPage } from "./pages/ActiveWorkoutPage";
 import { TemplateDetailPage } from "./pages/TemplateDetailPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { TemplateListPage } from "./pages/TemplateListPage";
 
 export function App() {
@@ -55,6 +56,7 @@ export function App() {
           <Route path="/templates" element={<TemplateListPage />} />
           <Route path="/templates/:id" element={<TemplateDetailPage />} />
           <Route path="/templates/:id/workout" element={<ActiveWorkoutPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </div>
       <nav className="tab-nav" aria-label="Main">
@@ -63,6 +65,9 @@ export function App() {
         </NavLink>
         <NavLink to="/templates" end>
           Templates
+        </NavLink>
+        <NavLink to="/profile" end>
+          Profile
         </NavLink>
       </nav>
     </>

@@ -528,3 +528,20 @@ textarea {
   font-size: 0.85rem;
   flex-shrink: 0;
 }
+
+.profile-status {
+  margin-top: 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+.profile-status--ok {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.profile-status--err {
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
