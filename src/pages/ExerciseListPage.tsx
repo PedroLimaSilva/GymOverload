@@ -73,39 +73,41 @@ export function ExerciseListPage() {
 
   return (
     <div className="list-screen">
-      <ScreenHeader
-        variant="main"
-        title="Exercises"
-        createLabel="Create"
-        onCreate={() => void createExerciseAndNavigate(navigate)}
-        menuLabel="Exercise list menu"
-        menuItems={menuItems}
-      />
-      <label className="search-wrap">
-        <IconSearch />
-        <input
-          className="search"
-          type="search"
-          placeholder="Search"
-          value={search}
-          onChange={(ev) => setSearch(ev.target.value)}
-          autoComplete="off"
-          enterKeyHint="search"
+      <div className="list-screen__sticky">
+        <ScreenHeader
+          variant="main"
+          title="Exercises"
+          createLabel="Create"
+          onCreate={() => void createExerciseAndNavigate(navigate)}
+          menuLabel="Exercise list menu"
+          menuItems={menuItems}
         />
-      </label>
-      {filterCats.length > 0 && (
-        <div className="chips">
-          {filterCats.map((c) => (
-            <span key={c} className="chip">
-              {c}
-            </span>
-          ))}
-        </div>
-      )}
+        <label className="search-wrap">
+          <IconSearch />
+          <input
+            className="search"
+            type="search"
+            placeholder="Search"
+            value={search}
+            onChange={(ev) => setSearch(ev.target.value)}
+            autoComplete="off"
+            enterKeyHint="search"
+          />
+        </label>
+        {filterCats.length > 0 && (
+          <div className="chips">
+            {filterCats.map((c) => (
+              <span key={c} className="chip">
+                {c}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
       {!exercises && <p className="empty">Loading…</p>}
       {exercises && filtered.length === 0 && <p className="empty">No exercises match.</p>}
       {filtered.length > 0 && (
-        <div className="list-with-index">
+        <div className={`list-with-index${showIndex ? " list-with-index--with-scrubber" : ""}`}>
           <div className="list-with-index__scroll" ref={scrollRef}>
             {showIndex ? (
               grouped.map((section) => (
