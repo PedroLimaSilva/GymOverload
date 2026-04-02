@@ -3,6 +3,7 @@ import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 import { ensureSeeded } from "./db/bootstrap";
 import { ExerciseDetailPage } from "./pages/ExerciseDetailPage";
 import { ExerciseListPage } from "./pages/ExerciseListPage";
+import { ActiveWorkoutPage } from "./pages/ActiveWorkoutPage";
 import { TemplateDetailPage } from "./pages/TemplateDetailPage";
 import { TemplateListPage } from "./pages/TemplateListPage";
 
@@ -53,6 +54,7 @@ export function App() {
           <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
           <Route path="/templates" element={<TemplateListPage />} />
           <Route path="/templates/:id" element={<TemplateDetailPage />} />
+          <Route path="/templates/:id/workout" element={<ActiveWorkoutPage />} />
         </Routes>
       </div>
       <nav className="tab-nav" aria-label="Main">

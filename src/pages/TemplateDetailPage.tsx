@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
 import { db } from "../db/database";
+import { deleteSessionsForTemplate, lastSessionSummaryForExercise } from "../db/workoutHistory";
 import type { Exercise, ExerciseCategory, PlannedExercise, WorkoutTemplate } from "../model/types";
 import { plannedFromDTO } from "../model/types";
 
@@ -15,6 +16,20 @@ export function TemplateDetailPage() {
   const [editMode, setEditMode] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
+  const sessionsForTemplate = useLiveQuery(
+    () => (id ? db.workoutSessions.where("templateId").equals(id).toArray() : []),
+    [id]
+  );
+  const latestSession = sessionsForTemplate
+    ? [...sessionsForTemplate].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1))[0]
+    : undefined;
+  const latestEntries = useLiveQuery(
+    () =>
+      latestSession
+        ? db.loggedExerciseEntries.where("sessionId").equals(latestSession.id).toArray()
+        : [],
+    [latestSession?.id]
+  );
 
   useEffect(() => {
     if (template) setDraft(template);
@@ -32,6 +47,7 @@ export function TemplateDetailPage() {
 
   async function remove() {
     if (!draft || !confirm(`Delete “${draft.name}”?`)) return;
+    await deleteSessionsForTemplate(draft.id);
     await db.templates.delete(draft.id);
     navigate("/templates");
   }
@@ -69,6 +85,26 @@ export function TemplateDetailPage() {
       </div>
       <div className="form">
         <div className="form-section">
+          {draft.plannedExercises.length > 0 ? (
+            <Link
+              to={`/templates/${draft.id}/workout`}
+              className="btn btn-primary"
+              style={{ display: "block", width: "100%", textAlign: "center", marginBottom: "0.5rem" }}
+            >
+              Start workout
+            </Link>
+          ) : (
+            <button type="button" className="btn btn-primary" disabled style={{ width: "100%", marginBottom: "0.5rem" }}>
+              Start workout
+            </button>
+          )}
+          {draft.plannedExercises.length === 0 && (
+            <p className="muted" style={{ marginTop: 0, fontSize: "0.9rem" }}>
+              Add exercises to enable logging.
+            </p>
+          )}
+        </div>
+        <div className="form-section">
           <h2>Template name</h2>
           <div className="field">
             <label htmlFor="tpl-name">Name</label>
@@ -100,6 +136,11 @@ export function TemplateDetailPage() {
               <PlannedEditor
                 key={pe.id}
                 planned={pe}
+                lastSummary={
+                  latestEntries && latestEntries.length > 0
+                    ? lastSessionSummaryForExercise(latestEntries, pe)
+                    : null
+                }
                 onChange={(next) =>
                   void persist({
                     ...draft,
@@ -129,14 +170,17 @@ export function TemplateDetailPage() {
 
 function PlannedEditor({
   planned,
+  lastSummary,
   onChange,
 }: {
   planned: PlannedExercise;
+  lastSummary: string | null;
   onChange: (next: PlannedExercise) => void;
 }) {
   return (
     <div className="planned-card">
       <h3>{planned.name}</h3>
+      {lastSummary && <p className="muted" style={{ margin: "0 0 0.5rem", fontSize: "0.85rem" }}>{lastSummary}</p>}
       <div className="field">
         <label>Target reps</label>
         <div className="stepper">

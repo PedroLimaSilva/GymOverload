@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { Link, useNavigate } from "react-router-dom";
 import { db } from "../db/database";
+import { deleteSessionsForTemplate } from "../db/workoutHistory";
 import type { WorkoutTemplate } from "../model/types";
 import { newId } from "../model/types";
 
@@ -22,6 +23,7 @@ export function TemplateListPage() {
     e.preventDefault();
     e.stopPropagation();
     if (!confirm(`Delete “${t.name}”?`)) return;
+    await deleteSessionsForTemplate(t.id);
     await db.templates.delete(t.id);
   }
 

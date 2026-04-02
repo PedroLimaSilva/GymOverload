@@ -53,6 +53,22 @@ export interface WorkoutTemplate {
   plannedExercises: PlannedExercise[];
 }
 
+export interface WorkoutSession {
+  id: string;
+  templateId: string;
+  completedAt: string;
+}
+
+export interface LoggedExerciseEntry {
+  id: string;
+  sessionId: string;
+  plannedExerciseId: string;
+  exerciseName: string;
+  setIndex: number;
+  weight: number;
+  reps: number;
+}
+
 export function newId(): string {
   return crypto.randomUUID();
 }
