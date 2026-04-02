@@ -363,9 +363,9 @@ textarea {
 
 .tab-nav {
   position: fixed;
-  left: max(0.75rem, var(--safe-left));
-  right: max(0.75rem, var(--safe-right));
-  bottom: max(0.35rem, var(--safe-bottom));
+  left: 1.1rem;
+  right: 1.1rem;
+  bottom: 1rem;
   max-width: 680px;
   margin: 0 auto;
   width: auto;
