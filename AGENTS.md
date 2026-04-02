@@ -66,3 +66,25 @@ When changing persisted fields:
 ## Related docs
 
 Human-oriented overview: [`README.md`](README.md).
+
+## Cursor Cloud specific instructions
+
+### Services
+
+This is a single-service, client-side-only PWA. There is no backend, no database server, and no Docker.
+
+| Service | Command | Notes |
+|---------|---------|-------|
+| Vite dev server | `npm run dev` | Runs `predev` hook (`scripts/make-pwa-icons.mjs`) automatically. Add `-- --host 0.0.0.0` to expose outside localhost. |
+
+### Quick reference
+
+- **Install deps**: `npm ci` (or `npm install`)
+- **Tests**: `npm test` (Vitest, fast — currently one test file)
+- **Type-check + build**: `npm run build` (runs `tsc --noEmit` then `vite build`)
+- **Lint**: No dedicated lint script; type-checking is done via `tsc --noEmit` as part of `npm run build`.
+
+### Gotchas
+
+- The `predev` / `prebuild` hook runs `scripts/make-pwa-icons.mjs`, which requires the `pngjs` dev dependency and `scripts/app-icon-source.png`. If either is missing the dev server will fail to start.
+- Data is seeded from `public/seed/*.json` on first load into IndexedDB via Dexie. Clearing browser data resets the database; a fresh visit re-seeds automatically.
