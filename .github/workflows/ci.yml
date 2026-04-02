@@ -6,84 +6,25 @@ on:
   pull_request:
     branches: [main]
 
-# Requires a GitHub-hosted macOS image with Xcode 26 (iOS 26 / watchOS 26 SDKs).
-# If the default Xcode on the runner is older, adjust the "Select Xcode" step paths
-# to match https://github.com/actions/runner-images/blob/main/images/macos/
-
 jobs:
-  ios-tests:
-    name: iOS 26 — unit tests
-    runs-on: macos-15
+  web:
+    name: Web — test & build
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Select Xcode 26
-        run: |
-          set -e
-          for xcode in \
-            "/Applications/Xcode_26.2.app" \
-            "/Applications/Xcode_26.1.app" \
-            "/Applications/Xcode_26.0.app" \
-            "/Applications/Xcode_26.app"; do
-            if [ -d "$xcode" ]; then
-              echo "DEVELOPER_DIR=$xcode/Contents/Developer" >> "$GITHUB_ENV"
-              sudo xcode-select -s "$xcode/Contents/Developer"
-              xcodebuild -version
-              exit 0
-            fi
-          done
-          echo "No Xcode 26 bundle found under /Applications; using runner default."
-          xcodebuild -version
-
-      - name: Run tests (iOS Simulator)
-        run: |
-          xcodebuild test \
-            -project GymOverload.xcodeproj \
-            -scheme GymOverload \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
-            -resultBundlePath TestResults-iOS.xcresult
-        env:
-          NSUnbufferedIO: "YES"
-
-      - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          name: TestResults-iOS
-          path: TestResults-iOS.xcresult
+          node-version: "22"
+          cache: npm
 
-  watchos-build:
-    name: watchOS 26 — build
-    runs-on: macos-15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Install
+        run: npm ci
 
-      - name: Select Xcode 26
-        run: |
-          set -e
-          for xcode in \
-            "/Applications/Xcode_26.2.app" \
-            "/Applications/Xcode_26.1.app" \
-            "/Applications/Xcode_26.0.app" \
-            "/Applications/Xcode_26.app"; do
-            if [ -d "$xcode" ]; then
-              echo "DEVELOPER_DIR=$xcode/Contents/Developer" >> "$GITHUB_ENV"
-              sudo xcode-select -s "$xcode/Contents/Developer"
-              xcodebuild -version
-              exit 0
-            fi
-          done
-          echo "No Xcode 26 bundle found under /Applications; using runner default."
-          xcodebuild -version
+      - name: Test
+        run: npm test
 
-      - name: Build Watch app (Simulator)
-        run: |
-          # Generic destination avoids brittle simulator display-name churn on runner images.
-          xcodebuild build \
-            -project GymOverload.xcodeproj \
-            -scheme 'GymOverloadWatch Watch App' \
-            -destination 'generic/platform=watchOS Simulator'
-        env:
-          NSUnbufferedIO: "YES"
+      - name: Build
+        run: npm run build
