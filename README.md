@@ -1,11 +1,11 @@
 # GymOverload
 
-GymOverload is a **progressive web app (PWA)** for **strength training**. It targets people who already program their own work: you maintain an **exercise library**, build **workout templates** (planned sets and target reps), and keep everything **in the browser** via **IndexedDB**—no account or backend required for core use.
+GymOverload is a **progressive web app (PWA)** for **strength training**. It targets people who already program their own work: you maintain an **exercise library**, define **workouts** (planned sets and target reps), and keep everything **in the browser** via **IndexedDB**—no account or backend required for core use.
 
 **Principles**
 
 - **Local first**: Data stays on the device that runs the browser (same origin). Clear site data or another browser profile starts empty unless you re-import seed JSON (first visit loads bundled seed when the database is empty).
-- **Your library**: Exercises with muscle categories, defaults (rest, weight unit, increments), movement **kind** (e.g. weight/reps or time), and notes. Templates list ordered planned exercises with sets and target reps.
+- **Your library**: Exercises with muscle categories, defaults (rest, weight unit, increments), movement **kind** (e.g. weight/reps or time), and notes. Workouts list ordered planned exercises with sets and target reps.
 - **Installable**: Add to Home Screen / install where the browser supports it; offline shell and assets are handled by the service worker generated at build time.
 
 ## Vision vs current PWA
@@ -13,7 +13,7 @@ GymOverload is a **progressive web app (PWA)** for **strength training**. It tar
 | Area | Goal | Status today |
 |------|------|----------------|
 | Exercises | Custom exercises; categories; kind string; rest and weight defaults | **Yes**: list, search, category filter, create/edit/delete |
-| Templates / plans | Named plans with ordered exercises, sets, target reps | **Yes**: list, detail, add from library, reorder in edit mode |
+| Workouts | Named plans with ordered exercises, sets, target reps | **Yes**: list, detail, add from library, reorder in edit mode |
 | Session logging | Walk a plan; log sets; rest timer | **Not built** (same gap as the former native app) |
 | Export / backup | Portable data | **Planned** (JSON export/import fits IndexedDB well) |
 | Progress / charts | Trends over time | **Planned** |
@@ -29,7 +29,7 @@ GymOverload is a **progressive web app (PWA)** for **strength training**. It tar
 | Path | Role |
 |------|------|
 | `src/` | React UI, Dexie schema, routing, PWA registration |
-| `public/seed/` | Bundled `exercises.json` and `templates.json` (first-run seed) |
+| `public/seed/` | Bundled `exercises.json` and `workouts.json` (first-run seed) |
 | `scripts/app-icon-source.png` | 1024×1024 master artwork (from the original iOS asset); `make-pwa-icons.mjs` resizes it to PWA and Apple touch icons, and emits light/dark favicons (`favicon-32-light.png` / `favicon-32-dark.png`) |
 | `vite.config.ts` | Vite + `vite-plugin-pwa` (manifest + service worker) |
 
@@ -45,7 +45,7 @@ npm run preview # serve dist/ locally
 
 ## Deploying
 
-Build with `npm run build` and host the `dist/` folder on any static host **over HTTPS** (required for service workers and installability). Configure the server so client-side routes fall back to `index.html` if you use deep links into `/exercises/:id` or `/templates/:id`.
+Build with `npm run build` and host the `dist/` folder on any static host **over HTTPS** (required for service workers and installability). Configure the server so client-side routes fall back to `index.html` if you use deep links into `/exercises/:id` or `/workouts/:id`.
 
 ### GitHub Pages (this repo)
 
