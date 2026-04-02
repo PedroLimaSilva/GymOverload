@@ -1,67 +1,57 @@
 # GymOverload
 
-GymOverload is a **native iOS** (and watchOS companion) app for **strength training**. It is aimed at people who already know their way around the gym: they define their own exercises and plans and want a reliable way to **track sets** during a session—on device, without depending on a server.
+GymOverload is a **progressive web app (PWA)** for **strength training**. It targets people who already program their own work: you maintain an **exercise library**, build **workout templates** (planned sets and target reps), and keep everything **in the browser** via **IndexedDB**—no account or backend required for core use.
 
 **Principles**
 
-- **On-device first**: Workouts and data stay local; no account or cloud service is required for core use (future **iCloud** sync is a goal, not a dependency).
-- **Your library**: Create **exercises** (muscle group / type), build **templates** (workout plans—ordered exercises for a session), then **log sessions** (per-set weight and reps, with a **rest timer** between sets).
+- **Local first**: Data stays on the device that runs the browser (same origin). Clear site data or another browser profile starts empty unless you re-import seed JSON (first visit loads bundled seed when the database is empty).
+- **Your library**: Exercises with muscle categories, defaults (rest, weight unit, increments), movement **kind** (e.g. weight/reps or time), and notes. Templates list ordered planned exercises with sets and target reps.
+- **Installable**: Add to Home Screen / install where the browser supports it; offline shell and assets are handled by the service worker generated at build time.
 
-## Vision vs current app
+## Vision vs current PWA
 
 | Area | Goal | Status today |
 |------|------|----------------|
-| Exercises | Custom exercises; categorize by muscle group; type as weight+reps, time (e.g. isometric), or both | **Partial**: create/edit exercises, categories, `kind` string, rest defaults, weight units/increments |
-| Templates / plans | Named plans grouping exercises for one session | **Partial**: templates with planned sets and target reps |
-| Session logging | Walk through a plan; log each set (weight, reps); rest timer | **Not built yet** (logging UI stub exists but is commented out; no session model) |
-| Data & portability | Export plans; durable on-device storage; optional iCloud | **Partial**: SwiftData on device; export and iCloud **planned** |
-| Progress | Charts for progression over time | **Planned** |
-| Watch | Companion on the wrist | **Partial**: receives exercises/templates from iPhone via WatchConnectivity |
-
-The sections below describe what exists in the repo **today**; the table is the north star for future work.
+| Exercises | Custom exercises; categories; kind string; rest and weight defaults | **Yes**: list, search, category filter, create/edit/delete |
+| Templates / plans | Named plans with ordered exercises, sets, target reps | **Yes**: list, detail, add from library, reorder in edit mode |
+| Session logging | Walk a plan; log sets; rest timer | **Not built** (same gap as the former native app) |
+| Export / backup | Portable data | **Planned** (JSON export/import fits IndexedDB well) |
+| Progress / charts | Trends over time | **Planned** |
+| Watch companion | Wrist UI | **Removed** with the native stack; not part of the PWA |
 
 ## Requirements
 
-- Xcode (project targets **iOS 26** and **watchOS 26**)
-- Swift **5**
-- A physical iPhone and Apple Watch pair for full WatchConnectivity behavior (simulators have limitations)
+- **Node.js** 20+ (CI uses 22)
+- **npm** 10+
 
 ## Project layout
 
 | Path | Role |
 |------|------|
-| `GymOverload/` | iOS app: SwiftUI `TabView` (Exercises, Templates), sync observer |
-| `GymOverloadWatch Watch App/` | watchOS app: receives synced data, lists templates |
-| `Shared/` | SwiftData models, bundled JSON seed data, assets shared by both targets |
-| `GymOverload.xcodeproj/` | Xcode project |
-| `GymOverloadTests/` | Unit tests (seed JSON decoding, DTO round-trip) |
+| `src/` | React UI, Dexie schema, routing, PWA registration |
+| `public/seed/` | Bundled `exercises.json` and `templates.json` (first-run seed) |
+| `vite.config.ts` | Vite + `vite-plugin-pwa` (manifest + service worker) |
 
-Shared code includes `Exercise` and `WorkoutTemplate` models, `SharedModelContainer`, `InitialDataLoader`, and `ModelDataLoader` (loads `Shared/Resources/exercises.json` and `templates.json`).
+## Scripts
+
+```bash
+npm install    # dependencies
+npm run dev    # local dev server
+npm test       # Vitest (seed JSON + model helpers)
+npm run build  # typecheck + production build to dist/
+npm run preview # serve dist/ locally
+```
+
+## Deploying
+
+Build with `npm run build` and host the `dist/` folder on any static host **over HTTPS** (required for service workers and installability). Configure the server so client-side routes fall back to `index.html` if you use deep links into `/exercises/:id` or `/templates/:id`.
 
 ## Continuous integration
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`:
-
-- **iOS**: `xcodebuild test` for the **GymOverload** scheme (iPhone simulator).
-- **watchOS**: `xcodebuild build` for the **GymOverloadWatch Watch App** scheme (generic watchOS Simulator destination).
-
-Runners must provide **Xcode 26** so the iOS 26 / watchOS 26 SDKs match the project. The workflow tries common `Xcode_26*.app` paths under `/Applications` and falls back to the image default if none match—if CI fails with a SDK or simulator error, align the **Select Xcode** step or simulator name with the [macOS runner image](https://github.com/actions/runner-images/blob/main/images/macos/) your repo uses.
-
-## Current features
-
-- **Exercises**: Name, categories (muscle groups), default rest, weight increments (kg/lb), movement kind (e.g. weight/reps), optional notes.
-- **Workout templates**: Named routines with planned exercises (sets and target reps).
-- **First launch**: If the store is empty, exercises and templates are seeded from bundled JSON.
-- **Watch sync**: `SyncObserver` on iOS polls SwiftData every 10 seconds and sends encoded DTOs via `WCSession.transferUserInfo`. The watch’s `WatchDataReceiver` decodes and replaces its local store.
-
-## Building and running
-
-1. Open `GymOverload.xcodeproj` in Xcode.
-2. Select the **GymOverload** scheme for the iOS app or the watch app scheme for the Watch target.
-3. Build and run on device or simulator (watch sync is most reliable on real hardware).
+GitHub Actions (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`: `npm ci`, `npm test`, `npm run build`.
 
 ## Author
 
-Pedro Lima e Silva (initial project dates in source: June 2025).
+Pedro Lima e Silva (initial native project dates in prior history: June 2025). Repository direction is now **web-only PWA**.
 
-For architecture notes and agent-oriented context, see [`AGENTS.md`](AGENTS.md).
+For agent-oriented context, see [`AGENTS.md`](AGENTS.md).
