@@ -1,17 +1,42 @@
+/* Brand green: extended-srgb 0.15686, 0.80392, 0.25490 → #28cd41 */
 :root {
-  color-scheme: dark;
-  --bg: #0f1419;
-  --surface: #1a222c;
-  --surface-2: #242d3a;
-  --border: #2f3a48;
-  --text: #e8eef5;
-  --muted: #8b9aaf;
-  --accent: #5b9fd4;
-  --accent-dim: rgba(91, 159, 212, 0.15);
-  --danger: #e06c6c;
+  --brand-green: #28cd41;
   --radius: 10px;
   --font: "DM Sans", system-ui, -apple-system, sans-serif;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --header-mark-size: 36px;
+}
+
+/* Dark: gray canvas, logo in brand green */
+:root {
+  color-scheme: dark;
+  --bg: #3d3d3d;
+  --surface: #4a4a4a;
+  --surface-2: #525252;
+  --border: #5c5c5c;
+  --text: #f2f2f2;
+  --muted: #b8b8b8;
+  --accent: var(--brand-green);
+  --accent-dim: color-mix(in srgb, var(--brand-green) 22%, transparent);
+  --danger: #ff8a8a;
+  --on-accent: #0f1f12;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    /* Light: green canvas, logo at original colors */
+    --bg: var(--brand-green);
+    --surface: #ffffff;
+    --surface-2: #f0f4f1;
+    --border: color-mix(in srgb, #000 14%, transparent);
+    --text: #1a1f1b;
+    --muted: #3d4a40;
+    --accent: #0d4a1f;
+    --accent-dim: color-mix(in srgb, var(--accent) 12%, transparent);
+    --danger: #b3261e;
+    --on-accent: #ffffff;
+  }
 }
 
 * {
@@ -63,13 +88,62 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
   padding: 0.75rem 0 0.5rem;
   margin: 0 -1rem;
   padding-left: 1rem;
   padding-right: 1rem;
   border-bottom: 1px solid var(--border);
+}
+
+.app-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.app-header-mark {
+  position: relative;
+  width: var(--header-mark-size);
+  height: var(--header-mark-size);
+  flex-shrink: 0;
+}
+
+/* Dark: monochrome mark in brand green (mask from app icon alpha) */
+.app-header-mark__mask {
+  display: none;
+  width: 100%;
+  height: 100%;
+  background-color: var(--brand-green);
+  mask-image: url("/pwa-192.png");
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-image: url("/pwa-192.png");
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+}
+
+/* Light: full-color icon */
+.app-header-mark__img {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (prefers-color-scheme: dark) {
+  .app-header-mark__mask {
+    display: block;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  .app-header-mark__img {
+    display: block;
+  }
 }
 
 .app-header h1 {
@@ -88,7 +162,7 @@ textarea {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem calc(0.5rem + var(--safe-bottom));
-  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
   backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
   z-index: 20;
@@ -140,7 +214,7 @@ textarea {
 .btn-primary {
   background: var(--accent);
   border-color: transparent;
-  color: var(--bg);
+  color: var(--on-accent);
 }
 
 .btn-ghost {

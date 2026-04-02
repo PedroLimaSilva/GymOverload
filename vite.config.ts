@@ -18,8 +18,8 @@ export default defineConfig({
         short_name: "GymOverload",
         description:
           "Strength training tracker: exercises, workout templates, on-device storage.",
-        theme_color: "#0f1419",
-        background_color: "#0f1419",
+        theme_color: "#28cd41",
+        background_color: "#28cd41",
         display: "standalone",
         orientation: "portrait-primary",
         start_url: "/",

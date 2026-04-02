@@ -32,7 +32,20 @@ export function App() {
     <>
       <div className="app-shell">
         <header className="app-header">
-          <h1>GymOverload</h1>
+          <div className="app-header-inner">
+            <div className="app-header-mark" aria-hidden="true">
+              <span className="app-header-mark__mask" />
+              <img
+                className="app-header-mark__img"
+                src="/pwa-192.png"
+                alt=""
+                width={36}
+                height={36}
+                decoding="async"
+              />
+            </div>
+            <h1>GymOverload</h1>
+          </div>
         </header>
         <Routes>
           <Route path="/" element={<Navigate to="/exercises" replace />} />
