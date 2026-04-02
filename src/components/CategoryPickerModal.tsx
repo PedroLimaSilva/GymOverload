@@ -45,7 +45,7 @@ export function CategoryPickerModal({
                 Clear
               </button>
             )}
-            <button type="button" className="btn btn-primary" onClick={onClose}>
+            <button type="button" className="btn btn-primary " onClick={onClose}>
               Done
             </button>
           </div>
