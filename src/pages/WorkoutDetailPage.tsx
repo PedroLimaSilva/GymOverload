@@ -3,25 +3,25 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
 import { db } from "../db/database";
-import { deleteSessionsForTemplate, lastSessionSummaryForExercise } from "../db/workoutHistory";
-import type { Exercise, ExerciseCategory, PlannedExercise, WorkoutTemplate } from "../model/types";
+import { deleteSessionsForWorkout, lastSessionSummaryForExercise } from "../db/workoutHistory";
+import type { Exercise, ExerciseCategory, PlannedExercise, Workout } from "../model/types";
 import { plannedFromDTO } from "../model/types";
 
-export function TemplateDetailPage() {
+export function WorkoutDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const rows = useLiveQuery(() => db.templates.toArray(), []);
-  const template = id && rows ? rows.find((t) => t.id === id) : undefined;
-  const [draft, setDraft] = useState<WorkoutTemplate | null>(null);
+  const rows = useLiveQuery(() => db.workouts.toArray(), []);
+  const workout = id && rows ? rows.find((w) => w.id === id) : undefined;
+  const [draft, setDraft] = useState<Workout | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
-  const sessionsForTemplate = useLiveQuery(
-    () => (id ? db.workoutSessions.where("templateId").equals(id).toArray() : []),
+  const sessionsForWorkout = useLiveQuery(
+    () => (id ? db.workoutSessions.where("workoutId").equals(id).toArray() : []),
     [id]
   );
-  const latestSession = sessionsForTemplate
-    ? [...sessionsForTemplate].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1))[0]
+  const latestSession = sessionsForWorkout
+    ? [...sessionsForWorkout].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1))[0]
     : undefined;
   const latestEntries = useLiveQuery(
     () =>
@@ -32,24 +32,24 @@ export function TemplateDetailPage() {
   );
 
   useEffect(() => {
-    if (template) setDraft(template);
-  }, [template]);
+    if (workout) setDraft(workout);
+  }, [workout]);
 
   useEffect(() => {
     if (!id || rows === undefined) return;
-    if (!template) navigate("/templates", { replace: true });
-  }, [id, rows, template, navigate]);
+    if (!workout) navigate("/workouts", { replace: true });
+  }, [id, rows, workout, navigate]);
 
-  async function persist(next: WorkoutTemplate) {
+  async function persist(next: Workout) {
     setDraft(next);
-    await db.templates.put(next);
+    await db.workouts.put(next);
   }
 
   async function remove() {
     if (!draft || !confirm(`Delete “${draft.name}”?`)) return;
-    await deleteSessionsForTemplate(draft.id);
-    await db.templates.delete(draft.id);
-    navigate("/templates");
+    await deleteSessionsForWorkout(draft.id);
+    await db.workouts.delete(draft.id);
+    navigate("/workouts");
   }
 
   function addSelected(selected: Exercise[]) {
@@ -71,7 +71,7 @@ export function TemplateDetailPage() {
   return (
     <>
       <div className="toolbar">
-        <Link to="/templates" className="btn btn-ghost">
+        <Link to="/workouts" className="btn btn-ghost">
           ← Back
         </Link>
         <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -87,7 +87,7 @@ export function TemplateDetailPage() {
         <div className="form-section">
           {draft.plannedExercises.length > 0 ? (
             <Link
-              to={`/templates/${draft.id}/workout`}
+              to={`/workouts/${draft.id}/session`}
               className="btn btn-primary"
               style={{ display: "block", width: "100%", textAlign: "center", marginBottom: "0.5rem" }}
             >
@@ -105,11 +105,11 @@ export function TemplateDetailPage() {
           )}
         </div>
         <div className="form-section">
-          <h2>Template name</h2>
+          <h2>Workout name</h2>
           <div className="field">
-            <label htmlFor="tpl-name">Name</label>
+            <label htmlFor="workout-name">Name</label>
             <input
-              id="tpl-name"
+              id="workout-name"
               type="text"
               value={draft.name}
               onChange={(e) => void persist({ ...draft, name: e.target.value })}
