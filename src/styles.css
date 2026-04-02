@@ -7,13 +7,13 @@
   --header-mark-size: 36px;
 }
 
-/* Dark: gray canvas, logo in brand green */
+/* Dark: black canvas; surfaces stepped lighter for hierarchy */
 :root {
   color-scheme: dark;
-  --bg: #3d3d3d;
-  --surface: #4a4a4a;
-  --surface-2: #525252;
-  --border: #5c5c5c;
+  --bg: #000000;
+  --surface: #1a1a1a;
+  --surface-2: #262626;
+  --border: #333333;
   --text: #f2f2f2;
   --muted: #b8b8b8;
   --accent: var(--brand-green);
