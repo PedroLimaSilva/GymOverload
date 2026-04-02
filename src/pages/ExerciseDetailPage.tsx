@@ -2,6 +2,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
+import { OverflowMenu } from "../components/OverflowMenu";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import type { Exercise, ExerciseCategory } from "../model/types";
 
@@ -39,14 +41,20 @@ export function ExerciseDetailPage() {
 
   return (
     <>
-      <div className="toolbar">
-        <Link to="/exercises" className="btn btn-ghost">
-          ← Back
-        </Link>
-        <button type="button" className="btn btn-danger" onClick={() => void remove()}>
-          Delete
-        </button>
-      </div>
+      <ScreenHeader
+        variant="detail"
+        leading={
+          <Link to="/exercises" className="btn-pill">
+            Back
+          </Link>
+        }
+        trailing={
+          <OverflowMenu
+            label="Exercise actions"
+            items={[{ label: "Delete exercise", onSelect: () => void remove() }]}
+          />
+        }
+      />
       <form
         className="form"
         onSubmit={(e) => {

@@ -2,6 +2,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
+import { OverflowMenu } from "../components/OverflowMenu";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import { deleteSessionsForTemplate, lastSessionSummaryForExercise } from "../db/workoutHistory";
 import type { Exercise, ExerciseCategory, PlannedExercise, WorkoutTemplate } from "../model/types";
@@ -70,19 +72,26 @@ export function TemplateDetailPage() {
 
   return (
     <>
-      <div className="toolbar">
-        <Link to="/templates" className="btn btn-ghost">
-          ← Back
-        </Link>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button type="button" className="btn btn-ghost" onClick={() => setEditMode((e) => !e)}>
-            {editMode ? "Done" : "Edit order"}
-          </button>
-          <button type="button" className="btn btn-danger" onClick={() => void remove()}>
-            Delete
-          </button>
-        </div>
-      </div>
+      <ScreenHeader
+        variant="detail"
+        leading={
+          <Link to="/templates" className="btn-pill">
+            Back
+          </Link>
+        }
+        trailing={
+          <OverflowMenu
+            label="Template actions"
+            items={[
+              {
+                label: editMode ? "Done reordering" : "Edit exercise order…",
+                onSelect: () => setEditMode((e) => !e),
+              },
+              { label: "Delete template", onSelect: () => void remove() },
+            ]}
+          />
+        }
+      />
       <div className="form">
         <div className="form-section">
           {draft.plannedExercises.length > 0 ? (

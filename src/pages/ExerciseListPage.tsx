@@ -1,10 +1,20 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
+import { IconChevronRight, IconSearch } from "../components/Icons";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
+import { groupByFirstLetter } from "../lib/groupByLetter";
+import { createExerciseAndNavigate } from "../lib/navActions";
 import type { Exercise, ExerciseCategory } from "../model/types";
-import { defaultExercise } from "../model/types";
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  const w = parts[0] ?? "?";
+  return w.slice(0, 2).toUpperCase();
+}
 
 export function ExerciseListPage() {
   const navigate = useNavigate();
@@ -12,6 +22,8 @@ export function ExerciseListPage() {
   const [search, setSearch] = useState("");
   const [filterCats, setFilterCats] = useState<ExerciseCategory[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [deleteMode, setDeleteMode] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
     if (!exercises) return [];
@@ -19,17 +31,19 @@ export function ExerciseListPage() {
       const q = search.trim().toLowerCase();
       const matchesSearch = !q || ex.name.toLowerCase().includes(q);
       const matchesCat =
-        filterCats.length === 0 ||
-        ex.categories.some((c) => filterCats.includes(c));
+        filterCats.length === 0 || ex.categories.some((c) => filterCats.includes(c));
       return matchesSearch && matchesCat;
     });
   }, [exercises, search, filterCats]);
 
-  async function addExercise() {
-    const ex = defaultExercise();
-    await db.exercises.add(ex);
-    navigate(`/exercises/${ex.id}`);
-  }
+  const grouped = useMemo(() => groupByFirstLetter(filtered), [filtered]);
+  const showIndex = grouped.length > 1 && !search.trim() && filterCats.length === 0;
+
+  const scrollToSection = useCallback((key: string) => {
+    const id = `ex-section-${key === "#" ? "sym" : key}`;
+    const el = scrollRef.current?.querySelector(`#${id}`);
+    el?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, []);
 
   async function removeExercise(e: React.MouseEvent, ex: Exercise) {
     e.preventDefault();
@@ -38,16 +52,47 @@ export function ExerciseListPage() {
     await db.exercises.delete(ex.id);
   }
 
+  const menuItems = [
+    {
+      label: filterCats.length ? "Edit filter…" : "Filter by category…",
+      onSelect: () => setFilterOpen(true),
+    },
+    ...(filterCats.length
+      ? [
+          {
+            label: "Clear filters",
+            onSelect: () => setFilterCats([]),
+          },
+        ]
+      : []),
+    {
+      label: deleteMode ? "Done deleting" : "Delete exercises…",
+      onSelect: () => setDeleteMode((d) => !d),
+    },
+  ];
+
   return (
-    <>
-      <div className="toolbar">
-        <button type="button" className="btn btn-ghost" onClick={() => setFilterOpen(true)}>
-          Filter
-        </button>
-        <button type="button" className="btn btn-primary" onClick={() => void addExercise()}>
-          New exercise
-        </button>
-      </div>
+    <div className="list-screen">
+      <ScreenHeader
+        variant="main"
+        title="Exercises"
+        createLabel="Create"
+        onCreate={() => void createExerciseAndNavigate(navigate)}
+        menuLabel="Exercise list menu"
+        menuItems={menuItems}
+      />
+      <label className="search-wrap">
+        <IconSearch />
+        <input
+          className="search"
+          type="search"
+          placeholder="Search"
+          value={search}
+          onChange={(ev) => setSearch(ev.target.value)}
+          autoComplete="off"
+          enterKeyHint="search"
+        />
+      </label>
       {filterCats.length > 0 && (
         <div className="chips">
           {filterCats.map((c) => (
@@ -57,40 +102,93 @@ export function ExerciseListPage() {
           ))}
         </div>
       )}
-      <input
-        className="search"
-        type="search"
-        placeholder="Search exercises"
-        value={search}
-        onChange={(ev) => setSearch(ev.target.value)}
-        autoComplete="off"
-      />
       {!exercises && <p className="empty">Loading…</p>}
-      {exercises && filtered.length === 0 && (
-        <p className="empty">No exercises match.</p>
-      )}
+      {exercises && filtered.length === 0 && <p className="empty">No exercises match.</p>}
       {filtered.length > 0 && (
-        <ul className="list">
-          {filtered.map((ex) => (
-            <li key={ex.id}>
-              <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
-                <Link to={`/exercises/${ex.id}`} style={{ flex: 1, paddingRight: "0.5rem" }}>
-                  <p className="row-title">{ex.name}</p>
-                  <p className="row-sub">{ex.categories.join(", ") || "No categories"}</p>
-                </Link>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  style={{ alignSelf: "center", padding: "0.35rem 0.5rem" }}
-                  aria-label={`Delete ${ex.name}`}
-                  onClick={(ev) => void removeExercise(ev, ex)}
-                >
-                  ✕
+        <div className="list-with-index">
+          <div className="list-with-index__scroll" ref={scrollRef}>
+            {showIndex ? (
+              grouped.map((section) => (
+                <section key={section.key} aria-labelledby={`ex-section-${section.key === "#" ? "sym" : section.key}`}>
+                  <h2
+                    className="list-section-label"
+                    id={`ex-section-${section.key === "#" ? "sym" : section.key}`}
+                  >
+                    {section.key}
+                  </h2>
+                  <ul className="list">
+                    {section.items.map((ex) => (
+                      <li key={ex.id}>
+                        <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
+                          <Link to={`/exercises/${ex.id}`} className="list-row-link" style={{ flex: 1 }}>
+                            <span className="list-row-link__thumb" aria-hidden>
+                              {initials(ex.name)}
+                            </span>
+                            <span className="list-row-link__body">
+                              <p className="row-title">{ex.name}</p>
+                              <p className="row-sub">{ex.categories.join(", ") || "No categories"}</p>
+                            </span>
+                            <IconChevronRight className="list-row-link__chevron" />
+                          </Link>
+                          {deleteMode && (
+                            <button
+                              type="button"
+                              className="btn btn-ghost"
+                              style={{ alignSelf: "center", padding: "0.35rem 0.5rem", flexShrink: 0 }}
+                              aria-label={`Delete ${ex.name}`}
+                              onClick={(ev) => void removeExercise(ev, ex)}
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+            ) : (
+              <ul className="list">
+                {filtered.map((ex) => (
+                  <li key={ex.id}>
+                    <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
+                      <Link to={`/exercises/${ex.id}`} className="list-row-link" style={{ flex: 1 }}>
+                        <span className="list-row-link__thumb" aria-hidden>
+                          {initials(ex.name)}
+                        </span>
+                        <span className="list-row-link__body">
+                          <p className="row-title">{ex.name}</p>
+                          <p className="row-sub">{ex.categories.join(", ") || "No categories"}</p>
+                        </span>
+                        <IconChevronRight className="list-row-link__chevron" />
+                      </Link>
+                      {deleteMode && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          style={{ alignSelf: "center", padding: "0.35rem 0.5rem", flexShrink: 0 }}
+                          aria-label={`Delete ${ex.name}`}
+                          onClick={(ev) => void removeExercise(ev, ex)}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {showIndex && (
+            <aside className="section-index" aria-label="Jump to letter">
+              {grouped.map((g) => (
+                <button key={g.key} type="button" onClick={() => scrollToSection(g.key)}>
+                  {g.key}
                 </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+              ))}
+            </aside>
+          )}
+        </div>
       )}
       {filterOpen && (
         <CategoryPickerModal
@@ -101,6 +199,6 @@ export function ExerciseListPage() {
           onClose={() => setFilterOpen(false)}
         />
       )}
-    </>
+    </div>
   );
 }
