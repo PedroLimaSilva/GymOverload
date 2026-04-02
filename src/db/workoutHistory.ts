@@ -1,9 +1,9 @@
 import { db } from "./database";
-import type { LoggedExerciseEntry, PlannedExercise, WorkoutSession, WorkoutTemplate } from "../model/types";
+import type { LoggedExerciseEntry, PlannedExercise, Workout, WorkoutSession } from "../model/types";
 import { newId } from "../model/types";
 
-export async function getLatestCompletedSession(templateId: string): Promise<WorkoutSession | undefined> {
-  const rows = await db.workoutSessions.where("templateId").equals(templateId).toArray();
+export async function getLatestCompletedSession(workoutId: string): Promise<WorkoutSession | undefined> {
+  const rows = await db.workoutSessions.where("workoutId").equals(workoutId).toArray();
   rows.sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
   return rows[0];
 }
@@ -21,14 +21,14 @@ function entryMap(entries: LoggedExerciseEntry[]): Map<string, LoggedExerciseEnt
 }
 
 export async function buildInitialSetStates(
-  template: WorkoutTemplate
+  workout: Workout
 ): Promise<Record<string, { weight: number; reps: number }[]>> {
-  const session = await getLatestCompletedSession(template.id);
+  const session = await getLatestCompletedSession(workout.id);
   const entries = session ? await entriesForSession(session.id) : [];
   const byKey = entryMap(entries);
 
   const out: Record<string, { weight: number; reps: number }[]> = {};
-  for (const pe of template.plannedExercises) {
+  for (const pe of workout.plannedExercises) {
     const row: { weight: number; reps: number }[] = [];
     for (let setIndex = 0; setIndex < pe.sets; setIndex++) {
       const entry = byKey.get(`${pe.id}\0${setIndex}`);
@@ -40,8 +40,8 @@ export async function buildInitialSetStates(
   return out;
 }
 
-export async function deleteSessionsForTemplate(templateId: string): Promise<void> {
-  const sessions = await db.workoutSessions.where("templateId").equals(templateId).toArray();
+export async function deleteSessionsForWorkout(workoutId: string): Promise<void> {
+  const sessions = await db.workoutSessions.where("workoutId").equals(workoutId).toArray();
   await db.transaction("rw", db.workoutSessions, db.loggedExerciseEntries, async () => {
     for (const s of sessions) {
       await db.loggedExerciseEntries.where("sessionId").equals(s.id).delete();
@@ -51,19 +51,19 @@ export async function deleteSessionsForTemplate(templateId: string): Promise<voi
 }
 
 export async function saveCompletedWorkout(
-  template: WorkoutTemplate,
+  workout: Workout,
   setStates: Record<string, { weight: number; reps: number }[]>
 ): Promise<void> {
   const sessionId = newId();
   const completedAt = new Date().toISOString();
   const session: WorkoutSession = {
     id: sessionId,
-    templateId: template.id,
+    workoutId: workout.id,
     completedAt,
   };
 
   const entries: LoggedExerciseEntry[] = [];
-  for (const pe of template.plannedExercises) {
+  for (const pe of workout.plannedExercises) {
     const states = setStates[pe.id];
     if (!states) continue;
     for (let setIndex = 0; setIndex < pe.sets; setIndex++) {
