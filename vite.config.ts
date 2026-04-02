@@ -20,13 +20,13 @@ export default defineConfig({
         "favicon-32-dark.png",
         "apple-touch-icon.png",
         "seed/exercises.json",
-        "seed/templates.json",
+        "seed/workouts.json",
       ],
       manifest: {
         name: "GymOverload",
         short_name: "GymOverload",
         description:
-          "Strength training tracker: exercises, workout templates, on-device storage.",
+          "Strength training tracker: exercises, workouts, on-device storage.",
         theme_color: "#28cd41",
         background_color: "#28cd41",
         display: "standalone",
