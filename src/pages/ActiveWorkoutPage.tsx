@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import { buildInitialSetStates, saveCompletedWorkout } from "../db/workoutHistory";
 import type { Exercise } from "../model/types";
@@ -79,11 +80,14 @@ export function ActiveWorkoutPage() {
   if (workout.plannedExercises.length === 0) {
     return (
       <>
-        <div className="toolbar">
-          <Link to={`/workouts/${workout.id}`} className="btn btn-ghost">
-            ← Back
-          </Link>
-        </div>
+        <ScreenHeader
+          variant="detail"
+          leading={
+            <Link to={`/workouts/${workout.id}`} className="btn-pill glass">
+              Back
+            </Link>
+          }
+        />
         <p className="empty">Add exercises to this workout before starting a session.</p>
       </>
     );
@@ -91,14 +95,19 @@ export function ActiveWorkoutPage() {
 
   return (
     <>
-      <div className="toolbar">
-        <Link to={`/workouts/${workout.id}`} className="btn btn-ghost">
-          ← Back
-        </Link>
-        <button type="button" className="btn btn-primary" onClick={() => void finish()}>
-          Finish
-        </button>
-      </div>
+      <ScreenHeader
+        variant="detail"
+        leading={
+          <Link to={`/workouts/${workout.id}`} className="btn-pill glass">
+            Back
+          </Link>
+        }
+        trailing={
+          <button type="button" className="btn btn-primary" onClick={() => void finish()}>
+            Finish
+          </button>
+        }
+      />
       <div className="form">
         <h2 className="workout-title">{workout.name}</h2>
         {workout.plannedExercises.map((pe) => {
