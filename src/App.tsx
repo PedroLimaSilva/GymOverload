@@ -85,10 +85,10 @@ export function App() {
 
   return (
     <Routes>
+      <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<Navigate to="/exercises" replace />} />
         <Route path="/exercises" element={<ExerciseListPage />} />
-        <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
         <Route path="/templates" element={<TemplateListPage />} />
         <Route path="/templates/:id" element={<TemplateDetailPage />} />
         <Route path="/templates/:id/workout" element={<ActiveWorkoutPage />} />

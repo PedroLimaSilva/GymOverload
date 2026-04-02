@@ -14,6 +14,7 @@
 :root {
   color-scheme: dark;
   --bg: #000000;
+  --modal-canvas: #121212;
   --surface: #1c1c1e;
   --surface-2: #2c2c2e;
   --border: #38383a;
@@ -31,6 +32,7 @@
   :root {
     color-scheme: light;
     --bg: #f2f2f7;
+    --modal-canvas: #f2f2f7;
     --surface: #ffffff;
     --surface-2: #e5e5ea;
     --border: #c6c6c8;
@@ -767,4 +769,261 @@ textarea {
   color: var(--muted);
   font-size: 0.85rem;
   flex-shrink: 0;
+}
+
+/* Full-screen exercise edit modal */
+.exercise-detail-modal {
+  min-height: 100dvh;
+  min-height: 100vh;
+  background: var(--modal-canvas);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  padding: max(0.5rem, var(--safe-top)) max(1rem, var(--safe-left)) max(1.25rem, var(--safe-bottom))
+    max(1rem, var(--safe-right));
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+  border-radius: 20px 20px 0 0;
+  position: relative;
+}
+
+@media (min-width: 720px) {
+  .exercise-detail-modal {
+    border-radius: 20px;
+    margin-top: 1rem;
+    min-height: calc(100dvh - 2rem);
+  }
+}
+
+.exercise-detail-modal__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.btn-circle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.btn-circle-icon--surface {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.btn-circle-icon--accent {
+  background: var(--accent);
+  color: #fff;
+}
+
+.exercise-detail-modal__title {
+  margin: 0.35rem 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.edit-exercise-card {
+  background: var(--surface);
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.edit-card__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.edit-card__row:last-child {
+  border-bottom: none;
+}
+
+button.edit-card__row {
+  width: 100%;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.edit-card__row:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.edit-card__row--textarea {
+  align-items: flex-start;
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.edit-card__label {
+  flex-shrink: 0;
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.edit-card__control {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.edit-card__control--link {
+  justify-content: flex-end;
+}
+
+.edit-card__value {
+  color: var(--muted);
+  font-size: 1rem;
+  text-align: right;
+  border: none;
+  background: transparent;
+  max-width: 65%;
+}
+
+.edit-card__value:focus {
+  outline: none;
+  color: var(--text);
+}
+
+.edit-card__select {
+  appearance: none;
+  -webkit-appearance: none;
+  color: var(--muted);
+  font-size: 1rem;
+  text-align: right;
+  direction: rtl;
+  padding: 0.2rem 0 0.2rem 1.5rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  max-width: 70%;
+}
+
+.edit-card__select option {
+  direction: ltr;
+}
+
+.edit-card__select:focus {
+  outline: none;
+  color: var(--text);
+}
+
+.edit-card__name-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  padding: 0.15rem 0;
+}
+
+.edit-card__name-input:focus {
+  outline: none;
+  color: var(--text);
+}
+
+.edit-card__textarea {
+  width: 100%;
+  min-height: 5.5rem;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 1rem;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.edit-card__textarea::placeholder {
+  color: var(--muted);
+}
+
+.edit-card__textarea:focus {
+  outline: none;
+}
+
+.edit-card__chevron {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.exercise-detail-modal__delete {
+  display: block;
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.exercise-detail-modal__fab {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.exercise-detail-modal__advanced {
+  margin-top: 1rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.exercise-detail-modal__advanced summary {
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+}
+
+.exercise-detail-modal__advanced summary::-webkit-details-marker {
+  display: none;
+}
+
+.exercise-detail-modal__advanced .form-section {
+  margin-top: 0;
+  padding: 0 1rem 0.75rem;
+}
+
+.exercise-detail-modal__advanced .field {
+  border-bottom-color: var(--border);
+}
+
+.exercise-detail-modal__advanced .field:last-child {
+  border-bottom: none;
 }

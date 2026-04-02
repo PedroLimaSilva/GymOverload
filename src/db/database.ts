@@ -19,6 +19,22 @@ export class GymOverloadDB extends Dexie {
       workoutSessions: "id, templateId, completedAt",
       loggedExerciseEntries: "id, sessionId, [sessionId+plannedExerciseId+setIndex]",
     });
+    this.version(3)
+      .stores({
+        exercises: "id, createdAt, name",
+        templates: "id, name",
+        workoutSessions: "id, templateId, completedAt",
+        loggedExerciseEntries: "id, sessionId, [sessionId+plannedExerciseId+setIndex]",
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table("exercises")
+          .toCollection()
+          .modify((ex: Record<string, unknown>) => {
+            if (ex.trainingCategory === undefined) ex.trainingCategory = "Strength";
+            if (ex.equipment === undefined) ex.equipment = "Barbell";
+          });
+      });
   }
 }
 
