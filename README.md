@@ -47,6 +47,10 @@ npm run preview # serve dist/ locally
 
 Build with `npm run build` and host the `dist/` folder on any static host **over HTTPS** (required for service workers and installability). Configure the server so client-side routes fall back to `index.html` if you use deep links into `/exercises/:id` or `/templates/:id`.
 
+### GitHub Pages (this repo)
+
+Pushes to `main` run `.github/workflows/deploy-pages.yml`, which builds with `VITE_BASE_PATH=/<repository-name>/` (required for project sites at `https://<user>.github.io/<repo>/`) and deploys `dist/` via **Actions → Deploy GitHub Pages**. In the repository **Settings → Pages**, set **Source** to **GitHub Actions** if it is not already.
+
 ## Continuous integration
 
 GitHub Actions (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`: `npm ci`, `npm test`, `npm run build`.
