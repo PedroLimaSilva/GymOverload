@@ -9,7 +9,7 @@ GymOverload is a **browser-based**, **local-first** strength training tracker fo
 They must be able to:
 
 1. **Exercises** — Create and categorize exercises (muscle group and **kind**: e.g. weight + reps, **time** for holds, or labels you choose).
-2. **Templates / workout plans** — Define named plans: ordered exercises for a session with planned structure (sets, target reps).
+2. **Workouts** — Define named plans: ordered exercises for a session with planned structure (sets, target reps).
 3. **Session logging** (future) — Run a workout, log each set, use a **rest timer** between sets.
 
 **Future / ideal** (not all implemented):
@@ -25,7 +25,7 @@ They must be able to:
 | Goal | Codebase reality |
 |------|------------------|
 | Exercise CRUD + categories + kind | Implemented in React (`ExerciseListPage`, `ExerciseDetailPage`), types in `src/model/types.ts`, persistence in Dexie (`src/db/database.ts`). |
-| Templates with planned sets/reps | Implemented (`TemplateListPage`, `TemplateDetailPage`). Planned rows have stable `id` fields in IndexedDB. |
+| Workouts with planned sets/reps | Implemented (`WorkoutListPage`, `WorkoutDetailPage`). Planned rows have stable `id` fields in IndexedDB. |
 | **Session logging / rest timer** | **Not implemented** (by design for now). |
 | Export / charts / sync | **Not implemented**. |
 | Native iOS / watchOS | **Removed**. This repo is **web-only**. |
@@ -33,15 +33,15 @@ They must be able to:
 ## Technical stack
 
 - **Vite** + **React 19** + **TypeScript**
-- **React Router** for `/exercises`, `/exercises/:id`, `/templates`, `/templates/:id`
-- **Dexie** (IndexedDB) for `exercises` and `templates` tables
+- **React Router** for `/exercises`, `/exercises/:id`, `/workouts`, `/workouts/:id` (legacy `/templates` URLs redirect)
+- **Dexie** (IndexedDB) for `exercises` and `workouts` tables
 - **vite-plugin-pwa**: Web App Manifest, `generateSW` Workbox build, `registerSW` in `src/pwa.ts`
 - **App icon**: `scripts/app-icon-source.png` (legacy 1024×1024); `scripts/make-pwa-icons.mjs` writes `public/pwa-*.png`, `favicon-32-light.png` / `favicon-32-dark.png` (full-color vs green silhouette for system light/dark), and `apple-touch-icon.png` before `dev`/`build`
 - **Vitest** for lightweight tests (`src/model/types.test.ts` imports seed JSON)
 
 ## Data contract
 
-- **Seed files**: `public/seed/exercises.json` and `public/seed/templates.json` mirror the historical Swift DTO shapes (categories as string enum values, planned exercises without persisted UUIDs in JSON—IDs are assigned at import).
+- **Seed files**: `public/seed/exercises.json` and `public/seed/workouts.json` mirror the historical Swift DTO shapes (categories as string enum values, planned exercises without persisted UUIDs in JSON—IDs are assigned at import).
 - **Bootstrap**: `ensureSeeded` in `src/db/bootstrap.ts` runs on app load; if both tables are empty, it fetches the two JSON files and bulk-inserts.
 
 When changing persisted fields:

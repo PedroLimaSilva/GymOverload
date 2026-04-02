@@ -1,27 +1,32 @@
-import type {
-  Exercise,
-  LoggedExerciseEntry,
-  WorkoutSession,
-  WorkoutTemplate,
-} from "../model/types";
+import type { Exercise, LoggedExerciseEntry, Workout, WorkoutSession } from "../model/types";
 import { newId } from "../model/types";
 import { db } from "./database";
 
-export const EXPORT_FORMAT_VERSION = 1 as const;
+/** Current on-disk export format (workouts + workoutId on sessions). */
+export const EXPORT_FORMAT_VERSION = 2 as const;
+export const LEGACY_EXPORT_FORMAT_VERSION = 1 as const;
 
 export interface GymOverloadExport {
   version: typeof EXPORT_FORMAT_VERSION;
   exportedAt: string;
   exercises: Exercise[];
-  templates: WorkoutTemplate[];
+  workouts: Workout[];
   workoutSessions: WorkoutSession[];
   loggedExerciseEntries: LoggedExerciseEntry[];
 }
 
+/** Normalized shape used after parsing v1 or v2 JSON. */
+interface NormalizedImportPayload {
+  exercises: Exercise[];
+  workouts: Workout[];
+  workoutSessions: Array<{ id?: string; workoutId: string; completedAt: string }>;
+  loggedExerciseEntries: LoggedExerciseEntry[];
+}
+
 export async function gatherExportPayload(): Promise<GymOverloadExport> {
-  const [exercises, templates, workoutSessions, loggedExerciseEntries] = await Promise.all([
+  const [exercises, workouts, workoutSessions, loggedExerciseEntries] = await Promise.all([
     db.exercises.toArray(),
-    db.templates.toArray(),
+    db.workouts.toArray(),
     db.workoutSessions.toArray(),
     db.loggedExerciseEntries.toArray(),
   ]);
@@ -29,7 +34,7 @@ export async function gatherExportPayload(): Promise<GymOverloadExport> {
     version: EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
     exercises,
-    templates,
+    workouts,
     workoutSessions,
     loggedExerciseEntries,
   };
@@ -44,43 +49,74 @@ function isRecord(x: unknown): x is Record<string, unknown> {
   return typeof x === "object" && x !== null && !Array.isArray(x);
 }
 
-function validateExportPayload(raw: unknown): GymOverloadExport {
-  if (!isRecord(raw)) throw new Error("Import file must be a JSON object.");
+function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportPayload {
   const v = raw.version;
-  if (v !== EXPORT_FORMAT_VERSION) {
-    throw new Error(`Unsupported export version (expected ${EXPORT_FORMAT_VERSION}).`);
+  if (v !== EXPORT_FORMAT_VERSION && v !== LEGACY_EXPORT_FORMAT_VERSION) {
+    throw new Error(`Unsupported export version (expected ${LEGACY_EXPORT_FORMAT_VERSION} or ${EXPORT_FORMAT_VERSION}).`);
   }
   if (!Array.isArray(raw.exercises)) throw new Error("Missing or invalid exercises array.");
-  if (!Array.isArray(raw.templates)) throw new Error("Missing or invalid templates array.");
   if (!Array.isArray(raw.workoutSessions)) throw new Error("Missing or invalid workoutSessions array.");
   if (!Array.isArray(raw.loggedExerciseEntries)) {
     throw new Error("Missing or invalid loggedExerciseEntries array.");
   }
-  return raw as unknown as GymOverloadExport;
+
+  let workouts: Workout[];
+  if (v === EXPORT_FORMAT_VERSION) {
+    if (!Array.isArray(raw.workouts)) throw new Error("Missing or invalid workouts array.");
+    workouts = raw.workouts as Workout[];
+  } else {
+    if (!Array.isArray(raw.templates)) {
+      throw new Error("Missing workouts: legacy exports (version 1) use a \"templates\" array.");
+    }
+    workouts = raw.templates as Workout[];
+  }
+
+  const workoutSessions: NormalizedImportPayload["workoutSessions"] = [];
+  for (const item of raw.workoutSessions) {
+    if (!isRecord(item)) continue;
+    const workoutId =
+      (typeof item.workoutId === "string" && item.workoutId) ||
+      (typeof item.templateId === "string" && item.templateId) ||
+      "";
+    if (!workoutId) continue;
+    workoutSessions.push({
+      id: typeof item.id === "string" ? item.id : undefined,
+      workoutId,
+      completedAt: typeof item.completedAt === "string" ? item.completedAt : new Date().toISOString(),
+    });
+  }
+
+  return {
+    exercises: raw.exercises as Exercise[],
+    workouts,
+    workoutSessions,
+    loggedExerciseEntries: raw.loggedExerciseEntries as LoggedExerciseEntry[],
+  };
 }
 
-export function parseImportPayloadJson(text: string): GymOverloadExport {
+export function parseImportPayloadJson(text: string): NormalizedImportPayload {
   let raw: unknown;
   try {
     raw = JSON.parse(text) as unknown;
   } catch {
     throw new Error("File is not valid JSON.");
   }
-  return validateExportPayload(raw);
+  if (!isRecord(raw)) throw new Error("Import file must be a JSON object.");
+  return normalizeImportPayload(raw);
 }
 
 export interface MergeImportResult {
   added: {
     exercises: number;
-    templates: number;
+    workouts: number;
     workoutSessions: number;
     loggedExerciseEntries: number;
   };
 }
 
-function remapImportedPayload(payload: GymOverloadExport): {
+function remapImportedPayload(payload: NormalizedImportPayload): {
   exercises: Exercise[];
-  templates: WorkoutTemplate[];
+  workouts: Workout[];
   workoutSessions: WorkoutSession[];
   loggedExerciseEntries: LoggedExerciseEntry[];
 } {
@@ -93,20 +129,20 @@ function remapImportedPayload(payload: GymOverloadExport): {
     });
   }
 
-  const templateIdMap = new Map<string, string>();
+  const workoutIdMap = new Map<string, string>();
   const plannedExerciseIdMap = new Map<string, string>();
-  const templates: WorkoutTemplate[] = [];
-  for (const t of payload.templates) {
-    const newTplId = newId();
-    if (t.id) templateIdMap.set(t.id, newTplId);
-    const plannedExercises = t.plannedExercises.map((pe) => {
+  const workouts: Workout[] = [];
+  for (const w of payload.workouts) {
+    const newWId = newId();
+    if (w.id) workoutIdMap.set(w.id, newWId);
+    const plannedExercises = w.plannedExercises.map((pe) => {
       const newPeId = newId();
       if (pe.id) plannedExerciseIdMap.set(pe.id, newPeId);
       return { ...pe, id: newPeId };
     });
-    templates.push({
-      ...t,
-      id: newTplId,
+    workouts.push({
+      ...w,
+      id: newWId,
       plannedExercises,
     });
   }
@@ -114,13 +150,12 @@ function remapImportedPayload(payload: GymOverloadExport): {
   const sessionIdMap = new Map<string, string>();
   const workoutSessions: WorkoutSession[] = [];
   for (const s of payload.workoutSessions) {
-    if (!s.templateId || !templateIdMap.has(s.templateId)) continue;
+    if (!s.workoutId || !workoutIdMap.has(s.workoutId)) continue;
     const newSessionId = newId();
     if (s.id) sessionIdMap.set(s.id, newSessionId);
     workoutSessions.push({
-      ...s,
       id: newSessionId,
-      templateId: templateIdMap.get(s.templateId)!,
+      workoutId: workoutIdMap.get(s.workoutId)!,
       completedAt: s.completedAt || new Date().toISOString(),
     });
   }
@@ -138,20 +173,20 @@ function remapImportedPayload(payload: GymOverloadExport): {
     });
   }
 
-  return { exercises, templates, workoutSessions, loggedExerciseEntries };
+  return { exercises, workouts, workoutSessions, loggedExerciseEntries };
 }
 
-export async function mergeImportPayload(payload: GymOverloadExport): Promise<MergeImportResult> {
-  const { exercises, templates, workoutSessions, loggedExerciseEntries } = remapImportedPayload(payload);
+export async function mergeImportPayload(payload: NormalizedImportPayload): Promise<MergeImportResult> {
+  const { exercises, workouts, workoutSessions, loggedExerciseEntries } = remapImportedPayload(payload);
   await db.transaction(
     "rw",
     db.exercises,
-    db.templates,
+    db.workouts,
     db.workoutSessions,
     db.loggedExerciseEntries,
     async () => {
       if (exercises.length) await db.exercises.bulkAdd(exercises);
-      if (templates.length) await db.templates.bulkAdd(templates);
+      if (workouts.length) await db.workouts.bulkAdd(workouts);
       if (workoutSessions.length) await db.workoutSessions.bulkAdd(workoutSessions);
       if (loggedExerciseEntries.length) await db.loggedExerciseEntries.bulkAdd(loggedExerciseEntries);
     }
@@ -159,7 +194,7 @@ export async function mergeImportPayload(payload: GymOverloadExport): Promise<Me
   return {
     added: {
       exercises: exercises.length,
-      templates: templates.length,
+      workouts: workouts.length,
       workoutSessions: workoutSessions.length,
       loggedExerciseEntries: loggedExerciseEntries.length,
     },
@@ -170,13 +205,13 @@ export async function deleteAllUserData(): Promise<void> {
   await db.transaction(
     "rw",
     db.exercises,
-    db.templates,
+    db.workouts,
     db.workoutSessions,
     db.loggedExerciseEntries,
     async () => {
       await db.loggedExerciseEntries.clear();
       await db.workoutSessions.clear();
-      await db.templates.clear();
+      await db.workouts.clear();
       await db.exercises.clear();
     }
   );

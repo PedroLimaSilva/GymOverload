@@ -51,7 +51,7 @@ export function ProfilePage() {
       const { added } = await mergeImportPayload(payload);
       const parts = [
         `${added.exercises} exercise${added.exercises === 1 ? "" : "s"}`,
-        `${added.templates} template${added.templates === 1 ? "" : "s"}`,
+        `${added.workouts} workout plan${added.workouts === 1 ? "" : "s"}`,
         `${added.workoutSessions} session${added.workoutSessions === 1 ? "" : "s"}`,
         `${added.loggedExerciseEntries} logged set${added.loggedExerciseEntries === 1 ? "" : "s"}`,
       ];
@@ -65,7 +65,7 @@ export function ProfilePage() {
   }
 
   async function confirmDeleteAll() {
-    if (!confirm("Delete all exercises, templates, and workout history? This cannot be undone.")) {
+    if (!confirm("Delete all exercises, workout plans, sessions, and logged sets? This cannot be undone.")) {
       return;
     }
     if (!confirm("Are you sure? Everything in this app on this device will be removed.")) {
@@ -106,17 +106,17 @@ export function ProfilePage() {
         </p>
         <ul className="profile-import-list muted">
           <li>
-            The import merges with what is already here: every exercise, template, completed workout session, and logged
-            set in the file is inserted as new data. Nothing you already have is removed or overwritten. Importing the
-            same file twice adds a second copy of everything in that file.
+            The import merges with what is already here: every exercise, workout plan, completed session, and logged set
+            in the file is inserted as new data. Nothing you already have is removed or overwritten. Importing the same
+            file twice adds a second copy of everything in that file.
           </li>
           <li>
             Each imported record gets a new ID so it cannot clash with existing rows. References inside the backup are
-            updated accordingly: sessions point at the newly created templates, and logged sets point at the new
+            updated accordingly: sessions point at the newly created workout plans, and logged sets point at the new
             sessions and planned exercise rows.
           </li>
           <li>
-            Sessions are only imported when their template is included in the same file. Logged sets are only imported
+            Sessions are only imported when their workout plan is included in the same file. Logged sets are only imported
             when they can be tied to a remapped session and planned exercise. Anything in the file that would leave a
             dangling reference is skipped.
           </li>
