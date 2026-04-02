@@ -13,7 +13,10 @@ export function App() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      await ensureSeeded("/seed/exercises.json", "/seed/templates.json");
+      await ensureSeeded(
+        `${import.meta.env.BASE_URL}seed/exercises.json`,
+        `${import.meta.env.BASE_URL}seed/templates.json`
+      );
       if (!cancelled) setReady(true);
     })();
     return () => {
@@ -38,7 +41,7 @@ export function App() {
               <span className="app-header-mark__mask" />
               <img
                 className="app-header-mark__img"
-                src="/pwa-192.png"
+                src={`${import.meta.env.BASE_URL}pwa-192.png`}
                 alt=""
                 width={36}
                 height={36}
