@@ -55,7 +55,7 @@ export interface PlannedExerciseDTO {
   targetReps: number;
 }
 
-export interface WorkoutTemplateDTO {
+export interface WorkoutDTO {
   name: string;
   plannedExercises: PlannedExerciseDTO[];
 }
@@ -69,7 +69,7 @@ export interface PlannedExercise extends PlannedExerciseDTO {
   id: string;
 }
 
-export interface WorkoutTemplate {
+export interface Workout {
   id: string;
   name: string;
   plannedExercises: PlannedExercise[];
@@ -77,7 +77,7 @@ export interface WorkoutTemplate {
 
 export interface WorkoutSession {
   id: string;
-  templateId: string;
+  workoutId: string;
   completedAt: string;
 }
 
@@ -118,7 +118,7 @@ export function plannedFromDTO(dto: PlannedExerciseDTO, id = newId()): PlannedEx
   return { id, name: dto.name, sets: dto.sets, targetReps: dto.targetReps };
 }
 
-export function templateFromDTO(dto: WorkoutTemplateDTO, id = newId()): WorkoutTemplate {
+export function workoutFromDTO(dto: WorkoutDTO, id = newId()): Workout {
   return {
     id,
     name: dto.name,

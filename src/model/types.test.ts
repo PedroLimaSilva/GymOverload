@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import exercises from "../../public/seed/exercises.json";
-import templates from "../../public/seed/templates.json";
+import workouts from "../../public/seed/workouts.json";
 import {
   exerciseFromDTO,
   isExerciseCategory,
-  templateFromDTO,
+  workoutFromDTO,
   type ExerciseDTO,
-  type WorkoutTemplateDTO,
+  type WorkoutDTO,
 } from "./types";
 
 describe("seed JSON", () => {
@@ -23,14 +23,14 @@ describe("seed JSON", () => {
     }
   });
 
-  it("decodes templates and planned exercises", () => {
-    const list = templates as WorkoutTemplateDTO[];
+  it("decodes workouts and planned exercises", () => {
+    const list = workouts as WorkoutDTO[];
     expect(list.length).toBeGreaterThan(0);
     for (const dto of list) {
-      const t = templateFromDTO(dto);
-      expect(t.id).toBeTruthy();
-      expect(t.plannedExercises.length).toBe(dto.plannedExercises.length);
-      for (const p of t.plannedExercises) {
+      const w = workoutFromDTO(dto);
+      expect(w.id).toBeTruthy();
+      expect(w.plannedExercises.length).toBe(dto.plannedExercises.length);
+      for (const p of w.plannedExercises) {
         expect(p.id).toBeTruthy();
       }
     }

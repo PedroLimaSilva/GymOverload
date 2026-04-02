@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { NavLink, Navigate, Outlet, Route, Routes, useParams } from "react-router-dom";
 import { ensureSeeded } from "./db/bootstrap";
 import {
   IconBicep,
@@ -11,8 +11,8 @@ import {
 import { ExerciseDetailPage } from "./pages/ExerciseDetailPage";
 import { ExerciseListPage } from "./pages/ExerciseListPage";
 import { ActiveWorkoutPage } from "./pages/ActiveWorkoutPage";
-import { TemplateDetailPage } from "./pages/TemplateDetailPage";
-import { TemplateListPage } from "./pages/TemplateListPage";
+import { WorkoutDetailPage } from "./pages/WorkoutDetailPage";
+import { WorkoutListPage } from "./pages/WorkoutListPage";
 
 function AppLayout() {
   return (
@@ -29,7 +29,7 @@ function AppLayout() {
           </span>
           Home
         </span>
-        <NavLink to="/templates" end title="Workouts">
+        <NavLink to="/workouts" end title="Workouts">
           <span className="tab-nav__icon-wrap">
             <IconClipboard />
           </span>
@@ -66,7 +66,7 @@ export function App() {
     (async () => {
       await ensureSeeded(
         `${import.meta.env.BASE_URL}seed/exercises.json`,
-        `${import.meta.env.BASE_URL}seed/templates.json`
+        `${import.meta.env.BASE_URL}seed/workouts.json`
       );
       if (!cancelled) setReady(true);
     })();
@@ -89,10 +89,23 @@ export function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Navigate to="/exercises" replace />} />
         <Route path="/exercises" element={<ExerciseListPage />} />
-        <Route path="/templates" element={<TemplateListPage />} />
-        <Route path="/templates/:id" element={<TemplateDetailPage />} />
-        <Route path="/templates/:id/workout" element={<ActiveWorkoutPage />} />
+        <Route path="/workouts" element={<WorkoutListPage />} />
+        <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
+        <Route path="/workouts/:id/session" element={<ActiveWorkoutPage />} />
+        <Route path="/templates" element={<Navigate to="/workouts" replace />} />
+        <Route path="/templates/:id" element={<LegacyTemplateDetailRedirect />} />
+        <Route path="/templates/:id/workout" element={<LegacyActiveWorkoutRedirect />} />
       </Route>
     </Routes>
   );
+}
+
+function LegacyTemplateDetailRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/workouts/${id}`} replace />;
+}
+
+function LegacyActiveWorkoutRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/workouts/${id}/session`} replace />;
 }

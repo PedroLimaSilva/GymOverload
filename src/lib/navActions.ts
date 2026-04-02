@@ -1,6 +1,6 @@
 import type { NavigateFunction } from "react-router-dom";
 import { db } from "../db/database";
-import { defaultExercise, newId, type WorkoutTemplate } from "../model/types";
+import { defaultExercise, newId, type Workout } from "../model/types";
 
 export async function createExerciseAndNavigate(navigate: NavigateFunction) {
   const ex = defaultExercise();
@@ -8,12 +8,12 @@ export async function createExerciseAndNavigate(navigate: NavigateFunction) {
   navigate(`/exercises/${ex.id}`);
 }
 
-export async function createTemplateAndNavigate(navigate: NavigateFunction) {
-  const t: WorkoutTemplate = {
+export async function createWorkoutAndNavigate(navigate: NavigateFunction) {
+  const w: Workout = {
     id: newId(),
-    name: "New Template",
+    name: "New workout",
     plannedExercises: [],
   };
-  await db.templates.add(t);
-  navigate(`/templates/${t.id}`);
+  await db.workouts.add(w);
+  navigate(`/workouts/${w.id}`);
 }

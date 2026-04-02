@@ -11,8 +11,8 @@ type SetStates = Record<string, { weight: number; reps: number }[]>;
 export function ActiveWorkoutPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const rows = useLiveQuery(() => db.templates.toArray(), []);
-  const template = id && rows ? rows.find((t) => t.id === id) : undefined;
+  const rows = useLiveQuery(() => db.workouts.toArray(), []);
+  const workout = id && rows ? rows.find((w) => w.id === id) : undefined;
   const exercises = useLiveQuery(() => db.exercises.toArray(), []);
 
   const exerciseByName = useMemo(() => {
@@ -26,18 +26,18 @@ export function ActiveWorkoutPage() {
 
   const plannedKey = useMemo(
     () =>
-      template
-        ? template.plannedExercises.map((p) => `${p.id}:${p.sets}:${p.targetReps}`).join("|")
+      workout
+        ? workout.plannedExercises.map((p) => `${p.id}:${p.sets}:${p.targetReps}`).join("|")
         : "",
-    [template]
+    [workout]
   );
 
   useEffect(() => {
-    if (!template) return;
+    if (!workout) return;
     let cancelled = false;
     setReady(false);
     void (async () => {
-      const initial = await buildInitialSetStates(template);
+      const initial = await buildInitialSetStates(workout);
       if (!cancelled) {
         setSetStates(initial);
         setReady(true);
@@ -46,12 +46,12 @@ export function ActiveWorkoutPage() {
     return () => {
       cancelled = true;
     };
-  }, [template?.id, plannedKey, template]);
+  }, [workout?.id, plannedKey, workout]);
 
   useEffect(() => {
     if (!id || rows === undefined) return;
-    if (!template) navigate("/templates", { replace: true });
-  }, [id, rows, template, navigate]);
+    if (!workout) navigate("/workouts", { replace: true });
+  }, [id, rows, workout, navigate]);
 
   const updateSet = useCallback(
     (plannedId: string, setIndex: number, patch: Partial<{ weight: number; reps: number }>) => {
@@ -68,27 +68,27 @@ export function ActiveWorkoutPage() {
   );
 
   async function finish() {
-    if (!template || !ready) return;
-    await saveCompletedWorkout(template, setStates);
-    navigate(`/templates/${template.id}`);
+    if (!workout || !ready) return;
+    await saveCompletedWorkout(workout, setStates);
+    navigate(`/workouts/${workout.id}`);
   }
 
-  if (rows === undefined || !template || !ready) {
+  if (rows === undefined || !workout || !ready) {
     return <p className="empty">Loading…</p>;
   }
 
-  if (template.plannedExercises.length === 0) {
+  if (workout.plannedExercises.length === 0) {
     return (
       <>
         <ScreenHeader
           variant="detail"
           leading={
-            <Link to={`/templates/${template.id}`} className="btn-pill">
+            <Link to={`/workouts/${workout.id}`} className="btn-pill">
               Back
             </Link>
           }
         />
-        <p className="empty">Add exercises to this template before starting a workout.</p>
+        <p className="empty">Add exercises to this workout before starting a session.</p>
       </>
     );
   }
@@ -98,7 +98,7 @@ export function ActiveWorkoutPage() {
       <ScreenHeader
         variant="detail"
         leading={
-          <Link to={`/templates/${template.id}`} className="btn-pill">
+          <Link to={`/workouts/${workout.id}`} className="btn-pill">
             Back
           </Link>
         }
@@ -109,8 +109,8 @@ export function ActiveWorkoutPage() {
         }
       />
       <div className="form">
-        <h2 className="workout-title">{template.name}</h2>
-        {template.plannedExercises.map((pe) => {
+        <h2 className="workout-title">{workout.name}</h2>
+        {workout.plannedExercises.map((pe) => {
           const unit = exerciseByName.get(pe.name)?.weightUnit ?? "kg";
           const row = setStates[pe.id] ?? [];
           return (

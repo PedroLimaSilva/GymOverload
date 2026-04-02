@@ -4,9 +4,9 @@ import { Link, useNavigate } from "react-router-dom";
 import { IconChevronRight } from "../components/Icons";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
-import { deleteSessionsForTemplate } from "../db/workoutHistory";
-import { createTemplateAndNavigate } from "../lib/navActions";
-import type { WorkoutTemplate } from "../model/types";
+import { deleteSessionsForWorkout } from "../db/workoutHistory";
+import { createWorkoutAndNavigate } from "../lib/navActions";
+import type { Workout } from "../model/types";
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -15,22 +15,22 @@ function initials(name: string): string {
   return w.slice(0, 2).toUpperCase();
 }
 
-export function TemplateListPage() {
+export function WorkoutListPage() {
   const navigate = useNavigate();
-  const templates = useLiveQuery(() => db.templates.orderBy("name").toArray(), []);
+  const workouts = useLiveQuery(() => db.workouts.orderBy("name").toArray(), []);
   const [deleteMode, setDeleteMode] = useState(false);
 
-  async function removeTemplate(e: React.MouseEvent, t: WorkoutTemplate) {
+  async function removeWorkout(e: React.MouseEvent, w: Workout) {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm(`Delete “${t.name}”?`)) return;
-    await deleteSessionsForTemplate(t.id);
-    await db.templates.delete(t.id);
+    if (!confirm(`Delete “${w.name}”?`)) return;
+    await deleteSessionsForWorkout(w.id);
+    await db.workouts.delete(w.id);
   }
 
   const menuItems = [
     {
-      label: deleteMode ? "Done deleting" : "Delete templates…",
+      label: deleteMode ? "Done deleting" : "Delete workouts…",
       onSelect: () => setDeleteMode((d) => !d),
     },
   ];
@@ -41,26 +41,26 @@ export function TemplateListPage() {
         variant="main"
         title="Workouts"
         createLabel="Create"
-        onCreate={() => void createTemplateAndNavigate(navigate)}
+        onCreate={() => void createWorkoutAndNavigate(navigate)}
         menuLabel="Workout list menu"
         menuItems={menuItems}
       />
-      {!templates && <p className="empty">Loading…</p>}
-      {templates && templates.length === 0 && <p className="empty">No templates yet.</p>}
-      {templates && templates.length > 0 && (
+      {!workouts && <p className="empty">Loading…</p>}
+      {workouts && workouts.length === 0 && <p className="empty">No workouts yet.</p>}
+      {workouts && workouts.length > 0 && (
         <ul className="list" style={{ marginTop: "0.65rem" }}>
-          {templates.map((t) => (
-            <li key={t.id}>
+          {workouts.map((w) => (
+            <li key={w.id}>
               <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
-                <Link to={`/templates/${t.id}`} className="list-row-link" style={{ flex: 1 }}>
+                <Link to={`/workouts/${w.id}`} className="list-row-link" style={{ flex: 1 }}>
                   <span className="list-row-link__thumb" aria-hidden>
-                    {initials(t.name)}
+                    {initials(w.name)}
                   </span>
                   <span className="list-row-link__body">
-                    <p className="row-title">{t.name}</p>
+                    <p className="row-title">{w.name}</p>
                     <p className="row-sub">
-                      {t.plannedExercises.length
-                        ? `${t.plannedExercises.length} exercises`
+                      {w.plannedExercises.length
+                        ? `${w.plannedExercises.length} exercises`
                         : "No exercises yet"}
                     </p>
                   </span>
@@ -71,8 +71,8 @@ export function TemplateListPage() {
                     type="button"
                     className="btn btn-ghost"
                     style={{ alignSelf: "center", padding: "0.35rem 0.5rem", flexShrink: 0 }}
-                    aria-label={`Delete ${t.name}`}
-                    onClick={(ev) => void removeTemplate(ev, t)}
+                    aria-label={`Delete ${w.name}`}
+                    onClick={(ev) => void removeWorkout(ev, w)}
                   >
                     ✕
                   </button>
