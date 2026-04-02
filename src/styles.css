@@ -25,17 +25,17 @@
 @media (prefers-color-scheme: light) {
   :root {
     color-scheme: light;
-    /* Light: green canvas, logo at original colors */
+    /* Light: green canvas, logo at original colors; accent = brand green */
     --bg: var(--brand-green);
     --surface: #ffffff;
     --surface-2: #f0f4f1;
     --border: color-mix(in srgb, #000 14%, transparent);
     --text: #1a1f1b;
     --muted: #3d4a40;
-    --accent: #0d4a1f;
-    --accent-dim: color-mix(in srgb, var(--accent) 12%, transparent);
+    --accent: var(--brand-green);
+    --accent-dim: color-mix(in srgb, var(--brand-green) 18%, transparent);
     --danger: #b3261e;
-    --on-accent: #ffffff;
+    --on-accent: #0f1f12;
   }
 }
 
@@ -82,6 +82,17 @@ textarea {
   width: 100%;
   padding: 0 1rem 1rem;
   padding-bottom: calc(4.5rem + var(--safe-bottom));
+}
+
+/* Light: white card on green so links/chips in brand green read clearly */
+@media (prefers-color-scheme: light) {
+  .app-shell {
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    box-shadow: 0 -4px 24px color-mix(in srgb, #000 6%, transparent);
+  }
 }
 
 .app-header {
