@@ -36,6 +36,7 @@ They must be able to:
 - **React Router** for `/exercises`, `/exercises/:id`, `/templates`, `/templates/:id`
 - **Dexie** (IndexedDB) for `exercises` and `templates` tables
 - **vite-plugin-pwa**: Web App Manifest, `generateSW` Workbox build, `registerSW` in `src/pwa.ts`
+- **App icon**: `scripts/app-icon-source.png` (legacy 1024×1024); `scripts/make-pwa-icons.mjs` writes `public/pwa-*.png`, `favicon-32.png`, and `apple-touch-icon.png` before `dev`/`build`
 - **Vitest** for lightweight tests (`src/model/types.test.ts` imports seed JSON)
 
 ## Data contract

@@ -1,33 +1,65 @@
-import { createWriteStream } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PNG } from "pngjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "public");
+const sourcePath = join(__dirname, "app-icon-source.png");
 
-function writeSolidPng(filename, size, r, g, b) {
-  const png = new PNG({ width: size, height: size });
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const idx = (size * y + x) << 2;
-      png.data[idx] = r;
-      png.data[idx + 1] = g;
-      png.data[idx + 2] = b;
-      png.data[idx + 3] = 255;
+/**
+ * Bilinear resize from a decoded pngjs PNG to a new PNG buffer (written by caller).
+ */
+function resizePng(src, dstW, dstH) {
+  const sw = src.width;
+  const sh = src.height;
+  const srcData = src.data;
+  const dst = new PNG({ width: dstW, height: dstH });
+
+  for (let y = 0; y < dstH; y++) {
+    for (let x = 0; x < dstW; x++) {
+      const sx = ((x + 0.5) * sw) / dstW - 0.5;
+      const sy = ((y + 0.5) * sh) / dstH - 0.5;
+      const x0 = Math.max(0, Math.min(sw - 1, Math.floor(sx)));
+      const y0 = Math.max(0, Math.min(sh - 1, Math.floor(sy)));
+      const x1 = Math.max(0, Math.min(sw - 1, x0 + 1));
+      const y1 = Math.max(0, Math.min(sh - 1, y0 + 1));
+      const fx = sx - x0;
+      const fy = sy - y0;
+      const di = (dstW * y + x) << 2;
+
+      for (let c = 0; c < 4; c++) {
+        const i00 = ((sh * y0 + x0) << 2) + c;
+        const i10 = ((sh * y0 + x1) << 2) + c;
+        const i01 = ((sh * y1 + x0) << 2) + c;
+        const i11 = ((sh * y1 + x1) << 2) + c;
+        const v00 = srcData[i00];
+        const v10 = srcData[i10];
+        const v01 = srcData[i01];
+        const v11 = srcData[i11];
+        const top = v00 * (1 - fx) + v10 * fx;
+        const bot = v01 * (1 - fx) + v11 * fx;
+        dst.data[di + c] = Math.round(top * (1 - fy) + bot * fy);
+      }
     }
   }
-  return new Promise((resolve, reject) => {
-    png
-      .pack()
-      .pipe(createWriteStream(filename))
-      .on("finish", resolve)
-      .on("error", reject);
-  });
+  return dst;
 }
 
-await mkdir(publicDir, { recursive: true });
-// Brand fill #1e3a5f
-await writeSolidPng(join(publicDir, "pwa-192.png"), 192, 30, 58, 95);
-await writeSolidPng(join(publicDir, "pwa-512.png"), 512, 30, 58, 95);
+function writePng(path, png) {
+  writeFileSync(path, PNG.sync.write(png));
+}
+
+const raw = readFileSync(sourcePath);
+const source = PNG.sync.read(raw);
+
+if (source.width !== source.height) {
+  console.warn(
+    "make-pwa-icons: source is not square; resizing uses full bitmap (may look stretched in maskable slots)."
+  );
+}
+
+writePng(join(publicDir, "pwa-192.png"), resizePng(source, 192, 192));
+writePng(join(publicDir, "pwa-512.png"), resizePng(source, 512, 512));
+writePng(join(publicDir, "favicon-32.png"), resizePng(source, 32, 32));
+writePng(join(publicDir, "apple-touch-icon.png"), resizePng(source, 180, 180));

@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/make-pwa-icons.mjs",
     "dev": "vite",
     "prebuild": "node scripts/make-pwa-icons.mjs",
     "build": "tsc -p tsconfig.json --noEmit && vite build",

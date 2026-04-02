@@ -7,7 +7,12 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "seed/exercises.json", "seed/templates.json"],
+      includeAssets: [
+        "favicon-32.png",
+        "apple-touch-icon.png",
+        "seed/exercises.json",
+        "seed/templates.json",
+      ],
       manifest: {
         name: "GymOverload",
         short_name: "GymOverload",
