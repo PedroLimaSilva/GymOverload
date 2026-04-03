@@ -1,6 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowUpDown,
   BarChart3,
@@ -10,6 +10,7 @@ import {
   GripHorizontal,
   Play,
   Plus,
+  Square,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -17,10 +18,12 @@ import { CategoryPickerModal } from "../components/CategoryPickerModal";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import {
+  buildInitialSetStates,
   deleteSessionsForWorkout,
   lastPerformanceBySetForExercise,
   lastSessionSummaryForExercise,
   priorSessionId,
+  saveCompletedWorkout,
 } from "../db/workoutHistory";
 import type { Exercise, ExerciseCategory, PlannedExercise, Workout } from "../model/types";
 import { planRowDefaults, plannedFromDTO } from "../model/types";
@@ -28,10 +31,16 @@ import { planRowDefaults, plannedFromDTO } from "../model/types";
 export function WorkoutDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sessionActive = searchParams.get("session") === "1";
   const rows = useLiveQuery(() => db.workouts.toArray(), []);
   const workout = id && rows ? rows.find((w) => w.id === id) : undefined;
   const [draft, setDraft] = useState<Workout | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [sessionSetStates, setSessionSetStates] = useState<
+    Record<string, { weight: number; reps: number }[]>
+  >({});
+  const [sessionReady, setSessionReady] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
@@ -63,6 +72,44 @@ export function WorkoutDetailPage() {
     return m;
   }, [exercises]);
 
+  const plannedKey = useMemo(
+    () =>
+      draft
+        ? draft.plannedExercises.map((p) => `${p.id}:${p.sets}:${p.targetReps}`).join("|")
+        : "",
+    [draft],
+  );
+
+  useEffect(() => {
+    if (sessionActive) setEditMode(false);
+  }, [sessionActive]);
+
+  useEffect(() => {
+    if (!sessionActive) {
+      setSessionReady(false);
+      return;
+    }
+    if (!draft) return;
+    if (draft.plannedExercises.length === 0) {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+    let cancelled = false;
+    setSessionReady(false);
+    const workoutSnapshot = draft;
+    void (async () => {
+      const initial = await buildInitialSetStates(workoutSnapshot);
+      if (!cancelled) {
+        setSessionSetStates(initial);
+        setSessionReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `draft` identity changes on every persist(); `plannedKey`/`id` capture plan edits.
+  }, [sessionActive, id, plannedKey, setSearchParams]);
+
   useEffect(() => {
     if (workout) setDraft(workout);
   }, [workout]);
@@ -75,6 +122,29 @@ export function WorkoutDetailPage() {
   async function persist(next: Workout) {
     setDraft(next);
     await db.workouts.put(next);
+  }
+
+  const updateSessionSet = useCallback(
+    (plannedId: string, setIndex: number, patch: Partial<{ weight: number; reps: number }>) => {
+      setSessionSetStates((prev) => {
+        const row = prev[plannedId];
+        if (!row || !row[setIndex]) return prev;
+        const nextRow = row.map((cell, i) => (i === setIndex ? { ...cell, ...patch } : cell));
+        return { ...prev, [plannedId]: nextRow };
+      });
+    },
+    [],
+  );
+
+  function discardSession() {
+    if (!confirm("Discard this session? Nothing will be saved to your workout history.")) return;
+    setSearchParams({}, { replace: true });
+  }
+
+  async function finishSession() {
+    if (!draft || !sessionReady) return;
+    await saveCompletedWorkout(draft, sessionSetStates);
+    setSearchParams({}, { replace: true });
   }
 
   async function remove() {
@@ -107,43 +177,60 @@ export function WorkoutDetailPage() {
       <ScreenHeader
         variant="detail"
         leading={
-          <Link to="/workouts" className="btn-icon-circle glass" aria-label="Back to workouts">
-            <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
-          </Link>
+          sessionActive ? (
+            <button
+              type="button"
+              className="btn-icon-circle glass"
+              aria-label="Leave session"
+              onClick={() => discardSession()}
+            >
+              <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
+            </button>
+          ) : (
+            <Link to="/workouts" className="btn-icon-circle glass" aria-label="Back to workouts">
+              <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
+            </Link>
+          )
         }
         center={<span aria-hidden>0:00:00</span>}
         trailing={
-          <div className="workout-detail-header-actions">
-            {editMode ? (
-              <button
-                type="button"
-                className="btn-icon-circle"
-                aria-label="Done reordering"
-                onClick={() => setEditMode(false)}
-              >
-                <Check size={20} aria-hidden strokeWidth={2.5} />
-              </button>
-            ) : (
-              <>
+          sessionActive && sessionReady ? (
+            <button type="button" className="btn btn-primary" onClick={() => void finishSession()}>
+              Finish
+            </button>
+          ) : !sessionActive ? (
+            <div className="workout-detail-header-actions">
+              {editMode ? (
                 <button
                   type="button"
                   className="btn-icon-circle"
-                  aria-label="Reorder exercises"
-                  onClick={() => setEditMode(true)}
+                  aria-label="Done reordering"
+                  onClick={() => setEditMode(false)}
                 >
-                  <ArrowUpDown size={20} aria-hidden strokeWidth={2} />
+                  <Check size={20} aria-hidden strokeWidth={2.5} />
                 </button>
-                <button
-                  type="button"
-                  className="btn-icon-circle"
-                  aria-label="Delete workout"
-                  onClick={() => void remove()}
-                >
-                  <Trash2 size={20} aria-hidden strokeWidth={2} />
-                </button>
-              </>
-            )}
-          </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="btn-icon-circle"
+                    aria-label="Reorder exercises"
+                    onClick={() => setEditMode(true)}
+                  >
+                    <ArrowUpDown size={20} aria-hidden strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-icon-circle"
+                    aria-label="Delete workout"
+                    onClick={() => void remove()}
+                  >
+                    <Trash2 size={20} aria-hidden strokeWidth={2} />
+                  </button>
+                </>
+              )}
+            </div>
+          ) : undefined
         }
       />
 
@@ -155,6 +242,7 @@ export function WorkoutDetailPage() {
           value={draft.name}
           placeholder="Workout name"
           aria-label="Workout name"
+          readOnly={sessionActive}
           onChange={(e) => void persist({ ...draft, name: e.target.value })}
         />
         <button
@@ -165,43 +253,80 @@ export function WorkoutDetailPage() {
           {draft.notes?.trim() ? draft.notes.trim() : "Add notes"}
         </button>
         <div className="workout-detail-hero__actions">
-          {canStart ? (
-            <Link to={`/workouts/${draft.id}/session`} className="workout-detail-hero__action">
-              <span className="workout-detail-hero__action-icon">
-                <Play size={22} aria-hidden strokeWidth={2} />
-              </span>
-              Start
-            </Link>
+          {sessionActive ? (
+            sessionReady ? (
+              <>
+                <button
+                  type="button"
+                  className="workout-detail-hero__action"
+                  onClick={() => void finishSession()}
+                >
+                  <span className="workout-detail-hero__action-icon">
+                    <Check size={22} aria-hidden strokeWidth={2} />
+                  </span>
+                  Finish
+                </button>
+                <button
+                  type="button"
+                  className="workout-detail-hero__action"
+                  onClick={() => discardSession()}
+                >
+                  <span className="workout-detail-hero__action-icon">
+                    <Square size={20} aria-hidden strokeWidth={2} />
+                  </span>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <p className="muted" style={{ width: "100%", textAlign: "center", margin: 0 }}>
+                Preparing session…
+              </p>
+            )
           ) : (
-            <button type="button" className="workout-detail-hero__action" disabled>
-              <span className="workout-detail-hero__action-icon">
-                <Play size={22} aria-hidden strokeWidth={2} />
-              </span>
-              Start
-            </button>
+            <>
+              {canStart ? (
+                <button
+                  type="button"
+                  className="workout-detail-hero__action"
+                  onClick={() => setSearchParams({ session: "1" })}
+                >
+                  <span className="workout-detail-hero__action-icon">
+                    <Play size={22} aria-hidden strokeWidth={2} />
+                  </span>
+                  Start
+                </button>
+              ) : (
+                <button type="button" className="workout-detail-hero__action" disabled>
+                  <span className="workout-detail-hero__action-icon">
+                    <Play size={22} aria-hidden strokeWidth={2} />
+                  </span>
+                  Start
+                </button>
+              )}
+              <button
+                type="button"
+                className="workout-detail-hero__action"
+                disabled
+                title="Coming later"
+              >
+                <span className="workout-detail-hero__action-icon">
+                  <BarChart3 size={20} aria-hidden strokeWidth={2} />
+                </span>
+                Statistics
+              </button>
+              <button
+                type="button"
+                className="workout-detail-hero__action"
+                disabled
+                title="Coming later"
+              >
+                <span className="workout-detail-hero__action-icon">
+                  <Upload size={20} aria-hidden strokeWidth={2} />
+                </span>
+                Share
+              </button>
+            </>
           )}
-          <button
-            type="button"
-            className="workout-detail-hero__action"
-            disabled
-            title="Coming later"
-          >
-            <span className="workout-detail-hero__action-icon">
-              <BarChart3 size={20} aria-hidden strokeWidth={2} />
-            </span>
-            Statistics
-          </button>
-          <button
-            type="button"
-            className="workout-detail-hero__action"
-            disabled
-            title="Coming later"
-          >
-            <span className="workout-detail-hero__action-icon">
-              <Upload size={20} aria-hidden strokeWidth={2} />
-            </span>
-            Share
-          </button>
         </div>
       </div>
 
@@ -223,6 +348,33 @@ export function WorkoutDetailPage() {
           <p className="muted" style={{ marginTop: "1.25rem", textAlign: "center" }}>
             No exercises yet. Add exercises below.
           </p>
+        ) : sessionActive ? (
+          sessionReady ? (
+            <div className="workout-detail-exercises">
+              {draft.plannedExercises.map((pe) => {
+                const ex = exerciseByName.get(pe.name);
+                const lastForLog = lastPerformanceBySetForExercise(
+                  latestEntries && latestEntries.length > 0 ? latestEntries : null,
+                  pe,
+                );
+                const row = sessionSetStates[pe.id] ?? [];
+                return (
+                  <SessionExerciseCard
+                    key={pe.id}
+                    planned={pe}
+                    exercise={ex}
+                    lastBySet={lastForLog}
+                    setRow={row}
+                    updateSet={(setIndex, patch) => updateSessionSet(pe.id, setIndex, patch)}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <p className="empty" style={{ marginTop: "1.25rem" }}>
+              Loading…
+            </p>
+          )
         ) : (
           <div className="workout-detail-exercises">
             {draft.plannedExercises.map((pe) => {
@@ -254,13 +406,15 @@ export function WorkoutDetailPage() {
           </div>
         )}
 
-        <button
-          type="button"
-          className="btn btn-primary btn-workout-add-exercises"
-          onClick={() => setPickerOpen(true)}
-        >
-          Add exercises
-        </button>
+        {!sessionActive ? (
+          <button
+            type="button"
+            className="btn btn-primary btn-workout-add-exercises"
+            onClick={() => setPickerOpen(true)}
+          >
+            Add exercises
+          </button>
+        ) : null}
       </div>
 
       {notesModalOpen && (
@@ -464,6 +618,126 @@ function PlannedExerciseCard({
         </button>
       </div>
     </article>
+  );
+}
+
+function SessionExerciseCard({
+  planned,
+  exercise,
+  lastBySet,
+  setRow,
+  updateSet,
+}: {
+  planned: PlannedExercise;
+  exercise: Exercise | undefined;
+  lastBySet: string[];
+  setRow: { weight: number; reps: number }[];
+  updateSet: (setIndex: number, patch: Partial<{ weight: number; reps: number }>) => void;
+}) {
+  const unitLabel = (exercise?.weightUnit === "lb" ? "LB" : "KG").toUpperCase();
+  const primaryCat = exercise?.categories?.[0];
+  const equip = exercise?.equipment;
+  const subLine = [primaryCat, equip].filter(Boolean).join(", ");
+
+  return (
+    <article className="workout-exercise-card">
+      <div className="workout-exercise-card__head">
+        <div className="workout-exercise-card__thumb" aria-hidden>
+          {exercise?.imageDataUrl ? (
+            <img src={exercise.imageDataUrl} alt="" />
+          ) : (
+            <Dumbbell size={22} aria-hidden strokeWidth={2} />
+          )}
+        </div>
+        <div className="workout-exercise-card__meta">
+          <h2 className="workout-exercise-card__name">{planned.name}</h2>
+          {subLine ? <p className="workout-exercise-card__sub">{subLine}</p> : null}
+        </div>
+        <div className="workout-exercise-card__drag-handle" aria-hidden="true">
+          <GripHorizontal size={20} aria-hidden strokeWidth={2} style={{ opacity: 0.2 }} />
+        </div>
+      </div>
+
+      <div
+        className="workout-set-grid workout-set-grid--session"
+        role="table"
+        aria-label="Session sets"
+      >
+        <p className="workout-set-grid__hdr workout-set-grid__hdr--spacer"> </p>
+        <p className="workout-set-grid__hdr">{unitLabel}</p>
+        <p className="workout-set-grid__hdr">REPS</p>
+        <p className="workout-set-grid__hdr" style={{ textAlign: "right" }}>
+          LAST
+        </p>
+        {Array.from({ length: planned.sets }, (_, setIndex) => {
+          const cell = setRow[setIndex];
+          if (!cell) return null;
+          return (
+            <SessionSetRow
+              key={setIndex}
+              setIndex={setIndex}
+              weight={cell.weight}
+              reps={cell.reps}
+              lastLabel={lastBySet[setIndex] ?? ""}
+              onWeight={(w) => updateSet(setIndex, { weight: w })}
+              onReps={(r) => updateSet(setIndex, { reps: r })}
+            />
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
+function SessionSetRow({
+  setIndex,
+  weight,
+  reps,
+  lastLabel,
+  onWeight,
+  onReps,
+}: {
+  setIndex: number;
+  weight: number;
+  reps: number;
+  lastLabel: string;
+  onWeight: (w: number) => void;
+  onReps: (r: number) => void;
+}) {
+  return (
+    <>
+      <span className="workout-set-grid__idx">{setIndex + 1}</span>
+      <input
+        className="workout-set-grid__input"
+        inputMode="decimal"
+        aria-label={`Set ${setIndex + 1} weight`}
+        value={weight === 0 ? "" : String(weight)}
+        onChange={(e) => {
+          const raw = e.target.value.trim();
+          if (raw === "") {
+            onWeight(0);
+            return;
+          }
+          const n = parseFloat(raw.replace(",", "."));
+          if (!Number.isFinite(n) || n < 0) return;
+          onWeight(n);
+        }}
+      />
+      <input
+        className="workout-set-grid__input"
+        inputMode="numeric"
+        aria-label={`Set ${setIndex + 1} reps`}
+        value={String(reps)}
+        onChange={(e) => {
+          const raw = e.target.value.trim();
+          if (raw === "") return;
+          const n = parseInt(raw, 10);
+          if (!Number.isFinite(n) || n < 1) return;
+          onReps(n);
+        }}
+      />
+      <span className="workout-set-grid__last">{lastLabel}</span>
+    </>
   );
 }
 

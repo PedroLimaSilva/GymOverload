@@ -400,6 +400,10 @@ a.workout-detail-hero__action {
   font-variant-numeric: tabular-nums;
 }
 
+.workout-set-grid--session {
+  grid-template-columns: minmax(1.5rem, auto) 1fr 1fr minmax(3.2rem, auto);
+}
+
 .workout-set-grid__hdr {
   font-size: 0.65rem;
   font-weight: 600;
@@ -1164,17 +1168,6 @@ a.workout-detail-hero__action {
 .profile-status--err {
   border: 1px solid var(--danger);
   color: var(--danger);
-}
-
-.profile-import-list {
-  margin: 0 0 0.85rem;
-  padding-left: 1.2rem;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.profile-import-list li + li {
-  margin-top: 0.55rem;
 }
 
 /* Full-screen exercise edit modal */
