@@ -80,7 +80,7 @@ This is a single-service, client-side-only PWA. There is no backend, no database
 
 ### Quick reference
 
-- **Install deps**: `corepack enable` then `yarn install` (CI: `yarn install --immutable`)
+- **Install deps**: `corepack enable` then `yarn install` (CI: `yarn install --immutable`). The repo’s `preinstall` script rejects `npm install` / other clients so the lockfile stays consistent.
 - **Tests**: `yarn test` (Vitest, fast — currently one test file)
 - **Type-check + build**: `yarn build` (runs `tsc --noEmit` then `vite build`)
 - **Format**: `yarn format` / `yarn format:check` (Prettier; enforced in CI)

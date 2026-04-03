@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "preinstall": "node scripts/enforce-yarn-install.mjs",
     "predev": "node scripts/make-pwa-icons.mjs",
     "dev": "vite",
     "prebuild": "node scripts/make-pwa-icons.mjs",
