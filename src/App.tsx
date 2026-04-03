@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, Route, Routes, useParams } from "react-router-dom";
+import { ClipboardList, Dumbbell, History, Home, Settings } from "lucide-react";
 import { ensureSeeded } from "./db/bootstrap";
-import {
-  IconClipboard,
-  IconDumbbell,
-  IconHistory,
-  IconHome,
-  IconSettings,
-} from "./components/Icons";
 import { ExerciseDetailPage } from "./pages/ExerciseDetailPage";
 import { ExerciseListPage } from "./pages/ExerciseListPage";
 import { ActiveWorkoutPage } from "./pages/ActiveWorkoutPage";
@@ -26,31 +20,31 @@ function AppLayout() {
       <nav className="tab-nav glass" aria-label="Main">
         <span className="tab-nav__disabled" aria-hidden="true">
           <span className="tab-nav__icon-wrap">
-            <IconHome />
+            <Home size={22} aria-hidden />
           </span>
           Home
         </span>
         <NavLink to="/workouts" end title="Workouts">
           <span className="tab-nav__icon-wrap">
-            <IconClipboard />
+            <ClipboardList size={22} aria-hidden />
           </span>
           Workouts
         </NavLink>
         <span className="tab-nav__disabled" aria-hidden="true">
           <span className="tab-nav__icon-wrap">
-            <IconHistory />
+            <History size={22} aria-hidden />
           </span>
           History
         </span>
         <NavLink to="/exercises" end title="Exercises">
           <span className="tab-nav__icon-wrap">
-            <IconDumbbell />
+            <Dumbbell size={22} aria-hidden />
           </span>
           Exercises
         </NavLink>
         <NavLink to="/settings" end title="Settings">
           <span className="tab-nav__icon-wrap">
-            <IconSettings />
+            <Settings size={22} aria-hidden />
           </span>
           Settings
         </NavLink>

@@ -1,13 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  IconCamera,
-  IconCheck,
-  IconChevronRight,
-  IconChevronUpDown,
-  IconClose,
-} from "../components/Icons";
+import { Camera, Check, ChevronRight, ChevronsUpDown, X } from "lucide-react";
 import { db } from "../db/database";
 import {
   EQUIPMENT_PRESETS,
@@ -137,7 +131,7 @@ export function ExerciseDetailPage() {
           aria-label="Close"
           onClick={closeModal}
         >
-          <IconClose />
+          <X size={18} aria-hidden strokeWidth={2.2} />
         </button>
         <button
           type="button"
@@ -145,7 +139,7 @@ export function ExerciseDetailPage() {
           aria-label="Done"
           onClick={closeModal}
         >
-          <IconCheck />
+          <Check size={18} aria-hidden strokeWidth={2.5} />
         </button>
       </div>
       <h1 className="exercise-detail-modal__title">Edit exercise</h1>
@@ -196,7 +190,7 @@ export function ExerciseDetailPage() {
                 </option>
               ))}
             </select>
-            <IconChevronUpDown className="edit-card__chevron" />
+            <ChevronsUpDown className="edit-card__chevron" size={14} aria-hidden strokeWidth={2} />
           </span>
         </label>
         <button
@@ -210,7 +204,7 @@ export function ExerciseDetailPage() {
             <span className="edit-card__value" style={{ maxWidth: "none" }}>
               {secondaryMuscles.length ? secondaryMuscles.join(", ") : "None"}
             </span>
-            <IconChevronRight className="edit-card__chevron" />
+            <ChevronRight className="edit-card__chevron" size={14} aria-hidden strokeWidth={2.5} />
           </span>
         </button>
         <label className="edit-card__row" htmlFor="ex-equipment">
@@ -228,7 +222,7 @@ export function ExerciseDetailPage() {
                 </option>
               ))}
             </select>
-            <IconChevronUpDown className="edit-card__chevron" />
+            <ChevronsUpDown className="edit-card__chevron" size={14} aria-hidden strokeWidth={2} />
           </span>
         </label>
         <label className="edit-card__row" htmlFor="ex-type">
@@ -246,7 +240,7 @@ export function ExerciseDetailPage() {
                 </option>
               ))}
             </select>
-            <IconChevronUpDown className="edit-card__chevron" />
+            <ChevronsUpDown className="edit-card__chevron" size={14} aria-hidden strokeWidth={2} />
           </span>
         </label>
         <label className="edit-card__row" htmlFor="ex-training-cat">
@@ -266,7 +260,7 @@ export function ExerciseDetailPage() {
                 </option>
               ))}
             </select>
-            <IconChevronUpDown className="edit-card__chevron" />
+            <ChevronsUpDown className="edit-card__chevron" size={14} aria-hidden strokeWidth={2} />
           </span>
         </label>
         <div className="edit-card__row edit-card__row--textarea">
@@ -313,7 +307,7 @@ export function ExerciseDetailPage() {
           aria-label={draft.imageDataUrl ? "Change exercise photo" : "Add exercise photo"}
           onClick={() => fileRef.current?.click()}
         >
-          <IconCamera />
+          <Camera size={22} aria-hidden strokeWidth={2} />
         </button>
       </div>
 

@@ -103,6 +103,12 @@ export class GymOverloadDB extends Dexie {
             if (ex.equipment === undefined) ex.equipment = "Barbell";
           });
       });
+    this.version(6).stores({
+      exercises: "id, createdAt, name",
+      workouts: "id, name",
+      workoutSessions: "id, workoutId, completedAt",
+      loggedExerciseEntries: "id, sessionId, [sessionId+plannedExerciseId+setIndex]",
+    });
   }
 }
 

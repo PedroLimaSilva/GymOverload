@@ -102,3 +102,32 @@ export function lastSessionSummaryForExercise(
   }
   return parts.length ? `Last: ${parts.join(", ")}` : null;
 }
+
+/** Second-newest session id for per-set “last” labels (needs at least two completed sessions). */
+export function priorSessionId(sessions: WorkoutSession[]): string | undefined {
+  if (sessions.length < 2) return undefined;
+  const sorted = [...sessions].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
+  return sorted[1]?.id;
+}
+
+/** Per-set "last time" label like `70×12`, or empty string when unknown. */
+export function lastPerformanceBySetForExercise(
+  priorEntries: LoggedExerciseEntry[] | null,
+  planned: PlannedExercise,
+): string[] {
+  const labels: string[] = [];
+  for (let i = 0; i < planned.sets; i++) {
+    if (!priorEntries) {
+      labels.push("");
+      continue;
+    }
+    const e = priorEntries.find((x) => x.plannedExerciseId === planned.id && x.setIndex === i);
+    if (!e) {
+      labels.push("");
+      continue;
+    }
+    const w = Number.isInteger(e.weight) ? String(e.weight) : e.weight.toFixed(1);
+    labels.push(`${w}×${e.reps}`);
+  }
+  return labels;
+}

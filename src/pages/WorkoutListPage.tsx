@@ -1,7 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { IconChevronRight } from "../components/Icons";
+import { ChevronRight } from "lucide-react";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import { deleteSessionsForWorkout } from "../db/workoutHistory";
@@ -64,7 +64,12 @@ export function WorkoutListPage() {
                         : "No exercises yet"}
                     </p>
                   </span>
-                  <IconChevronRight className="list-row-link__chevron" />
+                  <ChevronRight
+                    className="list-row-link__chevron"
+                    size={14}
+                    aria-hidden
+                    strokeWidth={2.5}
+                  />
                 </Link>
                 {deleteMode && (
                   <button

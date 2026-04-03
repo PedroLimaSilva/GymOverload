@@ -1,13 +1,29 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  ArrowUpDown,
+  BarChart3,
+  Check,
+  ChevronLeft,
+  Dumbbell,
+  GripHorizontal,
+  Play,
+  Plus,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
-import { OverflowMenu } from "../components/OverflowMenu";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
-import { deleteSessionsForWorkout, lastSessionSummaryForExercise } from "../db/workoutHistory";
+import {
+  deleteSessionsForWorkout,
+  lastPerformanceBySetForExercise,
+  lastSessionSummaryForExercise,
+  priorSessionId,
+} from "../db/workoutHistory";
 import type { Exercise, ExerciseCategory, PlannedExercise, Workout } from "../model/types";
-import { plannedFromDTO } from "../model/types";
+import { planRowDefaults, plannedFromDTO } from "../model/types";
 
 export function WorkoutDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,14 +33,22 @@ export function WorkoutDetailPage() {
   const [draft, setDraft] = useState<Workout | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [notesModalOpen, setNotesModalOpen] = useState(false);
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
   const sessionsForWorkout = useLiveQuery(
     () => (id ? db.workoutSessions.where("workoutId").equals(id).toArray() : []),
     [id],
   );
-  const latestSession = sessionsForWorkout
-    ? [...sessionsForWorkout].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1))[0]
-    : undefined;
+  const sortedSessions = useMemo(() => {
+    if (!sessionsForWorkout) return [];
+    return [...sessionsForWorkout].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
+  }, [sessionsForWorkout]);
+  const latestSession = sortedSessions[0];
+  const priorSid = priorSessionId(sortedSessions);
+  const priorEntries = useLiveQuery(
+    () => (priorSid ? db.loggedExerciseEntries.where("sessionId").equals(priorSid).toArray() : []),
+    [priorSid],
+  );
   const latestEntries = useLiveQuery(
     () =>
       latestSession
@@ -32,6 +56,12 @@ export function WorkoutDetailPage() {
         : [],
     [latestSession?.id],
   );
+
+  const exerciseByName = useMemo(() => {
+    const m = new Map<string, Exercise>();
+    for (const ex of exercises ?? []) m.set(ex.name, ex);
+    return m;
+  }, [exercises]);
 
   useEffect(() => {
     if (workout) setDraft(workout);
@@ -70,74 +100,114 @@ export function WorkoutDetailPage() {
     return <p className="empty">Loading…</p>;
   }
 
+  const canStart = draft.plannedExercises.length > 0;
+
   return (
     <>
       <ScreenHeader
         variant="detail"
         leading={
-          <Link to="/workouts" className="btn-pill glass">
-            Back
+          <Link to="/workouts" className="btn-icon-circle glass" aria-label="Back to workouts">
+            <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
           </Link>
         }
+        center={<span aria-hidden>0:00:00</span>}
         trailing={
-          <OverflowMenu
-            label="Workout actions"
-            items={[
-              {
-                label: editMode ? "Done reordering" : "Edit exercise order…",
-                onSelect: () => setEditMode((e) => !e),
-              },
-              { label: "Delete workout", onSelect: () => void remove() },
-            ]}
-          />
+          <div className="workout-detail-header-actions">
+            {editMode ? (
+              <button
+                type="button"
+                className="btn-icon-circle"
+                aria-label="Done reordering"
+                onClick={() => setEditMode(false)}
+              >
+                <Check size={20} aria-hidden strokeWidth={2.5} />
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn-icon-circle"
+                  aria-label="Reorder exercises"
+                  onClick={() => setEditMode(true)}
+                >
+                  <ArrowUpDown size={20} aria-hidden strokeWidth={2} />
+                </button>
+                <button
+                  type="button"
+                  className="btn-icon-circle"
+                  aria-label="Delete workout"
+                  onClick={() => void remove()}
+                >
+                  <Trash2 size={20} aria-hidden strokeWidth={2} />
+                </button>
+              </>
+            )}
+          </div>
         }
       />
-      <div className="form">
-        <div className="form-section">
-          {draft.plannedExercises.length > 0 ? (
-            <Link
-              to={`/workouts/${draft.id}/session`}
-              className="btn btn-primary"
-              style={{
-                display: "block",
-                width: "100%",
-                textAlign: "center",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Start workout
+
+      <div className="workout-detail-hero">
+        <input
+          id="workout-detail-name"
+          className="workout-detail-hero__title"
+          type="text"
+          value={draft.name}
+          placeholder="Workout name"
+          aria-label="Workout name"
+          onChange={(e) => void persist({ ...draft, name: e.target.value })}
+        />
+        <button
+          type="button"
+          className="workout-detail-hero__notes"
+          onClick={() => setNotesModalOpen(true)}
+        >
+          {draft.notes?.trim() ? draft.notes.trim() : "Add notes"}
+        </button>
+        <div className="workout-detail-hero__actions">
+          {canStart ? (
+            <Link to={`/workouts/${draft.id}/session`} className="workout-detail-hero__action">
+              <span className="workout-detail-hero__action-icon">
+                <Play size={22} aria-hidden strokeWidth={2} />
+              </span>
+              Start
             </Link>
           ) : (
-            <button
-              type="button"
-              className="btn btn-primary"
-              disabled
-              style={{ width: "100%", marginBottom: "0.5rem" }}
-            >
-              Start workout
+            <button type="button" className="workout-detail-hero__action" disabled>
+              <span className="workout-detail-hero__action-icon">
+                <Play size={22} aria-hidden strokeWidth={2} />
+              </span>
+              Start
             </button>
           )}
-          {draft.plannedExercises.length === 0 && (
-            <p className="muted" style={{ marginTop: 0, fontSize: "0.9rem" }}>
-              Add exercises to enable logging.
-            </p>
-          )}
+          <button
+            type="button"
+            className="workout-detail-hero__action"
+            disabled
+            title="Coming later"
+          >
+            <span className="workout-detail-hero__action-icon">
+              <BarChart3 size={20} aria-hidden strokeWidth={2} />
+            </span>
+            Statistics
+          </button>
+          <button
+            type="button"
+            className="workout-detail-hero__action"
+            disabled
+            title="Coming later"
+          >
+            <span className="workout-detail-hero__action-icon">
+              <Upload size={20} aria-hidden strokeWidth={2} />
+            </span>
+            Share
+          </button>
         </div>
-        <div className="form-section">
-          <h2>Workout name</h2>
-          <div className="field">
-            <label htmlFor="workout-name">Name</label>
-            <input
-              id="workout-name"
-              type="text"
-              value={draft.name}
-              onChange={(e) => void persist({ ...draft, name: e.target.value })}
-            />
-          </div>
-        </div>
-        <div className="form-section">
-          <h2>Exercises</h2>
-          {editMode ? (
+      </div>
+
+      <div className="form" style={{ marginTop: 0 }}>
+        {editMode ? (
+          <div className="form-section" style={{ marginTop: "1rem" }}>
             <ReorderList
               items={draft.plannedExercises}
               onReorder={(next) => void persist({ ...draft, plannedExercises: next })}
@@ -148,39 +218,62 @@ export function WorkoutDetailPage() {
                 })
               }
             />
-          ) : draft.plannedExercises.length === 0 ? (
-            <p className="muted">No exercises added yet.</p>
-          ) : (
-            draft.plannedExercises.map((pe) => (
-              <PlannedEditor
-                key={pe.id}
-                planned={pe}
-                lastSummary={
-                  latestEntries && latestEntries.length > 0
-                    ? lastSessionSummaryForExercise(latestEntries, pe)
-                    : null
-                }
-                onChange={(next) =>
-                  void persist({
-                    ...draft,
-                    plannedExercises: draft.plannedExercises.map((p) =>
-                      p.id === pe.id ? next : p,
-                    ),
-                  })
-                }
-              />
-            ))
-          )}
-        </div>
+          </div>
+        ) : draft.plannedExercises.length === 0 ? (
+          <p className="muted" style={{ marginTop: "1.25rem", textAlign: "center" }}>
+            No exercises yet. Add exercises below.
+          </p>
+        ) : (
+          <div className="workout-detail-exercises">
+            {draft.plannedExercises.map((pe) => {
+              const ex = exerciseByName.get(pe.name);
+              const priorForLast = priorSid ? (priorEntries ?? null) : null;
+              const lastBySet = lastPerformanceBySetForExercise(priorForLast, pe);
+              const sessionSummary =
+                latestEntries && latestEntries.length > 0
+                  ? lastSessionSummaryForExercise(latestEntries, pe)
+                  : null;
+              return (
+                <PlannedExerciseCard
+                  key={pe.id}
+                  planned={pe}
+                  exercise={ex}
+                  lastBySet={lastBySet}
+                  sessionSummary={sessionSummary}
+                  onChange={(next) =>
+                    void persist({
+                      ...draft,
+                      plannedExercises: draft.plannedExercises.map((p) =>
+                        p.id === pe.id ? next : p,
+                      ),
+                    })
+                  }
+                />
+              );
+            })}
+          </div>
+        )}
+
         <button
           type="button"
-          className="btn btn-primary"
-          style={{ width: "100%", marginTop: "0.75rem" }}
+          className="btn btn-primary btn-workout-add-exercises"
           onClick={() => setPickerOpen(true)}
         >
-          Add exercise
+          Add exercises
         </button>
       </div>
+
+      {notesModalOpen && (
+        <NotesModal
+          initial={draft.notes ?? ""}
+          onSave={(notes) => {
+            void persist({ ...draft, notes: notes.trim() ? notes.trim() : undefined });
+            setNotesModalOpen(false);
+          }}
+          onClose={() => setNotesModalOpen(false)}
+        />
+      )}
+
       {pickerOpen && exercises && (
         <ExerciseMultiPickerModal
           exercises={exercises}
@@ -192,64 +285,250 @@ export function WorkoutDetailPage() {
   );
 }
 
-function PlannedEditor({
-  planned,
-  lastSummary,
-  onChange,
+function NotesModal({
+  initial,
+  onSave,
+  onClose,
 }: {
-  planned: PlannedExercise;
-  lastSummary: string | null;
-  onChange: (next: PlannedExercise) => void;
+  initial: string;
+  onSave: (notes: string) => void;
+  onClose: () => void;
 }) {
+  const [text, setText] = useState(initial);
   return (
-    <div className="planned-card">
-      <h3>{planned.name}</h3>
-      {lastSummary && (
-        <p className="muted" style={{ margin: "0 0 0.5rem", fontSize: "0.85rem" }}>
-          {lastSummary}
-        </p>
-      )}
-      <div className="field">
-        <label>Target reps</label>
-        <div className="stepper">
-          <button
-            type="button"
-            onClick={() =>
-              onChange({ ...planned, targetReps: Math.max(1, planned.targetReps - 1) })
-            }
-          >
-            −
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="workout-notes-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <header>
+          <h2 id="workout-notes-title">Workout notes</h2>
+          <button type="button" className="btn btn-ghost" onClick={onClose}>
+            Cancel
           </button>
-          <span style={{ minWidth: "2rem", textAlign: "center" }}>{planned.targetReps}</span>
+        </header>
+        <div className="body">
+          <textarea
+            className="edit-card__textarea"
+            style={{ minHeight: "8rem", marginTop: "0.5rem" }}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Optional notes for this workout…"
+          />
           <button
             type="button"
-            onClick={() =>
-              onChange({ ...planned, targetReps: Math.min(30, planned.targetReps + 1) })
-            }
+            className="btn btn-primary"
+            style={{ width: "100%", marginTop: "0.75rem" }}
+            onClick={() => onSave(text)}
           >
-            +
-          </button>
-        </div>
-      </div>
-      <div className="field">
-        <label>Sets</label>
-        <div className="stepper">
-          <button
-            type="button"
-            onClick={() => onChange({ ...planned, sets: Math.max(1, planned.sets - 1) })}
-          >
-            −
-          </button>
-          <span style={{ minWidth: "2rem", textAlign: "center" }}>{planned.sets}</span>
-          <button
-            type="button"
-            onClick={() => onChange({ ...planned, sets: Math.min(10, planned.sets + 1) })}
-          >
-            +
+            Save
           </button>
         </div>
       </div>
     </div>
+  );
+}
+
+function ensurePlanArrays(planned: PlannedExercise): { weights: number[]; reps: number[] } {
+  const rows = planRowDefaults(planned);
+  return {
+    weights: rows.map((r) => r.weight),
+    reps: rows.map((r) => r.reps),
+  };
+}
+
+function PlannedExerciseCard({
+  planned,
+  exercise,
+  lastBySet,
+  sessionSummary,
+  onChange,
+}: {
+  planned: PlannedExercise;
+  exercise: Exercise | undefined;
+  lastBySet: string[];
+  sessionSummary: string | null;
+  onChange: (next: PlannedExercise) => void;
+}) {
+  const rows = planRowDefaults(planned);
+  const unitLabel = (exercise?.weightUnit === "lb" ? "LB" : "KG").toUpperCase();
+  const primaryCat = exercise?.categories?.[0];
+  const equip = exercise?.equipment;
+  const subLine = [primaryCat, equip].filter(Boolean).join(", ");
+
+  return (
+    <article className="workout-exercise-card">
+      <div className="workout-exercise-card__head">
+        <div className="workout-exercise-card__thumb" aria-hidden>
+          {exercise?.imageDataUrl ? (
+            <img src={exercise.imageDataUrl} alt="" />
+          ) : (
+            <Dumbbell size={22} aria-hidden strokeWidth={2} />
+          )}
+        </div>
+        <div className="workout-exercise-card__meta">
+          <h2 className="workout-exercise-card__name">
+            {exercise ? <Link to={`/exercises/${exercise.id}`}>{planned.name}</Link> : planned.name}
+          </h2>
+          {subLine ? <p className="workout-exercise-card__sub">{subLine}</p> : null}
+          {sessionSummary ? (
+            <p className="muted" style={{ margin: "0.35rem 0 0", fontSize: "0.78rem" }}>
+              {sessionSummary}
+            </p>
+          ) : null}
+        </div>
+        <div className="workout-exercise-card__drag-handle">
+          <GripHorizontal size={20} aria-hidden strokeWidth={2} />
+        </div>
+      </div>
+
+      <div className="workout-set-grid" role="table" aria-label="Planned sets">
+        <p className="workout-set-grid__hdr workout-set-grid__hdr--spacer"> </p>
+        <p className="workout-set-grid__hdr">{unitLabel}</p>
+        <p className="workout-set-grid__hdr">REPS</p>
+        <p className="workout-set-grid__hdr" style={{ textAlign: "right" }}>
+          LAST
+        </p>
+        <p className="workout-set-grid__hdr workout-set-grid__hdr--spacer" aria-hidden>
+          {" "}
+        </p>
+        {rows.map((cell, setIndex) => (
+          <FragmentRow
+            key={setIndex}
+            setIndex={setIndex}
+            weight={cell.weight}
+            reps={cell.reps}
+            lastLabel={lastBySet[setIndex] ?? ""}
+            removeDisabled={planned.sets <= 1}
+            onWeight={(w) => {
+              const { weights, reps } = ensurePlanArrays(planned);
+              weights[setIndex] = w;
+              onChange({
+                ...planned,
+                weightsBySet: weights,
+                repsBySet: reps,
+                targetReps: reps[setIndex] ?? planned.targetReps,
+              });
+            }}
+            onReps={(r) => {
+              const { weights, reps } = ensurePlanArrays(planned);
+              reps[setIndex] = r;
+              const nextTarget = reps[0] ?? r;
+              onChange({
+                ...planned,
+                weightsBySet: weights,
+                repsBySet: reps,
+                targetReps: nextTarget,
+              });
+            }}
+            onRemove={() => {
+              if (planned.sets <= 1) return;
+              const { weights, reps } = ensurePlanArrays(planned);
+              weights.splice(setIndex, 1);
+              reps.splice(setIndex, 1);
+              onChange({
+                ...planned,
+                sets: planned.sets - 1,
+                weightsBySet: weights,
+                repsBySet: reps,
+                targetReps: reps[0] ?? planned.targetReps,
+              });
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="workout-exercise-card__footer">
+        <button
+          type="button"
+          className="workout-exercise-card__add-set"
+          onClick={() => {
+            const { weights, reps } = ensurePlanArrays(planned);
+            weights.push(0);
+            reps.push(planned.targetReps);
+            onChange({
+              ...planned,
+              sets: planned.sets + 1,
+              weightsBySet: weights,
+              repsBySet: reps,
+            });
+          }}
+        >
+          <Plus size={18} aria-hidden strokeWidth={2.2} />
+          Add set
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function FragmentRow({
+  setIndex,
+  weight,
+  reps,
+  lastLabel,
+  removeDisabled,
+  onWeight,
+  onReps,
+  onRemove,
+}: {
+  setIndex: number;
+  weight: number;
+  reps: number;
+  lastLabel: string;
+  removeDisabled: boolean;
+  onWeight: (w: number) => void;
+  onReps: (r: number) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <>
+      <span className="workout-set-grid__idx">{setIndex + 1}</span>
+      <input
+        className="workout-set-grid__input"
+        inputMode="decimal"
+        aria-label={`Set ${setIndex + 1} weight`}
+        value={weight === 0 ? "" : String(weight)}
+        onChange={(e) => {
+          const raw = e.target.value.trim();
+          if (raw === "") {
+            onWeight(0);
+            return;
+          }
+          const n = parseFloat(raw.replace(",", "."));
+          if (!Number.isFinite(n) || n < 0) return;
+          onWeight(n);
+        }}
+      />
+      <input
+        className="workout-set-grid__input"
+        inputMode="numeric"
+        aria-label={`Set ${setIndex + 1} reps`}
+        value={String(reps)}
+        onChange={(e) => {
+          const raw = e.target.value.trim();
+          if (raw === "") return;
+          const n = parseInt(raw, 10);
+          if (!Number.isFinite(n) || n < 1) return;
+          onReps(n);
+        }}
+      />
+      <span className="workout-set-grid__last">{lastLabel}</span>
+      <button
+        type="button"
+        className="workout-set-grid__remove"
+        aria-label={`Remove set ${setIndex + 1}`}
+        disabled={removeDisabled}
+        onClick={onRemove}
+      >
+        <Trash2 size={16} aria-hidden strokeWidth={2} />
+      </button>
+    </>
   );
 }
 
