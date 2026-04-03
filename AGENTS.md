@@ -60,9 +60,9 @@ When changing persisted fields:
 
 ## Testing
 
-- **Unit tests**: `npm test` (Vitest).
-- **Formatting**: `npm run format` (write) / `npm run format:check` (verify).
-- **CI**: `.github/workflows/ci.yml` — install, format check, test, build on Ubuntu + Node 22.
+- **Unit tests**: `yarn test` (Vitest).
+- **Formatting**: `yarn format` (write) / `yarn format:check` (verify).
+- **CI**: `.github/workflows/ci.yml` — install, format check, test, build on Ubuntu; Node version from [`.nvmrc`](.nvmrc).
 
 ## Related docs
 
@@ -74,17 +74,17 @@ Human-oriented overview: [`README.md`](README.md).
 
 This is a single-service, client-side-only PWA. There is no backend, no database server, and no Docker.
 
-| Service         | Command       | Notes                                                                                                                 |
-| --------------- | ------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Vite dev server | `npm run dev` | Runs `predev` hook (`scripts/make-pwa-icons.mjs`) automatically. Add `-- --host 0.0.0.0` to expose outside localhost. |
+| Service         | Command    | Notes                                                                                                              |
+| --------------- | ---------- | ------------------------------------------------------------------------------------------------------------------ |
+| Vite dev server | `yarn dev` | Runs `predev` hook (`scripts/make-pwa-icons.mjs`) automatically. Add `--host 0.0.0.0` to expose outside localhost. |
 
 ### Quick reference
 
-- **Install deps**: `npm ci` (or `npm install`)
-- **Tests**: `npm test` (Vitest, fast — currently one test file)
-- **Type-check + build**: `npm run build` (runs `tsc --noEmit` then `vite build`)
-- **Format**: `npm run format` / `npm run format:check` (Prettier; enforced in CI)
-- **Lint**: No ESLint; type-checking is done via `tsc --noEmit` as part of `npm run build`.
+- **Install deps**: `corepack enable` then `yarn install` (CI: `yarn install --immutable`)
+- **Tests**: `yarn test` (Vitest, fast — currently one test file)
+- **Type-check + build**: `yarn build` (runs `tsc --noEmit` then `vite build`)
+- **Format**: `yarn format` / `yarn format:check` (Prettier; enforced in CI)
+- **Lint**: No ESLint; type-checking is done via `tsc --noEmit` as part of `yarn build`.
 
 ### Gotchas
 

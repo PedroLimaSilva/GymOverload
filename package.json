@@ -24,11 +24,12 @@
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.5.2",
+    "pngjs": "^7.0.0",
+    "prettier": "^3.5.3",
     "typescript": "~5.8.3",
     "vite": "^6.3.5",
     "vite-plugin-pwa": "^1.0.0",
-    "vitest": "^3.1.4",
-    "pngjs": "^7.0.0",
-    "prettier": "^3.5.3"
-  }
+    "vitest": "^3.1.4"
+  },
+  "packageManager": "yarn@4.13.0"
 }
