@@ -143,7 +143,11 @@ export function ExerciseListBody(props: ExerciseListBodyProps) {
 
   return (
     <div className={`list-with-index${showIndex ? " list-with-index--with-scrubber" : ""}`}>
-      <div className="list-with-index__scroll" ref={scrollRef}>
+      <div
+        className="list-with-index__scroll"
+        ref={scrollRef}
+        style={{ paddingBottom: props.mode === "link" ? "7rem" : 0 }}
+      >
         {showIndex ? (
           grouped.map((section) => (
             <section key={section.key} aria-labelledby={sectionElementId(idNamespace, section.key)}>

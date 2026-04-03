@@ -92,7 +92,7 @@ export function SettingsPage() {
   return (
     <div className="list-screen">
       <h1>Settings</h1>
-      <div className="list-with-index__scroll" style={{ paddingBottom: "1rem" }}>
+      <div className="list-with-index__scroll" style={{ paddingBottom: "7rem" }}>
         <div className="form" style={{ marginTop: 0 }}>
           <section className="form-section">
             <h2>Export</h2>
