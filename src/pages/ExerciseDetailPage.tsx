@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Camera, Check, ChevronRight, ChevronsUpDown, X } from "lucide-react";
 import { db } from "../db/database";
@@ -67,6 +67,9 @@ function SecondaryMusclesModal({
 export function ExerciseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const leaveExerciseDetail = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
   const rows = useLiveQuery(() => db.exercises.toArray(), []);
   const exercise = id && rows ? rows.find((e) => e.id === id) : undefined;
   const [draft, setDraft] = useState<Exercise | null>(null);
@@ -79,8 +82,8 @@ export function ExerciseDetailPage() {
 
   useEffect(() => {
     if (!id || rows === undefined) return;
-    if (!exercise) navigate("/exercises", { replace: true });
-  }, [id, rows, exercise, navigate]);
+    if (!exercise) leaveExerciseDetail();
+  }, [id, rows, exercise, leaveExerciseDetail]);
 
   async function persist(next: Exercise) {
     setDraft(next);
@@ -88,13 +91,13 @@ export function ExerciseDetailPage() {
   }
 
   function closeModal() {
-    navigate("/exercises", { replace: true });
+    leaveExerciseDetail();
   }
 
   async function remove() {
     if (!draft || !confirm(`Delete “${draft.name}”?`)) return;
     await db.exercises.delete(draft.id);
-    navigate("/exercises", { replace: true });
+    leaveExerciseDetail();
   }
 
   const equipmentOptions = useMemo(() => {
