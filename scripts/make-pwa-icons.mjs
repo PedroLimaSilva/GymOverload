@@ -7,10 +7,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "public");
 const sourcePath = join(__dirname, "app-icon-source.png");
 
-/** Accent green (matches `src/styles.css` --brand-green) */
-const BR = 0x32;
-const BG = 0xd7;
-const BB = 0x4b;
+/** Brand green #28cd41 (manifest / icon pipeline; UI accent may differ by platform) */
+const BR = 0x28;
+const BG = 0xcd;
+const BB = 0x41;
 
 /**
  * Bilinear resize from a decoded pngjs PNG to a new PNG buffer (written by caller).
@@ -52,9 +52,9 @@ function resizePng(src, dstW, dstH) {
 }
 
 /**
- * Favicon: accent green fill, alpha from luminance × source alpha (gray artwork → green silhouette).
+ * Brand green silhouette: fill #28cd41, alpha from luminance × source alpha (gray artwork → mask).
  */
-function faviconAccentGreen(src, size) {
+function brandGreenSilhouette(src, size) {
   const r = resizePng(src, size, size);
   for (let i = 0; i < r.data.length; i += 4) {
     const sr = r.data[i];
@@ -86,6 +86,6 @@ if (source.width !== source.height) {
 
 writePng(join(publicDir, "pwa-192.png"), resizePng(source, 192, 192));
 writePng(join(publicDir, "pwa-512.png"), resizePng(source, 512, 512));
-writePng(join(publicDir, "favicon-32-light.png"), faviconAccentGreen(source, 32));
-writePng(join(publicDir, "favicon-32-dark.png"), faviconAccentGreen(source, 32));
-writePng(join(publicDir, "apple-touch-icon.png"), resizePng(source, 180, 180));
+writePng(join(publicDir, "favicon-32-light.png"), brandGreenSilhouette(source, 32));
+writePng(join(publicDir, "favicon-32-dark.png"), brandGreenSilhouette(source, 32));
+writePng(join(publicDir, "apple-touch-icon.png"), brandGreenSilhouette(source, 180));
