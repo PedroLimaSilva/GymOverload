@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { IconMenu } from "./Icons";
 
@@ -10,9 +11,12 @@ export type OverflowMenuItem = {
 type Props = {
   label: string;
   items: OverflowMenuItem[];
+  /** Replaces default circular glass trigger (e.g. card row icon) */
+  triggerClassName?: string;
+  icon?: ReactNode;
 };
 
-export function OverflowMenu({ label, items }: Props) {
+export function OverflowMenu({ label, items, triggerClassName, icon }: Props) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -34,17 +38,19 @@ export function OverflowMenu({ label, items }: Props) {
 
   if (items.length === 0) return null;
 
+  const triggerCls = triggerClassName ?? "btn-icon-circle glass";
+
   return (
     <div className="overflow-menu" ref={rootRef}>
       <button
         type="button"
-        className="btn-icon-circle glass"
+        className={triggerCls}
         aria-label={label}
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}
       >
-        <IconMenu />
+        {icon ?? <IconMenu />}
       </button>
       {open && (
         <ul className="overflow-menu__panel" role="menu">

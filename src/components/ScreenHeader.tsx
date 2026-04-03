@@ -13,6 +13,8 @@ type MainProps = {
 type DetailProps = {
   variant: "detail";
   leading: ReactNode;
+  /** Optional centered content (e.g. session timer) between leading and trailing */
+  center?: ReactNode;
   trailing?: ReactNode;
 };
 
@@ -20,10 +22,17 @@ type Props = MainProps | DetailProps;
 
 export function ScreenHeader(props: Props) {
   if (props.variant === "detail") {
+    const rowClass =
+      props.center != null
+        ? "screen-header__detail-row screen-header__detail-row--with-center"
+        : "screen-header__detail-row";
     return (
       <header className="screen-header screen-header--detail">
-        <div className="screen-header__detail-row">
+        <div className={rowClass}>
           {props.leading}
+          {props.center != null ? (
+            <div className="screen-header__detail-center">{props.center}</div>
+          ) : null}
           {props.trailing ? <div className="screen-header__detail-actions">{props.trailing}</div> : null}
         </div>
       </header>
