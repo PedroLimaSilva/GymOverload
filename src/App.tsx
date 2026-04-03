@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { NavLink, Navigate, Outlet, Route, Routes, useParams } from "react-router-dom";
+import { NavLink, Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { ClipboardList, Dumbbell, History, Home, Settings } from "lucide-react";
 import { ensureSeeded } from "./db/bootstrap";
 import { ExerciseDetailPage } from "./pages/ExerciseDetailPage";
 import { ExerciseListPage } from "./pages/ExerciseListPage";
-import { ActiveWorkoutPage } from "./pages/ActiveWorkoutPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { WorkoutDetailPage } from "./pages/WorkoutDetailPage";
 import { WorkoutListPage } from "./pages/WorkoutListPage";
@@ -86,23 +85,9 @@ export function App() {
         <Route path="/exercises" element={<ExerciseListPage />} />
         <Route path="/workouts" element={<WorkoutListPage />} />
         <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
-        <Route path="/workouts/:id/session" element={<ActiveWorkoutPage />} />
-        <Route path="/templates" element={<Navigate to="/workouts" replace />} />
-        <Route path="/templates/:id" element={<LegacyTemplateDetailRedirect />} />
-        <Route path="/templates/:id/workout" element={<LegacyActiveWorkoutRedirect />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<Navigate to="/settings" replace />} />
       </Route>
     </Routes>
   );
-}
-
-function LegacyTemplateDetailRedirect() {
-  const { id } = useParams<{ id: string }>();
-  return <Navigate to={`/workouts/${id}`} replace />;
-}
-
-function LegacyActiveWorkoutRedirect() {
-  const { id } = useParams<{ id: string }>();
-  return <Navigate to={`/workouts/${id}/session`} replace />;
 }

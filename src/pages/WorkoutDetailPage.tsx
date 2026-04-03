@@ -1,15 +1,18 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowUpDown,
   BarChart3,
   Check,
   ChevronLeft,
   Dumbbell,
+  FastForward,
   GripHorizontal,
+  Pause,
   Play,
   Plus,
+  Square,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -17,23 +20,72 @@ import { CategoryPickerModal } from "../components/CategoryPickerModal";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import {
+  buildInitialSetStates,
   deleteSessionsForWorkout,
   lastPerformanceBySetForExercise,
   lastSessionSummaryForExercise,
+  loggedSetKey,
   priorSessionId,
+  saveCompletedWorkout,
 } from "../db/workoutHistory";
 import type { Exercise, ExerciseCategory, PlannedExercise, Workout } from "../model/types";
 import { planRowDefaults, plannedFromDTO } from "../model/types";
 
+function formatSessionHms(totalMs: number): string {
+  const s = Math.max(0, Math.floor(totalMs / 1000));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+}
+
+function findNextPlannedSet(
+  planned: PlannedExercise[],
+  plannedId: string,
+  setIndex: number,
+): { plannedId: string; setIndex: number } | null {
+  const exIdx = planned.findIndex((p) => p.id === plannedId);
+  if (exIdx < 0) return null;
+  const pe = planned[exIdx];
+  if (setIndex + 1 < pe.sets) return { plannedId: pe.id, setIndex: setIndex + 1 };
+  if (exIdx + 1 < planned.length) return { plannedId: planned[exIdx + 1].id, setIndex: 0 };
+  return null;
+}
+
+function defaultRestSecondsForExercise(ex: Exercise | undefined): number {
+  const n = ex?.defaultRestSeconds;
+  if (typeof n === "number" && n > 0) return Math.round(n);
+  return 90;
+}
+
 export function WorkoutDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sessionActive = searchParams.get("session") === "1";
   const rows = useLiveQuery(() => db.workouts.toArray(), []);
   const workout = id && rows ? rows.find((w) => w.id === id) : undefined;
   const [draft, setDraft] = useState<Workout | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [sessionSetStates, setSessionSetStates] = useState<
+    Record<string, { weight: number; reps: number }[]>
+  >({});
+  const [sessionReady, setSessionReady] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
+  const [sessionUiTick, setSessionUiTick] = useState(0);
+  const [sessionWallTimer, setSessionWallTimer] = useState<{
+    accumMs: number;
+    paused: boolean;
+    runSince: number | null;
+  }>({ accumMs: 0, paused: false, runSince: null });
+  const [sessionCompletedKeys, setSessionCompletedKeys] = useState<Set<string>>(() => new Set());
+  const [sessionFocus, setSessionFocus] = useState<{
+    plannedId: string;
+    setIndex: number;
+  } | null>(null);
+  const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  const sessionInitializedRef = useRef(false);
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
   const sessionsForWorkout = useLiveQuery(
     () => (id ? db.workoutSessions.where("workoutId").equals(id).toArray() : []),
@@ -63,6 +115,74 @@ export function WorkoutDetailPage() {
     return m;
   }, [exercises]);
 
+  const plannedKey = useMemo(
+    () =>
+      draft ? draft.plannedExercises.map((p) => `${p.id}:${p.sets}:${p.targetReps}`).join("|") : "",
+    [draft],
+  );
+
+  useEffect(() => {
+    if (sessionActive) setEditMode(false);
+  }, [sessionActive]);
+
+  useEffect(() => {
+    if (!sessionActive || !sessionReady) return;
+    const id = window.setInterval(() => setSessionUiTick((x) => x + 1), 250);
+    return () => clearInterval(id);
+  }, [sessionActive, sessionReady]);
+
+  useEffect(() => {
+    if (!restEndsAt || !sessionActive) return;
+    const tick = () => {
+      if (Date.now() >= restEndsAt) setRestEndsAt(null);
+    };
+    const id = window.setInterval(tick, 400);
+    tick();
+    return () => clearInterval(id);
+  }, [restEndsAt, sessionActive]);
+
+  useEffect(() => {
+    if (!sessionActive) {
+      setSessionReady(false);
+      return;
+    }
+    if (!draft) return;
+    if (draft.plannedExercises.length === 0) {
+      setSearchParams({}, { replace: true });
+      return;
+    }
+    let cancelled = false;
+    setSessionReady(false);
+    const workoutSnapshot = draft;
+    void (async () => {
+      const initial = await buildInitialSetStates(workoutSnapshot);
+      if (!cancelled) {
+        setSessionSetStates(initial);
+        setSessionReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `draft` identity changes on every persist(); `plannedKey`/`id` capture plan edits.
+  }, [sessionActive, id, plannedKey, setSearchParams]);
+
+  useEffect(() => {
+    if (!sessionActive) {
+      sessionInitializedRef.current = false;
+      return;
+    }
+    if (!sessionReady) return;
+    const first = draft?.plannedExercises[0];
+    if (!first) return;
+    if (sessionInitializedRef.current) return;
+    sessionInitializedRef.current = true;
+    setSessionWallTimer({ accumMs: 0, paused: false, runSince: Date.now() });
+    setSessionCompletedKeys(new Set());
+    setSessionFocus({ plannedId: first.id, setIndex: 0 });
+    setRestEndsAt(null);
+  }, [sessionActive, sessionReady, draft]);
+
   useEffect(() => {
     if (workout) setDraft(workout);
   }, [workout]);
@@ -75,6 +195,81 @@ export function WorkoutDetailPage() {
   async function persist(next: Workout) {
     setDraft(next);
     await db.workouts.put(next);
+  }
+
+  const updateSessionSet = useCallback(
+    (plannedId: string, setIndex: number, patch: Partial<{ weight: number; reps: number }>) => {
+      setSessionSetStates((prev) => {
+        const row = prev[plannedId];
+        if (!row || !row[setIndex]) return prev;
+        const nextRow = row.map((cell, i) => (i === setIndex ? { ...cell, ...patch } : cell));
+        return { ...prev, [plannedId]: nextRow };
+      });
+    },
+    [],
+  );
+
+  const selectSessionSet = useCallback(
+    (plannedId: string, setIndex: number) => {
+      if (!draft) return;
+      const pe = draft.plannedExercises.find((p) => p.id === plannedId);
+      const ex = pe ? exerciseByName.get(pe.name) : undefined;
+      const sec = defaultRestSecondsForExercise(ex);
+      setSessionFocus({ plannedId, setIndex });
+      setRestEndsAt(Date.now() + sec * 1000);
+      setSessionWallTimer((t) => {
+        if (!t.paused) return t;
+        return { ...t, paused: false, runSince: Date.now() };
+      });
+    },
+    [draft, exerciseByName],
+  );
+
+  const toggleSessionWallPause = useCallback(() => {
+    const now = Date.now();
+    setSessionWallTimer((t) => {
+      if (!t.paused) {
+        const add = t.runSince != null ? now - t.runSince : 0;
+        return { accumMs: t.accumMs + add, paused: true, runSince: null };
+      }
+      return { ...t, paused: false, runSince: now };
+    });
+  }, []);
+
+  const skipRest = useCallback(() => setRestEndsAt(null), []);
+
+  const sessionDockAdvance = useCallback(() => {
+    if (!draft || !sessionFocus) return;
+    if (restEndsAt !== null) {
+      setRestEndsAt(null);
+      return;
+    }
+    const k = loggedSetKey(sessionFocus.plannedId, sessionFocus.setIndex);
+    setSessionCompletedKeys((prev) => (prev.has(k) ? prev : new Set(prev).add(k)));
+    const next = findNextPlannedSet(
+      draft.plannedExercises,
+      sessionFocus.plannedId,
+      sessionFocus.setIndex,
+    );
+    if (next) {
+      const pe = draft.plannedExercises.find((p) => p.id === next.plannedId);
+      const ex = pe ? exerciseByName.get(pe.name) : undefined;
+      setSessionFocus(next);
+      setRestEndsAt(Date.now() + defaultRestSecondsForExercise(ex) * 1000);
+    } else {
+      setRestEndsAt(null);
+    }
+  }, [draft, sessionFocus, restEndsAt, exerciseByName]);
+
+  function discardSession() {
+    if (!confirm("Discard this session? Nothing will be saved to your workout history.")) return;
+    setSearchParams({}, { replace: true });
+  }
+
+  async function finishSession() {
+    if (!draft || !sessionReady) return;
+    await saveCompletedWorkout(draft, sessionSetStates, sessionCompletedKeys);
+    setSearchParams({}, { replace: true });
   }
 
   async function remove() {
@@ -96,9 +291,28 @@ export function WorkoutDetailPage() {
     setPickerOpen(false);
   }
 
+  const sessionElapsedMs = useMemo(() => {
+    void sessionUiTick;
+    const t = sessionWallTimer;
+    let ms = t.accumMs;
+    if (!t.paused && t.runSince != null) ms += Date.now() - t.runSince;
+    return ms;
+  }, [sessionWallTimer, sessionUiTick]);
+
   if (!draft) {
     return <p className="empty">Loading…</p>;
   }
+
+  void sessionUiTick;
+  const sessionNowMs = Date.now();
+  const dockPlanned = sessionFocus
+    ? draft.plannedExercises.find((p) => p.id === sessionFocus.plannedId)
+    : undefined;
+  const dockExercise = dockPlanned ? exerciseByName.get(dockPlanned.name) : undefined;
+  const restRemainingSec =
+    restEndsAt != null && sessionNowMs < restEndsAt
+      ? Math.max(0, Math.ceil((restEndsAt - sessionNowMs) / 1000))
+      : null;
 
   const canStart = draft.plannedExercises.length > 0;
 
@@ -107,43 +321,62 @@ export function WorkoutDetailPage() {
       <ScreenHeader
         variant="detail"
         leading={
-          <Link to="/workouts" className="btn-icon-circle glass" aria-label="Back to workouts">
-            <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
-          </Link>
+          sessionActive ? (
+            <button
+              type="button"
+              className="btn-icon-circle glass"
+              aria-label="Leave session"
+              onClick={() => discardSession()}
+            >
+              <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
+            </button>
+          ) : (
+            <Link to="/workouts" className="btn-icon-circle glass" aria-label="Back to workouts">
+              <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
+            </Link>
+          )
         }
-        center={<span aria-hidden>0:00:00</span>}
+        center={
+          sessionActive && sessionReady ? (
+            <span className="workout-session-header-timer" aria-live="polite">
+              {formatSessionHms(sessionElapsedMs)}
+            </span>
+          ) : undefined
+        }
         trailing={
-          <div className="workout-detail-header-actions">
-            {editMode ? (
-              <button
-                type="button"
-                className="btn-icon-circle"
-                aria-label="Done reordering"
-                onClick={() => setEditMode(false)}
-              >
-                <Check size={20} aria-hidden strokeWidth={2.5} />
-              </button>
-            ) : (
-              <>
+          !sessionActive ? (
+            <div className="workout-detail-header-actions">
+              {editMode ? (
                 <button
                   type="button"
                   className="btn-icon-circle"
-                  aria-label="Reorder exercises"
-                  onClick={() => setEditMode(true)}
+                  aria-label="Done reordering"
+                  onClick={() => setEditMode(false)}
                 >
-                  <ArrowUpDown size={20} aria-hidden strokeWidth={2} />
+                  <Check size={20} aria-hidden strokeWidth={2.5} />
                 </button>
-                <button
-                  type="button"
-                  className="btn-icon-circle"
-                  aria-label="Delete workout"
-                  onClick={() => void remove()}
-                >
-                  <Trash2 size={20} aria-hidden strokeWidth={2} />
-                </button>
-              </>
-            )}
-          </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="btn-icon-circle"
+                    aria-label="Reorder exercises"
+                    onClick={() => setEditMode(true)}
+                  >
+                    <ArrowUpDown size={20} aria-hidden strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-icon-circle"
+                    aria-label="Delete workout"
+                    onClick={() => void remove()}
+                  >
+                    <Trash2 size={20} aria-hidden strokeWidth={2} />
+                  </button>
+                </>
+              )}
+            </div>
+          ) : undefined
         }
       />
 
@@ -155,6 +388,7 @@ export function WorkoutDetailPage() {
           value={draft.name}
           placeholder="Workout name"
           aria-label="Workout name"
+          readOnly={sessionActive}
           onChange={(e) => void persist({ ...draft, name: e.target.value })}
         />
         <button
@@ -165,43 +399,85 @@ export function WorkoutDetailPage() {
           {draft.notes?.trim() ? draft.notes.trim() : "Add notes"}
         </button>
         <div className="workout-detail-hero__actions">
-          {canStart ? (
-            <Link to={`/workouts/${draft.id}/session`} className="workout-detail-hero__action">
-              <span className="workout-detail-hero__action-icon">
-                <Play size={22} aria-hidden strokeWidth={2} />
-              </span>
-              Start
-            </Link>
+          {sessionActive ? (
+            sessionReady ? (
+              <>
+                <button
+                  type="button"
+                  className="workout-detail-hero__action"
+                  onClick={toggleSessionWallPause}
+                >
+                  <span className="workout-detail-hero__action-icon">
+                    {sessionWallTimer.paused ? (
+                      <Play size={22} aria-hidden strokeWidth={2} />
+                    ) : (
+                      <Pause size={22} aria-hidden strokeWidth={2} />
+                    )}
+                  </span>
+                  {sessionWallTimer.paused ? "Resume" : "Pause"}
+                </button>
+                <button
+                  type="button"
+                  className="workout-detail-hero__action"
+                  onClick={() => void finishSession()}
+                  aria-label="Stop and save workout"
+                >
+                  <span className="workout-detail-hero__action-icon">
+                    <Square size={20} aria-hidden strokeWidth={2} />
+                  </span>
+                  Stop
+                </button>
+              </>
+            ) : (
+              <p className="muted" style={{ width: "100%", textAlign: "center", margin: 0 }}>
+                Preparing session…
+              </p>
+            )
           ) : (
-            <button type="button" className="workout-detail-hero__action" disabled>
-              <span className="workout-detail-hero__action-icon">
-                <Play size={22} aria-hidden strokeWidth={2} />
-              </span>
-              Start
-            </button>
+            <>
+              {canStart ? (
+                <button
+                  type="button"
+                  className="workout-detail-hero__action"
+                  onClick={() => setSearchParams({ session: "1" })}
+                >
+                  <span className="workout-detail-hero__action-icon">
+                    <Play size={22} aria-hidden strokeWidth={2} />
+                  </span>
+                  Start
+                </button>
+              ) : (
+                <button type="button" className="workout-detail-hero__action" disabled>
+                  <span className="workout-detail-hero__action-icon">
+                    <Play size={22} aria-hidden strokeWidth={2} />
+                  </span>
+                  Start
+                </button>
+              )}
+              <button
+                type="button"
+                className="workout-detail-hero__action"
+                disabled
+                title="Coming later"
+              >
+                <span className="workout-detail-hero__action-icon">
+                  <BarChart3 size={20} aria-hidden strokeWidth={2} />
+                </span>
+                Statistics
+              </button>
+              <button
+                type="button"
+                className="workout-detail-hero__action"
+                disabled
+                title="Coming later"
+              >
+                <span className="workout-detail-hero__action-icon">
+                  <Upload size={20} aria-hidden strokeWidth={2} />
+                </span>
+                Share
+              </button>
+            </>
           )}
-          <button
-            type="button"
-            className="workout-detail-hero__action"
-            disabled
-            title="Coming later"
-          >
-            <span className="workout-detail-hero__action-icon">
-              <BarChart3 size={20} aria-hidden strokeWidth={2} />
-            </span>
-            Statistics
-          </button>
-          <button
-            type="button"
-            className="workout-detail-hero__action"
-            disabled
-            title="Coming later"
-          >
-            <span className="workout-detail-hero__action-icon">
-              <Upload size={20} aria-hidden strokeWidth={2} />
-            </span>
-            Share
-          </button>
         </div>
       </div>
 
@@ -223,6 +499,38 @@ export function WorkoutDetailPage() {
           <p className="muted" style={{ marginTop: "1.25rem", textAlign: "center" }}>
             No exercises yet. Add exercises below.
           </p>
+        ) : sessionActive ? (
+          sessionReady ? (
+            <div className="workout-detail-exercises workout-detail-exercises--session-active">
+              {draft.plannedExercises.map((pe) => {
+                const ex = exerciseByName.get(pe.name);
+                const lastForLog = lastPerformanceBySetForExercise(
+                  latestEntries && latestEntries.length > 0 ? latestEntries : null,
+                  pe,
+                );
+                const row = sessionSetStates[pe.id] ?? [];
+                return (
+                  <SessionExerciseCard
+                    key={pe.id}
+                    planned={pe}
+                    exercise={ex}
+                    lastBySet={lastForLog}
+                    setRow={row}
+                    updateSet={(setIndex, patch) => updateSessionSet(pe.id, setIndex, patch)}
+                    sessionFocus={sessionFocus}
+                    sessionNowMs={sessionNowMs}
+                    restEndsAt={restEndsAt}
+                    completedKeys={sessionCompletedKeys}
+                    onSelectSet={(setIndex) => selectSessionSet(pe.id, setIndex)}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <p className="empty" style={{ marginTop: "1.25rem" }}>
+              Loading…
+            </p>
+          )
         ) : (
           <div className="workout-detail-exercises">
             {draft.plannedExercises.map((pe) => {
@@ -254,14 +562,51 @@ export function WorkoutDetailPage() {
           </div>
         )}
 
-        <button
-          type="button"
-          className="btn btn-primary btn-workout-add-exercises"
-          onClick={() => setPickerOpen(true)}
-        >
-          Add exercises
-        </button>
+        {!sessionActive ? (
+          <button
+            type="button"
+            className="btn btn-primary btn-workout-add-exercises"
+            onClick={() => setPickerOpen(true)}
+          >
+            Add exercises
+          </button>
+        ) : null}
       </div>
+
+      {sessionActive && sessionReady && sessionFocus && dockPlanned ? (
+        <div className="workout-session-dock glass" role="region" aria-label="Session controls">
+          {restRemainingSec != null ? (
+            <div className="workout-session-dock__rest">
+              <span className="workout-session-dock__rest-pill">REST {restRemainingSec}</span>
+              <button
+                type="button"
+                className="btn btn-ghost workout-session-dock__skip"
+                onClick={skipRest}
+              >
+                Skip
+              </button>
+            </div>
+          ) : null}
+          <div className="workout-session-dock__row">
+            <div className="workout-session-dock__thumb" aria-hidden>
+              {dockExercise?.imageDataUrl ? (
+                <img src={dockExercise.imageDataUrl} alt="" />
+              ) : (
+                <Dumbbell size={20} aria-hidden strokeWidth={2} />
+              )}
+            </div>
+            <p className="workout-session-dock__title">{dockPlanned.name}</p>
+            <button
+              type="button"
+              className="workout-session-dock__advance"
+              aria-label="Complete current set and continue"
+              onClick={sessionDockAdvance}
+            >
+              <FastForward size={22} aria-hidden strokeWidth={2.2} />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {notesModalOpen && (
         <NotesModal
@@ -464,6 +809,195 @@ function PlannedExerciseCard({
         </button>
       </div>
     </article>
+  );
+}
+
+function SessionExerciseCard({
+  planned,
+  exercise,
+  lastBySet,
+  setRow,
+  updateSet,
+  sessionFocus,
+  sessionNowMs,
+  restEndsAt,
+  completedKeys,
+  onSelectSet,
+}: {
+  planned: PlannedExercise;
+  exercise: Exercise | undefined;
+  lastBySet: string[];
+  setRow: { weight: number; reps: number }[];
+  updateSet: (setIndex: number, patch: Partial<{ weight: number; reps: number }>) => void;
+  sessionFocus: { plannedId: string; setIndex: number } | null;
+  sessionNowMs: number;
+  restEndsAt: number | null;
+  completedKeys: Set<string>;
+  onSelectSet: (setIndex: number) => void;
+}) {
+  const unitLabel = (exercise?.weightUnit === "lb" ? "LB" : "KG").toUpperCase();
+  const primaryCat = exercise?.categories?.[0];
+  const equip = exercise?.equipment;
+  const subLine = [primaryCat, equip].filter(Boolean).join(", ");
+
+  return (
+    <article className="workout-exercise-card">
+      <div className="workout-exercise-card__head">
+        <div className="workout-exercise-card__thumb" aria-hidden>
+          {exercise?.imageDataUrl ? (
+            <img src={exercise.imageDataUrl} alt="" />
+          ) : (
+            <Dumbbell size={22} aria-hidden strokeWidth={2} />
+          )}
+        </div>
+        <div className="workout-exercise-card__meta">
+          <h2 className="workout-exercise-card__name">{planned.name}</h2>
+          {subLine ? <p className="workout-exercise-card__sub">{subLine}</p> : null}
+        </div>
+        <div className="workout-exercise-card__drag-handle" aria-hidden="true">
+          <GripHorizontal size={20} aria-hidden strokeWidth={2} style={{ opacity: 0.2 }} />
+        </div>
+      </div>
+
+      <div
+        className="workout-set-grid workout-set-grid--session"
+        role="table"
+        aria-label="Session sets"
+      >
+        <p className="workout-set-grid__hdr workout-set-grid__hdr--spacer"> </p>
+        <p className="workout-set-grid__hdr">{unitLabel}</p>
+        <p className="workout-set-grid__hdr">REPS</p>
+        <p className="workout-set-grid__hdr" style={{ textAlign: "right" }}>
+          LAST
+        </p>
+        {Array.from({ length: planned.sets }, (_, setIndex) => {
+          const cell = setRow[setIndex];
+          if (!cell) return null;
+          const k = loggedSetKey(planned.id, setIndex);
+          const isDone = completedKeys.has(k);
+          const isFocused =
+            sessionFocus != null &&
+            sessionFocus.plannedId === planned.id &&
+            sessionFocus.setIndex === setIndex;
+          const inRest = isFocused && restEndsAt != null && sessionNowMs < restEndsAt;
+          let rowVariant: "idle" | "done" | "go" | "rest";
+          if (isDone) rowVariant = "done";
+          else if (isFocused && inRest) rowVariant = "rest";
+          else if (isFocused) rowVariant = "go";
+          else rowVariant = "idle";
+          const restRemainingSec =
+            rowVariant === "rest" && restEndsAt != null
+              ? Math.max(0, Math.ceil((restEndsAt - sessionNowMs) / 1000))
+              : null;
+          return (
+            <SessionSetRow
+              key={setIndex}
+              setIndex={setIndex}
+              weight={cell.weight}
+              reps={cell.reps}
+              lastLabel={lastBySet[setIndex] ?? ""}
+              onWeight={(w) => updateSet(setIndex, { weight: w })}
+              onReps={(r) => updateSet(setIndex, { reps: r })}
+              rowVariant={rowVariant}
+              restRemainingSec={restRemainingSec}
+              onSelectRow={() => onSelectSet(setIndex)}
+            />
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
+function SessionSetRow({
+  setIndex,
+  weight,
+  reps,
+  lastLabel,
+  onWeight,
+  onReps,
+  rowVariant,
+  restRemainingSec,
+  onSelectRow,
+}: {
+  setIndex: number;
+  weight: number;
+  reps: number;
+  lastLabel: string;
+  onWeight: (w: number) => void;
+  onReps: (r: number) => void;
+  rowVariant: "idle" | "done" | "go" | "rest";
+  restRemainingSec: number | null;
+  onSelectRow: () => void;
+}) {
+  const rowToneClass = `workout-set-grid__row--session-${rowVariant}`;
+  const idxText =
+    rowVariant === "rest" && restRemainingSec != null
+      ? `REST ${restRemainingSec}`
+      : rowVariant === "go"
+        ? "GO"
+        : String(setIndex + 1);
+
+  return (
+    <div className={`workout-set-grid__row ${rowToneClass}`}>
+      <span
+        className="workout-set-grid__idx"
+        title="Select set"
+        onPointerDown={() => onSelectRow()}
+        role="presentation"
+      >
+        {idxText}
+      </span>
+      <input
+        className="workout-set-grid__input"
+        inputMode="decimal"
+        aria-label={`Set ${setIndex + 1} weight`}
+        value={weight === 0 ? "" : String(weight)}
+        onPointerDown={(e: PointerEvent) => e.stopPropagation()}
+        onChange={(e) => {
+          const raw = e.target.value.trim();
+          if (raw === "") {
+            onWeight(0);
+            return;
+          }
+          const n = parseFloat(raw.replace(",", "."));
+          if (!Number.isFinite(n) || n < 0) return;
+          onWeight(n);
+        }}
+      />
+      <input
+        className="workout-set-grid__input"
+        inputMode="numeric"
+        aria-label={`Set ${setIndex + 1} reps`}
+        value={String(reps)}
+        onPointerDown={(e: PointerEvent) => e.stopPropagation()}
+        onChange={(e) => {
+          const raw = e.target.value.trim();
+          if (raw === "") return;
+          const n = parseInt(raw, 10);
+          if (!Number.isFinite(n) || n < 1) return;
+          onReps(n);
+        }}
+      />
+      {rowVariant === "done" ? (
+        <span
+          className="workout-set-grid__last"
+          aria-label="Set completed"
+          onPointerDown={() => onSelectRow()}
+          role="presentation"
+        >
+          <Check size={18} aria-hidden strokeWidth={2.5} className="workout-set-grid__done-check" />
+        </span>
+      ) : (
+        <span
+          className="workout-set-grid__last"
+          onPointerDown={() => onSelectRow()}
+          role="presentation"
+        >
+          {lastLabel}
+        </span>
+      )}
+    </div>
   );
 }
 
