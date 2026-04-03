@@ -1208,6 +1208,22 @@ a.workout-detail-hero__action {
   margin-top: 0.5rem;
 }
 
+.exercise-picker-quick-create {
+  flex-shrink: 0;
+  margin-top: 0.5rem;
+}
+
+.exercise-picker-quick-create__btn {
+  width: 100%;
+}
+
+.exercise-picker-quick-create__hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
 .check-row {
   display: flex;
   align-items: center;
