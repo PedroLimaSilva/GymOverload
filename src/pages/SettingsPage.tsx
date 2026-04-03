@@ -104,7 +104,8 @@ export function SettingsPage() {
                 fontSize: "0.9rem",
               }}
             >
-              Download a JSON with all the data in this app on this device. Use it to import your data into another app or device.
+              Download a JSON with all the data in this app on this device. Use it to import your
+              data into another app or device.
             </p>
             <div
               className="toolbar"
