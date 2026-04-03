@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, Route, Routes, useParams } from "react-router-dom";
 import { ensureSeeded } from "./db/bootstrap";
 import {
-  IconBicep,
   IconClipboard,
   IconDumbbell,
   IconHistory,
   IconHome,
+  IconSettings,
 } from "./components/Icons";
 import { ExerciseDetailPage } from "./pages/ExerciseDetailPage";
 import { ExerciseListPage } from "./pages/ExerciseListPage";
 import { ActiveWorkoutPage } from "./pages/ActiveWorkoutPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { WorkoutDetailPage } from "./pages/WorkoutDetailPage";
 import { WorkoutListPage } from "./pages/WorkoutListPage";
 
@@ -47,12 +48,12 @@ function AppLayout() {
           </span>
           Exercises
         </NavLink>
-        <span className="tab-nav__disabled" aria-hidden="true">
+        <NavLink to="/settings" end title="Settings">
           <span className="tab-nav__icon-wrap">
-            <IconBicep />
+            <IconSettings />
           </span>
-          My Body
-        </span>
+          Settings
+        </NavLink>
       </nav>
     </>
   );
@@ -95,6 +96,8 @@ export function App() {
         <Route path="/templates" element={<Navigate to="/workouts" replace />} />
         <Route path="/templates/:id" element={<LegacyTemplateDetailRedirect />} />
         <Route path="/templates/:id/workout" element={<LegacyActiveWorkoutRedirect />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/profile" element={<Navigate to="/settings" replace />} />
       </Route>
     </Routes>
   );
