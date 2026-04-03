@@ -1,21 +1,19 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { CategoryPickerModal } from "../components/CategoryPickerModal";
 import {
-  IconChartBars,
-  IconChevronLeft,
-  IconDumbbell,
-  IconLink,
-  IconMenu,
-  IconPin,
-  IconPlay,
-  IconPlus,
-  IconReorderVertical,
-  IconShareUp,
-  IconStopwatch,
-} from "../components/Icons";
-import { OverflowMenu } from "../components/OverflowMenu";
+  ArrowUpDown,
+  BarChart3,
+  Check,
+  ChevronLeft,
+  Dumbbell,
+  GripHorizontal,
+  Play,
+  Plus,
+  Trash2,
+  Upload,
+} from "lucide-react";
+import { CategoryPickerModal } from "../components/CategoryPickerModal";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import {
@@ -49,7 +47,7 @@ export function WorkoutDetailPage() {
   const priorSid = priorSessionId(sortedSessions);
   const priorEntries = useLiveQuery(
     () => (priorSid ? db.loggedExerciseEntries.where("sessionId").equals(priorSid).toArray() : []),
-    [priorSid]
+    [priorSid],
   );
   const latestEntries = useLiveQuery(
     () =>
@@ -110,34 +108,41 @@ export function WorkoutDetailPage() {
         variant="detail"
         leading={
           <Link to="/workouts" className="btn-icon-circle glass" aria-label="Back to workouts">
-            <IconChevronLeft />
+            <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
           </Link>
         }
         center={<span aria-hidden>0:00:00</span>}
         trailing={
           <div className="workout-detail-header-actions">
-            <button type="button" className="btn-icon-circle" disabled aria-label="Timer (session only)">
-              <IconStopwatch />
-            </button>
-            <button
-              type="button"
-              className="btn-icon-circle"
-              aria-label={editMode ? "Done reordering" : "Reorder exercises"}
-              aria-pressed={editMode}
-              onClick={() => setEditMode((e) => !e)}
-            >
-              <IconReorderVertical />
-            </button>
-            <OverflowMenu
-              label="Workout actions"
-              items={[
-                {
-                  label: editMode ? "Done reordering" : "Edit exercise order…",
-                  onSelect: () => setEditMode((e) => !e),
-                },
-                { label: "Delete workout", onSelect: () => void remove() },
-              ]}
-            />
+            {editMode ? (
+              <button
+                type="button"
+                className="btn-icon-circle"
+                aria-label="Done reordering"
+                onClick={() => setEditMode(false)}
+              >
+                <Check size={20} aria-hidden strokeWidth={2.5} />
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="btn-icon-circle"
+                  aria-label="Reorder exercises"
+                  onClick={() => setEditMode(true)}
+                >
+                  <ArrowUpDown size={20} aria-hidden strokeWidth={2} />
+                </button>
+                <button
+                  type="button"
+                  className="btn-icon-circle"
+                  aria-label="Delete workout"
+                  onClick={() => void remove()}
+                >
+                  <Trash2 size={20} aria-hidden strokeWidth={2} />
+                </button>
+              </>
+            )}
           </div>
         }
       />
@@ -161,32 +166,39 @@ export function WorkoutDetailPage() {
         </button>
         <div className="workout-detail-hero__actions">
           {canStart ? (
-            <Link
-              to={`/workouts/${draft.id}/session`}
-              className="workout-detail-hero__action"
-            >
+            <Link to={`/workouts/${draft.id}/session`} className="workout-detail-hero__action">
               <span className="workout-detail-hero__action-icon">
-                <IconPlay />
+                <Play size={22} aria-hidden strokeWidth={2} />
               </span>
               Start
             </Link>
           ) : (
             <button type="button" className="workout-detail-hero__action" disabled>
               <span className="workout-detail-hero__action-icon">
-                <IconPlay />
+                <Play size={22} aria-hidden strokeWidth={2} />
               </span>
               Start
             </button>
           )}
-          <button type="button" className="workout-detail-hero__action" disabled title="Coming later">
+          <button
+            type="button"
+            className="workout-detail-hero__action"
+            disabled
+            title="Coming later"
+          >
             <span className="workout-detail-hero__action-icon">
-              <IconChartBars />
+              <BarChart3 size={20} aria-hidden strokeWidth={2} />
             </span>
             Statistics
           </button>
-          <button type="button" className="workout-detail-hero__action" disabled title="Coming later">
+          <button
+            type="button"
+            className="workout-detail-hero__action"
+            disabled
+            title="Coming later"
+          >
             <span className="workout-detail-hero__action-icon">
-              <IconShareUp />
+              <Upload size={20} aria-hidden strokeWidth={2} />
             </span>
             Share
           </button>
@@ -232,14 +244,8 @@ export function WorkoutDetailPage() {
                     void persist({
                       ...draft,
                       plannedExercises: draft.plannedExercises.map((p) =>
-                        p.id === pe.id ? next : p
+                        p.id === pe.id ? next : p,
                       ),
-                    })
-                  }
-                  onRemove={() =>
-                    void persist({
-                      ...draft,
-                      plannedExercises: draft.plannedExercises.filter((p) => p.id !== pe.id),
                     })
                   }
                 />
@@ -342,14 +348,12 @@ function PlannedExerciseCard({
   lastBySet,
   sessionSummary,
   onChange,
-  onRemove,
 }: {
   planned: PlannedExercise;
   exercise: Exercise | undefined;
   lastBySet: string[];
   sessionSummary: string | null;
   onChange: (next: PlannedExercise) => void;
-  onRemove: () => void;
 }) {
   const rows = planRowDefaults(planned);
   const unitLabel = (exercise?.weightUnit === "lb" ? "LB" : "KG").toUpperCase();
@@ -364,16 +368,12 @@ function PlannedExerciseCard({
           {exercise?.imageDataUrl ? (
             <img src={exercise.imageDataUrl} alt="" />
           ) : (
-            <IconDumbbell />
+            <Dumbbell size={22} aria-hidden strokeWidth={2} />
           )}
         </div>
         <div className="workout-exercise-card__meta">
           <h2 className="workout-exercise-card__name">
-            {exercise ? (
-              <Link to={`/exercises/${exercise.id}`}>{planned.name}</Link>
-            ) : (
-              planned.name
-            )}
+            {exercise ? <Link to={`/exercises/${exercise.id}`}>{planned.name}</Link> : planned.name}
           </h2>
           {subLine ? <p className="workout-exercise-card__sub">{subLine}</p> : null}
           {sessionSummary ? (
@@ -382,21 +382,8 @@ function PlannedExerciseCard({
             </p>
           ) : null}
         </div>
-        <div className="workout-exercise-card__head-actions">
-          <button
-            type="button"
-            className="workout-exercise-card__icon-btn workout-exercise-card__icon-btn--accent"
-            disabled
-            aria-label="Pin (coming later)"
-          >
-            <IconPin />
-          </button>
-          <OverflowMenu
-            label="Exercise actions"
-            items={[{ label: "Remove from workout", onSelect: onRemove }]}
-            triggerClassName="workout-exercise-card__icon-btn"
-            icon={<IconMenu />}
-          />
+        <div className="workout-exercise-card__drag-handle">
+          <GripHorizontal size={20} aria-hidden strokeWidth={2} />
         </div>
       </div>
 
@@ -407,6 +394,9 @@ function PlannedExerciseCard({
         <p className="workout-set-grid__hdr" style={{ textAlign: "right" }}>
           LAST
         </p>
+        <p className="workout-set-grid__hdr workout-set-grid__hdr--spacer" aria-hidden>
+          {" "}
+        </p>
         {rows.map((cell, setIndex) => (
           <FragmentRow
             key={setIndex}
@@ -414,6 +404,7 @@ function PlannedExerciseCard({
             weight={cell.weight}
             reps={cell.reps}
             lastLabel={lastBySet[setIndex] ?? ""}
+            removeDisabled={planned.sets <= 1}
             onWeight={(w) => {
               const { weights, reps } = ensurePlanArrays(planned);
               weights[setIndex] = w;
@@ -433,6 +424,19 @@ function PlannedExerciseCard({
                 weightsBySet: weights,
                 repsBySet: reps,
                 targetReps: nextTarget,
+              });
+            }}
+            onRemove={() => {
+              if (planned.sets <= 1) return;
+              const { weights, reps } = ensurePlanArrays(planned);
+              weights.splice(setIndex, 1);
+              reps.splice(setIndex, 1);
+              onChange({
+                ...planned,
+                sets: planned.sets - 1,
+                weightsBySet: weights,
+                repsBySet: reps,
+                targetReps: reps[0] ?? planned.targetReps,
               });
             }}
           />
@@ -455,12 +459,9 @@ function PlannedExerciseCard({
             });
           }}
         >
-          <IconPlus />
+          <Plus size={18} aria-hidden strokeWidth={2.2} />
           Add set
         </button>
-        <span className="workout-exercise-card__chain" aria-hidden title="Superset (coming later)">
-          <IconLink />
-        </span>
       </div>
     </article>
   );
@@ -471,15 +472,19 @@ function FragmentRow({
   weight,
   reps,
   lastLabel,
+  removeDisabled,
   onWeight,
   onReps,
+  onRemove,
 }: {
   setIndex: number;
   weight: number;
   reps: number;
   lastLabel: string;
+  removeDisabled: boolean;
   onWeight: (w: number) => void;
   onReps: (r: number) => void;
+  onRemove: () => void;
 }) {
   return (
     <>
@@ -514,6 +519,15 @@ function FragmentRow({
         }}
       />
       <span className="workout-set-grid__last">{lastLabel}</span>
+      <button
+        type="button"
+        className="workout-set-grid__remove"
+        aria-label={`Remove set ${setIndex + 1}`}
+        disabled={removeDisabled}
+        onClick={onRemove}
+      >
+        <Trash2 size={16} aria-hidden strokeWidth={2} />
+      </button>
     </>
   );
 }

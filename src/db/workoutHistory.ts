@@ -113,7 +113,7 @@ export function priorSessionId(sessions: WorkoutSession[]): string | undefined {
 /** Per-set "last time" label like `70×12`, or empty string when unknown. */
 export function lastPerformanceBySetForExercise(
   priorEntries: LoggedExerciseEntry[] | null,
-  planned: PlannedExercise
+  planned: PlannedExercise,
 ): string[] {
   const labels: string[] = [];
   for (let i = 0; i < planned.sets; i++) {

@@ -158,9 +158,7 @@ export function planRowDefaults(planned: PlannedExercise): { weight: number; rep
     out.push({
       weight: typeof w === "number" && Number.isFinite(w) ? w : 0,
       reps:
-        typeof r === "number" && Number.isFinite(r) && r >= 1
-          ? Math.round(r)
-          : planned.targetReps,
+        typeof r === "number" && Number.isFinite(r) && r >= 1 ? Math.round(r) : planned.targetReps,
     });
   }
   return out;
