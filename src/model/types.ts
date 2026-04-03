@@ -190,6 +190,18 @@ export function defaultExercise(): Exercise {
   });
 }
 
+/** New exercise row with the same defaults as `defaultExercise`, for quick create flows. */
+export function exerciseWithName(name: string): Exercise {
+  const trimmed = name.trim();
+  const base = defaultExercise();
+  return {
+    ...base,
+    id: newId(),
+    createdAt: new Date().toISOString(),
+    name: trimmed || base.name,
+  };
+}
+
 /** Loggable / time-based kinds shown in the Type picker */
 export const EXERCISE_KIND_PRESETS = [
   "Weight, Reps",
