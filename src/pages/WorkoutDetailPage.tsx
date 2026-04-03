@@ -12,11 +12,13 @@ import {
   Pause,
   Play,
   Plus,
+  Search,
   Square,
   Trash2,
   Upload,
 } from "lucide-react";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
+import { ExerciseListBody } from "../components/ExerciseListBody";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import {
@@ -1127,13 +1129,18 @@ function ExerciseMultiPickerModal({
   const [filterCats, setFilterCats] = useState<ExerciseCategory[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const listScrollRef = useRef<HTMLDivElement>(null);
 
-  const filtered = exercises.filter((ex) => {
-    const q = search.trim().toLowerCase();
-    const okSearch = !q || ex.name.toLowerCase().includes(q);
-    const okCat = filterCats.length === 0 || ex.categories.some((c) => filterCats.includes(c));
-    return okSearch && okCat;
-  });
+  const filtered = useMemo(() => {
+    return exercises.filter((ex) => {
+      const q = search.trim().toLowerCase();
+      const okSearch = !q || ex.name.toLowerCase().includes(q);
+      const okCat = filterCats.length === 0 || ex.categories.some((c) => filterCats.includes(c));
+      return okSearch && okCat;
+    });
+  }, [exercises, search, filterCats]);
+
+  const showLetterIndex = !search.trim() && filterCats.length === 0;
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -1161,8 +1168,8 @@ function ExerciseMultiPickerModal({
       }}
     >
       <div
-        className="modal"
-        style={{ maxWidth: 520, maxHeight: "90dvh" }}
+        className="modal modal--exercise-picker"
+        style={{ maxHeight: "90dvh" }}
         onClick={(e) => e.stopPropagation()}
       >
         <header>
@@ -1171,7 +1178,7 @@ function ExerciseMultiPickerModal({
             Cancel
           </button>
         </header>
-        <div className="body">
+        <div className="body modal-body--exercise-picker">
           <div className="toolbar" style={{ marginTop: 0 }}>
             <button type="button" className="btn btn-ghost" onClick={() => setFilterOpen(true)}>
               Filter
@@ -1194,39 +1201,28 @@ function ExerciseMultiPickerModal({
               ))}
             </div>
           )}
-          <input
-            className="search"
-            type="search"
-            placeholder="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+          <label className="search-wrap glass">
+            <Search size={18} aria-hidden strokeWidth={2} />
+            <input
+              className="search"
+              type="search"
+              placeholder="Search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoComplete="off"
+              enterKeyHint="search"
+            />
+          </label>
+          <ExerciseListBody
+            mode="select"
+            exercises={filtered}
+            idNamespace="picker"
+            showLetterIndex={showLetterIndex}
+            scrollRef={listScrollRef}
+            emptyMessage="No exercises match."
+            selectedIds={selected}
+            onToggle={toggle}
           />
-          <ul className="list" style={{ maxHeight: "45dvh", overflowY: "auto" }}>
-            {filtered.map((ex) => (
-              <li key={ex.id}>
-                <button type="button" className="row" onClick={() => toggle(ex.id)}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "0.75rem",
-                    }}
-                  >
-                    <div>
-                      <p className="row-title" style={{ margin: 0 }}>
-                        {ex.name}
-                      </p>
-                      <p className="row-sub" style={{ margin: "0.25rem 0 0" }}>
-                        {ex.categories.join(", ")}
-                      </p>
-                    </div>
-                    <input type="checkbox" readOnly checked={selected.has(ex.id)} />
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
       {filterOpen && (
