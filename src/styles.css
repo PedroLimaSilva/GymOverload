@@ -25,7 +25,6 @@
   --danger: #ff453a;
   --on-accent: #0a120c;
   --glass: color-mix(in srgb, #1c1c1e 72%, transparent);
-  --tab-active-bg: color-mix(in srgb, #ffffff 12%, transparent);
 }
 
 @media (prefers-color-scheme: light) {
@@ -43,7 +42,6 @@
     --danger: #ff3b30;
     --on-accent: #0a120c;
     --glass: color-mix(in srgb, #ffffff 82%, transparent);
-    --tab-active-bg: color-mix(in srgb, #000000 8%, transparent);
   }
 }
 
@@ -907,11 +905,11 @@ a.workout-detail-hero__action {
 }
 
 .tab-nav a[aria-current="page"] {
-  color: var(--text);
+  color: var(--accent);
 }
 
 .tab-nav a[aria-current="page"] .tab-nav__icon-wrap {
-  background: var(--tab-active-bg);
+  background: var(--accent-dim);
 }
 
 .tab-nav__icon-wrap {
