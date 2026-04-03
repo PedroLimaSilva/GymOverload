@@ -6,7 +6,6 @@ import {
   parseImportPayloadJson,
   triggerDownload,
 } from "../db/profileData";
-import { ScreenHeader } from "../components/ScreenHeader";
 
 type StatusKind = "idle" | "success" | "error";
 
