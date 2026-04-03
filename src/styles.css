@@ -367,6 +367,7 @@ a.workout-detail-hero__action {
 .workout-exercise-card__drag-handle {
   color: var(--muted);
   cursor: grab;
+  margin-right: 0.5rem;
 }
 
 .workout-exercise-card__icon-btn {
