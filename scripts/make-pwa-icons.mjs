@@ -84,8 +84,8 @@ if (source.width !== source.height) {
   );
 }
 
-writePng(join(publicDir, "pwa-192.png"), resizePng(source, 192, 192));
-writePng(join(publicDir, "pwa-512.png"), resizePng(source, 512, 512));
+writePng(join(publicDir, "pwa-192.png"), brandGreenSilhouette(source, 192));
+writePng(join(publicDir, "pwa-512.png"), brandGreenSilhouette(source, 512));
 writePng(join(publicDir, "favicon-32-light.png"), brandGreenSilhouette(source, 32));
 writePng(join(publicDir, "favicon-32-dark.png"), brandGreenSilhouette(source, 32));
 writePng(join(publicDir, "apple-touch-icon.png"), brandGreenSilhouette(source, 180));
