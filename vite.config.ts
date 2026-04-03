@@ -4,10 +4,7 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // GitHub project Pages: https://<user>.github.io/<repo>/ — set VITE_BASE_PATH=/<repo>/
 const rawBase = (process.env.VITE_BASE_PATH || "/").trim();
-const base =
-  rawBase === "" || rawBase === "/"
-    ? "/"
-    : `/${rawBase.replace(/^\/+|\/+$/g, "")}/`;
+const base = rawBase === "" || rawBase === "/" ? "/" : `/${rawBase.replace(/^\/+|\/+$/g, "")}/`;
 
 export default defineConfig({
   base,
@@ -25,8 +22,7 @@ export default defineConfig({
       manifest: {
         name: "GymOverload",
         short_name: "GymOverload",
-        description:
-          "Strength training tracker: exercises, workouts, on-device storage.",
+        description: "Strength training tracker: exercises, workouts, on-device storage.",
         theme_color: "#28cd41",
         background_color: "#28cd41",
         display: "standalone",
