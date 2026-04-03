@@ -483,7 +483,7 @@ export function WorkoutDetailPage() {
         </div>
       </div>
 
-      <div className="form" style={{ marginTop: 0 }}>
+      <div className="form" style={{ marginTop: 0, marginBottom: "7rem" }}>
         {editMode ? (
           <div className="form-section" style={{ marginTop: "1rem" }}>
             <ReorderList

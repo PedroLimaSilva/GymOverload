@@ -84,13 +84,15 @@ textarea {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  max-width: 100vw;
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
   padding-left: max(1rem, var(--safe-left));
   padding-right: max(1rem, var(--safe-right));
   padding-top: var(--safe-top);
-  padding-bottom: calc(7rem + var(--safe-bottom));
+  padding-bottom: 0;
+  overflow-y: hidden;
 }
 
 .app-shell {
@@ -205,7 +207,7 @@ textarea {
 }
 
 .workout-detail-hero {
-  border-radius: 22px;
+  border-radius: 2rem;
   padding: 1.15rem 1.1rem 1rem;
   background: var(--accent);
   color: var(--on-accent);
@@ -306,7 +308,7 @@ a.workout-detail-hero__action {
 .workout-exercise-card {
   background: var(--surface);
   border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
-  border-radius: 20px;
+  border-radius: 2rem;
   padding: 0.85rem 0.9rem 0.75rem;
 }
 
@@ -810,6 +812,7 @@ a.workout-detail-hero__action {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding-bottom: 7rem; /* account for the tabbed nav */
 }
 
 .list-with-index--with-scrubber .list-with-index__scroll {
