@@ -1,5 +1,13 @@
 node_modules
 dist
+
+# Yarn (Berry): keep only tracked config; local state is machine-specific
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 *.local
 .DS_Store
 coverage

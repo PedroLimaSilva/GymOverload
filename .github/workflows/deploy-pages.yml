@@ -23,20 +23,23 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: npm
+          node-version-file: .nvmrc
+          cache: yarn
+
+      - name: Enable Corepack (Yarn)
+        run: corepack enable
 
       - name: Install
-        run: npm ci
+        run: yarn install --immutable
 
       - name: Test
-        run: npm test
+        run: yarn test
 
       - name: Build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
         run: |
-          npm run build
+          yarn build
           cp dist/index.html dist/404.html
 
       - name: Upload artifact

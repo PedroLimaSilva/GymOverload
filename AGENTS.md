@@ -60,8 +60,8 @@ When changing persisted fields:
 
 ## Testing
 
-- **Unit tests**: `npm test` (Vitest).
-- **CI**: `.github/workflows/ci.yml` — install, test, build on Ubuntu + Node 22.
+- **Unit tests**: `yarn test` (Vitest).
+- **CI**: `.github/workflows/ci.yml` — install, test, build on Ubuntu; Node version from [`.nvmrc`](.nvmrc).
 
 ## Related docs
 
@@ -75,14 +75,14 @@ This is a single-service, client-side-only PWA. There is no backend, no database
 
 | Service | Command | Notes |
 |---------|---------|-------|
-| Vite dev server | `npm run dev` | Runs `predev` hook (`scripts/make-pwa-icons.mjs`) automatically. Add `-- --host 0.0.0.0` to expose outside localhost. |
+| Vite dev server | `yarn dev` | Runs `predev` hook (`scripts/make-pwa-icons.mjs`) automatically. Add `--host 0.0.0.0` to expose outside localhost. |
 
 ### Quick reference
 
-- **Install deps**: `npm ci` (or `npm install`)
-- **Tests**: `npm test` (Vitest, fast — currently one test file)
-- **Type-check + build**: `npm run build` (runs `tsc --noEmit` then `vite build`)
-- **Lint**: No dedicated lint script; type-checking is done via `tsc --noEmit` as part of `npm run build`.
+- **Install deps**: `corepack enable` then `yarn install` (CI: `yarn install --immutable`)
+- **Tests**: `yarn test` (Vitest, fast — currently one test file)
+- **Type-check + build**: `yarn build` (runs `tsc --noEmit` then `vite build`)
+- **Lint**: No dedicated lint script; type-checking is done via `tsc --noEmit` as part of `yarn build`.
 
 ### Gotchas
 
