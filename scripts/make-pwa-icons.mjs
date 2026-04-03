@@ -52,21 +52,17 @@ function resizePng(src, dstW, dstH) {
 }
 
 /**
- * Brand green silhouette: fill #28cd41, alpha from luminance × source alpha (gray artwork → mask).
+ * Brand green silhouette: RGB → #28cd41, keep resized source alpha only.
+ * (Do not multiply alpha by luminance: dark gray art would read as ~12% opaque.)
  */
 function brandGreenSilhouette(src, size) {
   const r = resizePng(src, size, size);
   for (let i = 0; i < r.data.length; i += 4) {
-    const sr = r.data[i];
-    const sg = r.data[i + 1];
-    const sb = r.data[i + 2];
     const sa = r.data[i + 3];
-    const lum = (0.299 * sr + 0.587 * sg + 0.114 * sb) / 255;
-    const outA = Math.min(255, Math.round(lum * sa));
     r.data[i] = BR;
     r.data[i + 1] = BG;
     r.data[i + 2] = BB;
-    r.data[i + 3] = outA;
+    r.data[i + 3] = sa;
   }
   return r;
 }
