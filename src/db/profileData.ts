@@ -52,10 +52,13 @@ function isRecord(x: unknown): x is Record<string, unknown> {
 function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportPayload {
   const v = raw.version;
   if (v !== EXPORT_FORMAT_VERSION && v !== LEGACY_EXPORT_FORMAT_VERSION) {
-    throw new Error(`Unsupported export version (expected ${LEGACY_EXPORT_FORMAT_VERSION} or ${EXPORT_FORMAT_VERSION}).`);
+    throw new Error(
+      `Unsupported export version (expected ${LEGACY_EXPORT_FORMAT_VERSION} or ${EXPORT_FORMAT_VERSION}).`,
+    );
   }
   if (!Array.isArray(raw.exercises)) throw new Error("Missing or invalid exercises array.");
-  if (!Array.isArray(raw.workoutSessions)) throw new Error("Missing or invalid workoutSessions array.");
+  if (!Array.isArray(raw.workoutSessions))
+    throw new Error("Missing or invalid workoutSessions array.");
   if (!Array.isArray(raw.loggedExerciseEntries)) {
     throw new Error("Missing or invalid loggedExerciseEntries array.");
   }
@@ -66,7 +69,7 @@ function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportP
     workouts = raw.workouts as Workout[];
   } else {
     if (!Array.isArray(raw.templates)) {
-      throw new Error("Missing workouts: legacy exports (version 1) use a \"templates\" array.");
+      throw new Error('Missing workouts: legacy exports (version 1) use a "templates" array.');
     }
     workouts = raw.templates as Workout[];
   }
@@ -82,7 +85,8 @@ function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportP
     workoutSessions.push({
       id: typeof item.id === "string" ? item.id : undefined,
       workoutId,
-      completedAt: typeof item.completedAt === "string" ? item.completedAt : new Date().toISOString(),
+      completedAt:
+        typeof item.completedAt === "string" ? item.completedAt : new Date().toISOString(),
     });
   }
 
@@ -176,8 +180,11 @@ function remapImportedPayload(payload: NormalizedImportPayload): {
   return { exercises, workouts, workoutSessions, loggedExerciseEntries };
 }
 
-export async function mergeImportPayload(payload: NormalizedImportPayload): Promise<MergeImportResult> {
-  const { exercises, workouts, workoutSessions, loggedExerciseEntries } = remapImportedPayload(payload);
+export async function mergeImportPayload(
+  payload: NormalizedImportPayload,
+): Promise<MergeImportResult> {
+  const { exercises, workouts, workoutSessions, loggedExerciseEntries } =
+    remapImportedPayload(payload);
   await db.transaction(
     "rw",
     db.exercises,
@@ -188,8 +195,9 @@ export async function mergeImportPayload(payload: NormalizedImportPayload): Prom
       if (exercises.length) await db.exercises.bulkAdd(exercises);
       if (workouts.length) await db.workouts.bulkAdd(workouts);
       if (workoutSessions.length) await db.workoutSessions.bulkAdd(workoutSessions);
-      if (loggedExerciseEntries.length) await db.loggedExerciseEntries.bulkAdd(loggedExerciseEntries);
-    }
+      if (loggedExerciseEntries.length)
+        await db.loggedExerciseEntries.bulkAdd(loggedExerciseEntries);
+    },
   );
   return {
     added: {
@@ -213,7 +221,7 @@ export async function deleteAllUserData(): Promise<void> {
       await db.workoutSessions.clear();
       await db.workouts.clear();
       await db.exercises.clear();
-    }
+    },
   );
 }
 

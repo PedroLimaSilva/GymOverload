@@ -22,13 +22,13 @@ They must be able to:
 
 ## Current implementation vs goals
 
-| Goal | Codebase reality |
-|------|------------------|
+| Goal                              | Codebase reality                                                                                                                             |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Exercise CRUD + categories + kind | Implemented in React (`ExerciseListPage`, `ExerciseDetailPage`), types in `src/model/types.ts`, persistence in Dexie (`src/db/database.ts`). |
-| Workouts with planned sets/reps | Implemented (`WorkoutListPage`, `WorkoutDetailPage`). Planned rows have stable `id` fields in IndexedDB. |
-| **Session logging / rest timer** | **Not implemented** (by design for now). |
-| Export / charts / sync | **Not implemented**. |
-| Native iOS / watchOS | **Removed**. This repo is **web-only**. |
+| Workouts with planned sets/reps   | Implemented (`WorkoutListPage`, `WorkoutDetailPage`). Planned rows have stable `id` fields in IndexedDB.                                     |
+| **Session logging / rest timer**  | **Not implemented** (by design for now).                                                                                                     |
+| Export / charts / sync            | **Not implemented**.                                                                                                                         |
+| Native iOS / watchOS              | **Removed**. This repo is **web-only**.                                                                                                      |
 
 ## Technical stack
 
@@ -61,7 +61,8 @@ When changing persisted fields:
 ## Testing
 
 - **Unit tests**: `yarn test` (Vitest).
-- **CI**: `.github/workflows/ci.yml` — install, test, build on Ubuntu; Node version from [`.nvmrc`](.nvmrc).
+- **Formatting**: `yarn format` (write) / `yarn format:check` (verify).
+- **CI**: `.github/workflows/ci.yml` — install, format check, test, build on Ubuntu; Node version from [`.nvmrc`](.nvmrc).
 
 ## Related docs
 
@@ -73,8 +74,8 @@ Human-oriented overview: [`README.md`](README.md).
 
 This is a single-service, client-side-only PWA. There is no backend, no database server, and no Docker.
 
-| Service | Command | Notes |
-|---------|---------|-------|
+| Service         | Command    | Notes                                                                                                              |
+| --------------- | ---------- | ------------------------------------------------------------------------------------------------------------------ |
 | Vite dev server | `yarn dev` | Runs `predev` hook (`scripts/make-pwa-icons.mjs`) automatically. Add `--host 0.0.0.0` to expose outside localhost. |
 
 ### Quick reference
@@ -82,7 +83,8 @@ This is a single-service, client-side-only PWA. There is no backend, no database
 - **Install deps**: `corepack enable` then `yarn install` (CI: `yarn install --immutable`)
 - **Tests**: `yarn test` (Vitest, fast — currently one test file)
 - **Type-check + build**: `yarn build` (runs `tsc --noEmit` then `vite build`)
-- **Lint**: No dedicated lint script; type-checking is done via `tsc --noEmit` as part of `yarn build`.
+- **Format**: `yarn format` / `yarn format:check` (Prettier; enforced in CI)
+- **Lint**: No ESLint; type-checking is done via `tsc --noEmit` as part of `yarn build`.
 
 ### Gotchas
 

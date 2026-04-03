@@ -57,7 +57,11 @@ function SecondaryMusclesModal({
           {EXERCISE_CATEGORIES.filter((c) => c !== primary).map((cat) => (
             <label key={cat} className="check-row">
               <span>{cat}</span>
-              <input type="checkbox" checked={selected.includes(cat)} onChange={() => toggle(cat)} />
+              <input
+                type="checkbox"
+                checked={selected.includes(cat)}
+                onChange={() => toggle(cat)}
+              />
             </label>
           ))}
         </div>
@@ -127,10 +131,20 @@ export function ExerciseDetailPage() {
   return (
     <div className="exercise-detail-modal">
       <div className="exercise-detail-modal__toolbar">
-        <button type="button" className="btn-circle-icon glass btn-circle-icon--surface" aria-label="Close" onClick={closeModal}>
+        <button
+          type="button"
+          className="btn-circle-icon glass btn-circle-icon--surface"
+          aria-label="Close"
+          onClick={closeModal}
+        >
           <IconClose />
         </button>
-        <button type="button" className="btn-circle-icon glass btn-circle-icon--accent" aria-label="Done" onClick={closeModal}>
+        <button
+          type="button"
+          className="btn-circle-icon glass btn-circle-icon--accent"
+          aria-label="Done"
+          onClick={closeModal}
+        >
           <IconCheck />
         </button>
       </div>

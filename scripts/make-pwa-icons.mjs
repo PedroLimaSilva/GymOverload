@@ -76,7 +76,7 @@ const source = PNG.sync.read(raw);
 
 if (source.width !== source.height) {
   console.warn(
-    "make-pwa-icons: source is not square; resizing uses full bitmap (may look stretched in maskable slots)."
+    "make-pwa-icons: source is not square; resizing uses full bitmap (may look stretched in maskable slots).",
   );
 }
 

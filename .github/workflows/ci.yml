@@ -26,6 +26,9 @@ jobs:
       - name: Install
         run: yarn install --immutable
 
+      - name: Format
+        run: yarn format:check
+
       - name: Test
         run: yarn test
 

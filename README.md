@@ -10,14 +10,14 @@ GymOverload is a **progressive web app (PWA)** for **strength training**. It tar
 
 ## Vision vs current PWA
 
-| Area | Goal | Status today |
-|------|------|----------------|
-| Exercises | Custom exercises; categories; kind string; rest and weight defaults | **Yes**: list, search, category filter, create/edit/delete |
-| Workouts | Named plans with ordered exercises, sets, target reps | **Yes**: list, detail, add from library, reorder in edit mode |
-| Session logging | Walk a plan; log sets; rest timer | **Not built** (same gap as the former native app) |
-| Export / backup | Portable data | **Planned** (JSON export/import fits IndexedDB well) |
-| Progress / charts | Trends over time | **Planned** |
-| Watch companion | Wrist UI | **Removed** with the native stack; not part of the PWA |
+| Area              | Goal                                                                | Status today                                                  |
+| ----------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Exercises         | Custom exercises; categories; kind string; rest and weight defaults | **Yes**: list, search, category filter, create/edit/delete    |
+| Workouts          | Named plans with ordered exercises, sets, target reps               | **Yes**: list, detail, add from library, reorder in edit mode |
+| Session logging   | Walk a plan; log sets; rest timer                                   | **Not built** (same gap as the former native app)             |
+| Export / backup   | Portable data                                                       | **Planned** (JSON export/import fits IndexedDB well)          |
+| Progress / charts | Trends over time                                                    | **Planned**                                                   |
+| Watch companion   | Wrist UI                                                            | **Removed** with the native stack; not part of the PWA        |
 
 ## Requirements
 
@@ -26,12 +26,12 @@ GymOverload is a **progressive web app (PWA)** for **strength training**. It tar
 
 ## Project layout
 
-| Path | Role |
-|------|------|
-| `src/` | React UI, Dexie schema, routing, PWA registration |
-| `public/seed/` | Bundled `exercises.json` and `workouts.json` (first-run seed) |
+| Path                          | Role                                                                                                                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/`                        | React UI, Dexie schema, routing, PWA registration                                                                                                                                                      |
+| `public/seed/`                | Bundled `exercises.json` and `workouts.json` (first-run seed)                                                                                                                                          |
 | `scripts/app-icon-source.png` | 1024×1024 master artwork (from the original iOS asset); `make-pwa-icons.mjs` emits `#28cd41` icons (PWA, favicons, Apple touch) using the source alpha; RGB is replaced, alpha is not luminance-scaled |
-| `vite.config.ts` | Vite + `vite-plugin-pwa` (manifest + service worker) |
+| `vite.config.ts`              | Vite + `vite-plugin-pwa` (manifest + service worker)                                                                                                                                                   |
 
 ## Scripts
 
@@ -42,6 +42,8 @@ yarn dev          # local dev server
 yarn test         # Vitest (seed JSON + model helpers)
 yarn build        # typecheck + production build to dist/
 yarn preview      # serve dist/ locally
+yarn format       # apply Prettier to the repo
+yarn format:check # verify formatting (also runs in CI)
 ```
 
 ## Deploying
@@ -54,7 +56,7 @@ Pushes to `main` run `.github/workflows/deploy-pages.yml`, which builds with `VI
 
 ## Continuous integration
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`: `yarn install --immutable`, `yarn test`, `yarn build`.
+GitHub Actions (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`: `yarn install --immutable`, `yarn format:check`, `yarn test`, `yarn build`.
 
 ## Author
 
