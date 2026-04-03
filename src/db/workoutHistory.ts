@@ -1,6 +1,6 @@
 import { db } from "./database";
 import type { LoggedExerciseEntry, PlannedExercise, Workout, WorkoutSession } from "../model/types";
-import { newId } from "../model/types";
+import { newId, planRowDefaults } from "../model/types";
 
 export async function getLatestCompletedSession(
   workoutId: string,
@@ -31,11 +31,15 @@ export async function buildInitialSetStates(
 
   const out: Record<string, { weight: number; reps: number }[]> = {};
   for (const pe of workout.plannedExercises) {
+    const plannedRow = planRowDefaults(pe);
     const row: { weight: number; reps: number }[] = [];
     for (let setIndex = 0; setIndex < pe.sets; setIndex++) {
       const entry = byKey.get(`${pe.id}\0${setIndex}`);
       if (entry) row.push({ weight: entry.weight, reps: entry.reps });
-      else row.push({ weight: 0, reps: pe.targetReps });
+      else {
+        const fallback = plannedRow[setIndex];
+        row.push(fallback ?? { weight: 0, reps: pe.targetReps });
+      }
     }
     out[pe.id] = row;
   }
@@ -52,9 +56,15 @@ export async function deleteSessionsForWorkout(workoutId: string): Promise<void>
   });
 }
 
+/** Same format as session UI: `${plannedExerciseId}:${setIndex}` */
+export function loggedSetKey(plannedExerciseId: string, setIndex: number): string {
+  return `${plannedExerciseId}:${setIndex}`;
+}
+
 export async function saveCompletedWorkout(
   workout: Workout,
   setStates: Record<string, { weight: number; reps: number }[]>,
+  completedSetKeys: ReadonlySet<string>,
 ): Promise<void> {
   const sessionId = newId();
   const completedAt = new Date().toISOString();
@@ -69,6 +79,7 @@ export async function saveCompletedWorkout(
     const states = setStates[pe.id];
     if (!states) continue;
     for (let setIndex = 0; setIndex < pe.sets; setIndex++) {
+      if (!completedSetKeys.has(loggedSetKey(pe.id, setIndex))) continue;
       const s = states[setIndex];
       if (!s) continue;
       entries.push({
