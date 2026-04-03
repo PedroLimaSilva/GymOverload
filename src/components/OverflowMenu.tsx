@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { IconMenu } from "./Icons";
+import { Menu } from "lucide-react";
 
 export type OverflowMenuItem = {
   label: string;
@@ -50,7 +50,7 @@ export function OverflowMenu({ label, items, triggerClassName, icon }: Props) {
         aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}
       >
-        {icon ?? <IconMenu />}
+        {icon ?? <Menu size={20} aria-hidden strokeWidth={2} />}
       </button>
       {open && (
         <ul className="overflow-menu__panel" role="menu">

@@ -1,8 +1,8 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ChevronRight, Search } from "lucide-react";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
-import { IconChevronRight, IconSearch } from "../components/Icons";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import { groupByFirstLetter } from "../lib/groupByLetter";
@@ -83,7 +83,7 @@ export function ExerciseListPage() {
           menuItems={menuItems}
         />
         <label className="search-wrap glass">
-          <IconSearch />
+          <Search size={18} aria-hidden strokeWidth={2} />
           <input
             className="search"
             type="search"
@@ -139,7 +139,12 @@ export function ExerciseListPage() {
                                 {ex.categories.join(", ") || "No categories"}
                               </p>
                             </span>
-                            <IconChevronRight className="list-row-link__chevron" />
+                            <ChevronRight
+                              className="list-row-link__chevron"
+                              size={14}
+                              aria-hidden
+                              strokeWidth={2.5}
+                            />
                           </Link>
                           {deleteMode && (
                             <button
@@ -179,7 +184,12 @@ export function ExerciseListPage() {
                           <p className="row-title">{ex.name}</p>
                           <p className="row-sub">{ex.categories.join(", ") || "No categories"}</p>
                         </span>
-                        <IconChevronRight className="list-row-link__chevron" />
+                        <ChevronRight
+                          className="list-row-link__chevron"
+                          size={14}
+                          aria-hidden
+                          strokeWidth={2.5}
+                        />
                       </Link>
                       {deleteMode && (
                         <button
