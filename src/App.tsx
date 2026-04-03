@@ -23,7 +23,7 @@ function AppLayout() {
           </span>
           Home
         </span>
-        <NavLink to="/workouts" end title="Workouts">
+        <NavLink to="/workouts" title="Workouts">
           <span className="tab-nav__icon-wrap">
             <ClipboardList size={22} aria-hidden />
           </span>
@@ -35,7 +35,7 @@ function AppLayout() {
           </span>
           History
         </span>
-        <NavLink to="/exercises" end title="Exercises">
+        <NavLink to="/exercises" title="Exercises">
           <span className="tab-nav__icon-wrap">
             <Dumbbell size={22} aria-hidden />
           </span>
@@ -79,10 +79,10 @@ export function App() {
 
   return (
     <Routes>
-      <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<Navigate to="/exercises" replace />} />
         <Route path="/exercises" element={<ExerciseListPage />} />
+        <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
         <Route path="/workouts" element={<WorkoutListPage />} />
         <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
         <Route path="/settings" element={<SettingsPage />} />

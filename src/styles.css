@@ -1331,7 +1331,7 @@ a.workout-detail-hero__action {
   color: var(--text);
   display: flex;
   flex-direction: column;
-  padding: max(0.5rem, var(--safe-top)) max(1rem, var(--safe-left)) max(1.25rem, var(--safe-bottom))
+  padding: max(0.5rem, var(--safe-top)) max(1rem, var(--safe-left)) calc(7rem + var(--safe-bottom))
     max(1rem, var(--safe-right));
   max-width: 720px;
   margin: 0 auto;
