@@ -31,7 +31,7 @@ import {
   saveCompletedWorkout,
 } from "../db/workoutHistory";
 import type { Exercise, ExerciseCategory, PlannedExercise, Workout } from "../model/types";
-import { planRowDefaults, plannedFromDTO } from "../model/types";
+import { exerciseWithName, planRowDefaults, plannedFromDTO } from "../model/types";
 
 function formatSessionHms(totalMs: number): string {
   const s = Math.max(0, Math.floor(totalMs / 1000));
@@ -291,6 +291,14 @@ export function WorkoutDetailPage() {
       plannedExercises: [...draft.plannedExercises, ...additions],
     });
     setPickerOpen(false);
+  }
+
+  async function quickCreateExerciseFromPicker(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const ex = exerciseWithName(trimmed);
+    await db.exercises.add(ex);
+    addSelected([ex]);
   }
 
   const sessionElapsedMs = useMemo(() => {
@@ -625,6 +633,7 @@ export function WorkoutDetailPage() {
         <ExerciseMultiPickerModal
           exercises={exercises}
           onAdd={(sel) => addSelected(sel)}
+          onQuickCreate={(name) => quickCreateExerciseFromPicker(name)}
           onClose={() => setPickerOpen(false)}
         />
       )}
@@ -1119,16 +1128,19 @@ function ReorderList({
 function ExerciseMultiPickerModal({
   exercises,
   onAdd,
+  onQuickCreate,
   onClose,
 }: {
   exercises: Exercise[];
   onAdd: (selected: Exercise[]) => void;
+  onQuickCreate: (name: string) => void | Promise<void>;
   onClose: () => void;
 }) {
   const [search, setSearch] = useState("");
   const [filterCats, setFilterCats] = useState<ExerciseCategory[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [quickCreating, setQuickCreating] = useState(false);
   const listScrollRef = useRef<HTMLDivElement>(null);
 
   const filtered = useMemo(() => {
@@ -1139,6 +1151,11 @@ function ExerciseMultiPickerModal({
       return okSearch && okCat;
     });
   }, [exercises, search, filterCats]);
+
+  const searchTrimmed = search.trim();
+  const canQuickCreate =
+    searchTrimmed.length > 0 &&
+    !exercises.some((ex) => ex.name.toLowerCase() === searchTrimmed.toLowerCase());
 
   const showLetterIndex = !search.trim() && filterCats.length === 0;
 
@@ -1211,8 +1228,44 @@ function ExerciseMultiPickerModal({
               onChange={(e) => setSearch(e.target.value)}
               autoComplete="off"
               enterKeyHint="search"
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" || !canQuickCreate || quickCreating) return;
+                e.preventDefault();
+                void (async () => {
+                  setQuickCreating(true);
+                  try {
+                    await onQuickCreate(searchTrimmed);
+                  } finally {
+                    setQuickCreating(false);
+                  }
+                })();
+              }}
             />
           </label>
+          {canQuickCreate ? (
+            <div className="exercise-picker-quick-create">
+              <button
+                type="button"
+                className="btn btn-primary exercise-picker-quick-create__btn"
+                disabled={quickCreating}
+                onClick={() => {
+                  void (async () => {
+                    setQuickCreating(true);
+                    try {
+                      await onQuickCreate(searchTrimmed);
+                    } finally {
+                      setQuickCreating(false);
+                    }
+                  })();
+                }}
+              >
+                {quickCreating ? "Adding…" : `Create “${searchTrimmed}”`}
+              </button>
+              <p className="muted exercise-picker-quick-create__hint">
+                Saves to your exercise list and adds it to this workout.
+              </p>
+            </div>
+          ) : null}
           <ExerciseListBody
             mode="select"
             exercises={filtered}
