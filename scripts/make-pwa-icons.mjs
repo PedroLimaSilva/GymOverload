@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "public");
 const sourcePath = join(__dirname, "app-icon-source.png");
 
-/** Brand green #28cd41 */
+/** Brand green #28cd41 (manifest / icon pipeline; UI accent may differ by platform) */
 const BR = 0x28;
 const BG = 0xcd;
 const BB = 0x41;
@@ -52,21 +52,17 @@ function resizePng(src, dstW, dstH) {
 }
 
 /**
- * Dark-mode favicon: brand green fill, alpha from luminance × source alpha (matches masked header mark).
+ * Brand green silhouette: RGB → #28cd41, keep resized source alpha only.
+ * (Do not multiply alpha by luminance: dark gray art would read as ~12% opaque.)
  */
-function faviconDarkGreen(src, size) {
+function brandGreenSilhouette(src, size) {
   const r = resizePng(src, size, size);
   for (let i = 0; i < r.data.length; i += 4) {
-    const sr = r.data[i];
-    const sg = r.data[i + 1];
-    const sb = r.data[i + 2];
     const sa = r.data[i + 3];
-    const lum = (0.299 * sr + 0.587 * sg + 0.114 * sb) / 255;
-    const outA = Math.min(255, Math.round(lum * sa));
     r.data[i] = BR;
     r.data[i + 1] = BG;
     r.data[i + 2] = BB;
-    r.data[i + 3] = outA;
+    r.data[i + 3] = sa;
   }
   return r;
 }
@@ -80,12 +76,12 @@ const source = PNG.sync.read(raw);
 
 if (source.width !== source.height) {
   console.warn(
-    "make-pwa-icons: source is not square; resizing uses full bitmap (may look stretched in maskable slots)."
+    "make-pwa-icons: source is not square; resizing uses full bitmap (may look stretched in maskable slots).",
   );
 }
 
-writePng(join(publicDir, "pwa-192.png"), resizePng(source, 192, 192));
-writePng(join(publicDir, "pwa-512.png"), resizePng(source, 512, 512));
-writePng(join(publicDir, "favicon-32-light.png"), resizePng(source, 32, 32));
-writePng(join(publicDir, "favicon-32-dark.png"), faviconDarkGreen(source, 32));
-writePng(join(publicDir, "apple-touch-icon.png"), resizePng(source, 180, 180));
+writePng(join(publicDir, "pwa-192.png"), brandGreenSilhouette(source, 192));
+writePng(join(publicDir, "pwa-512.png"), brandGreenSilhouette(source, 512));
+writePng(join(publicDir, "favicon-32-light.png"), brandGreenSilhouette(source, 32));
+writePng(join(publicDir, "favicon-32-dark.png"), brandGreenSilhouette(source, 32));
+writePng(join(publicDir, "apple-touch-icon.png"), brandGreenSilhouette(source, 180));

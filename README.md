@@ -10,42 +10,45 @@ GymOverload is a **progressive web app (PWA)** for **strength training**. It tar
 
 ## Vision vs current PWA
 
-| Area | Goal | Status today |
-|------|------|----------------|
-| Exercises | Custom exercises; categories; kind string; rest and weight defaults | **Yes**: list, search, category filter, create/edit/delete |
-| Workouts | Named plans with ordered exercises, sets, target reps | **Yes**: list, detail, add from library, reorder in edit mode |
-| Session logging | Walk a plan; log sets; rest timer | **Not built** (same gap as the former native app) |
-| Export / backup | Portable data | **Planned** (JSON export/import fits IndexedDB well) |
-| Progress / charts | Trends over time | **Planned** |
-| Watch companion | Wrist UI | **Removed** with the native stack; not part of the PWA |
+| Area              | Goal                                                                | Status today                                                  |
+| ----------------- | ------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Exercises         | Custom exercises; categories; kind string; rest and weight defaults | **Yes**: list, search, category filter, create/edit/delete    |
+| Workouts          | Named plans with ordered exercises, sets, target reps               | **Yes**: list, detail, add from library, reorder in edit mode |
+| Session logging   | Walk a plan; log sets; rest timer                                   | **Not built** (same gap as the former native app)             |
+| Export / backup   | Portable data                                                       | **Planned** (JSON export/import fits IndexedDB well)          |
+| Progress / charts | Trends over time                                                    | **Planned**                                                   |
+| Watch companion   | Wrist UI                                                            | **Removed** with the native stack; not part of the PWA        |
 
 ## Requirements
 
-- **Node.js** 20+ (CI uses 22)
-- **npm** 10+
+- **Node.js** 22 (pin with [`nvm`](https://github.com/nvm-sh/nvm): `nvm use` reads [`.nvmrc`](.nvmrc))
+- **Yarn** 4 via **Corepack** (`corepack enable` — the repo’s [`package.json`](package.json) `packageManager` field selects the version)
 
 ## Project layout
 
-| Path | Role |
-|------|------|
-| `src/` | React UI, Dexie schema, routing, PWA registration |
-| `public/seed/` | Bundled `exercises.json` and `workouts.json` (first-run seed) |
-| `scripts/app-icon-source.png` | 1024×1024 master artwork (from the original iOS asset); `make-pwa-icons.mjs` resizes it to PWA and Apple touch icons, and emits light/dark favicons (`favicon-32-light.png` / `favicon-32-dark.png`) |
-| `vite.config.ts` | Vite + `vite-plugin-pwa` (manifest + service worker) |
+| Path                          | Role                                                                                                                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/`                        | React UI, Dexie schema, routing, PWA registration                                                                                                                                                      |
+| `public/seed/`                | Bundled `exercises.json` and `workouts.json` (first-run seed)                                                                                                                                          |
+| `scripts/app-icon-source.png` | 1024×1024 master artwork (from the original iOS asset); `make-pwa-icons.mjs` emits `#28cd41` icons (PWA, favicons, Apple touch) using the source alpha; RGB is replaced, alpha is not luminance-scaled |
+| `vite.config.ts`              | Vite + `vite-plugin-pwa` (manifest + service worker)                                                                                                                                                   |
 
 ## Scripts
 
 ```bash
-npm install    # dependencies
-npm run dev    # local dev server
-npm test       # Vitest (seed JSON + model helpers)
-npm run build  # typecheck + production build to dist/
-npm run preview # serve dist/ locally
+corepack enable   # once per machine: activates Yarn from packageManager
+yarn install      # dependencies
+yarn dev          # local dev server
+yarn test         # Vitest (seed JSON + model helpers)
+yarn build        # typecheck + production build to dist/
+yarn preview      # serve dist/ locally
+yarn format       # apply Prettier to the repo
+yarn format:check # verify formatting (also runs in CI)
 ```
 
 ## Deploying
 
-Build with `npm run build` and host the `dist/` folder on any static host **over HTTPS** (required for service workers and installability). Configure the server so client-side routes fall back to `index.html` if you use deep links into `/exercises/:id` or `/workouts/:id`.
+Build with `yarn build` and host the `dist/` folder on any static host **over HTTPS** (required for service workers and installability). Configure the server so client-side routes fall back to `index.html` if you use deep links into `/exercises/:id` or `/workouts/:id`.
 
 ### GitHub Pages (this repo)
 
@@ -53,7 +56,7 @@ Pushes to `main` run `.github/workflows/deploy-pages.yml`, which builds with `VI
 
 ## Continuous integration
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`: `npm ci`, `npm test`, `npm run build`.
+GitHub Actions (`.github/workflows/ci.yml`) runs on pushes and pull requests to `main`: `yarn install --immutable`, `yarn format:check`, `yarn test`, `yarn build`.
 
 ## Author
 

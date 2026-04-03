@@ -16,6 +16,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,20 +25,33 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
-          cache: npm
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack (Yarn)
+        run: corepack enable
+
+      - name: Install Yarn from packageManager
+        run: corepack install
+
+      - name: Yarn cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.yarn/berry/cache
+          key: ${{ runner.os }}-yarn-berry-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-berry-
 
       - name: Install
-        run: npm ci
+        run: yarn install --immutable
 
       - name: Test
-        run: npm test
+        run: yarn test
 
       - name: Build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
         run: |
-          npm run build
+          yarn build
           cp dist/index.html dist/404.html
 
       - name: Upload artifact

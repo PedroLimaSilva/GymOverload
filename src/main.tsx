@@ -15,5 +15,5 @@ createRoot(document.getElementById("root")!).render(
     <BrowserRouter basename={basename}>
       <App />
     </BrowserRouter>
-  </StrictMode>
+  </StrictMode>,
 );

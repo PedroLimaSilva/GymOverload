@@ -509,6 +509,11 @@ a.workout-detail-hero__action {
   cursor: pointer;
 }
 
+.btn-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .btn-icon-circle {
   display: inline-flex;
   align-items: center;
@@ -1131,6 +1136,34 @@ a.workout-detail-hero__action {
   color: var(--muted);
   font-size: 0.85rem;
   flex-shrink: 0;
+}
+
+.profile-status {
+  margin-top: 1rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+.profile-status--ok {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.profile-status--err {
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+.profile-import-list {
+  margin: 0 0 0.85rem;
+  padding-left: 1.2rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.profile-import-list li + li {
+  margin-top: 0.55rem;
 }
 
 /* Full-screen exercise edit modal */

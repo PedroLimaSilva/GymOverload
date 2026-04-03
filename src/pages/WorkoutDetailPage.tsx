@@ -39,7 +39,7 @@ export function WorkoutDetailPage() {
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
   const sessionsForWorkout = useLiveQuery(
     () => (id ? db.workoutSessions.where("workoutId").equals(id).toArray() : []),
-    [id]
+    [id],
   );
   const sortedSessions = useMemo(() => {
     if (!sessionsForWorkout) return [];
@@ -56,7 +56,7 @@ export function WorkoutDetailPage() {
       latestSession
         ? db.loggedExerciseEntries.where("sessionId").equals(latestSession.id).toArray()
         : [],
-    [latestSession?.id]
+    [latestSession?.id],
   );
 
   const exerciseByName = useMemo(() => {
@@ -89,7 +89,7 @@ export function WorkoutDetailPage() {
   function addSelected(selected: Exercise[]) {
     if (!draft) return;
     const additions = selected.map((ex) =>
-      plannedFromDTO({ name: ex.name, sets: 4, targetReps: 10 })
+      plannedFromDTO({ name: ex.name, sets: 4, targetReps: 10 }),
     );
     void persist({
       ...draft,
@@ -541,7 +541,12 @@ function ReorderList({
       {items.map((pe, index) => (
         <div key={pe.id} className="reorder-row">
           <span>{pe.name}</span>
-          <button type="button" className="btn btn-ghost" onClick={() => move(index, -1)} disabled={index === 0}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => move(index, -1)}
+            disabled={index === 0}
+          >
             ↑
           </button>
           <button
@@ -578,8 +583,7 @@ function ExerciseMultiPickerModal({
   const filtered = exercises.filter((ex) => {
     const q = search.trim().toLowerCase();
     const okSearch = !q || ex.name.toLowerCase().includes(q);
-    const okCat =
-      filterCats.length === 0 || ex.categories.some((c) => filterCats.includes(c));
+    const okCat = filterCats.length === 0 || ex.categories.some((c) => filterCats.includes(c));
     return okSearch && okCat;
   });
 
@@ -608,7 +612,11 @@ function ExerciseMultiPickerModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="modal" style={{ maxWidth: 520, maxHeight: "90dvh" }} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        style={{ maxWidth: 520, maxHeight: "90dvh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <header>
           <h2 id="multi-picker-title">Add exercises</h2>
           <button type="button" className="btn btn-ghost" onClick={onClose}>
@@ -649,7 +657,14 @@ function ExerciseMultiPickerModal({
             {filtered.map((ex) => (
               <li key={ex.id}>
                 <button type="button" className="row" onClick={() => toggle(ex.id)}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "0.75rem",
+                    }}
+                  >
                     <div>
                       <p className="row-title" style={{ margin: 0 }}>
                         {ex.name}

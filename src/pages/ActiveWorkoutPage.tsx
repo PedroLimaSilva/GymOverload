@@ -29,7 +29,7 @@ export function ActiveWorkoutPage() {
       workout
         ? workout.plannedExercises.map((p) => `${p.id}:${p.sets}:${p.targetReps}`).join("|")
         : "",
-    [workout]
+    [workout],
   );
 
   useEffect(() => {
@@ -58,13 +58,11 @@ export function ActiveWorkoutPage() {
       setSetStates((prev) => {
         const row = prev[plannedId];
         if (!row || !row[setIndex]) return prev;
-        const nextRow = row.map((cell, i) =>
-          i === setIndex ? { ...cell, ...patch } : cell
-        );
+        const nextRow = row.map((cell, i) => (i === setIndex ? { ...cell, ...patch } : cell));
         return { ...prev, [plannedId]: nextRow };
       });
     },
-    []
+    [],
   );
 
   async function finish() {

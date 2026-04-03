@@ -6,6 +6,7 @@ type MainProps = {
   title: string;
   createLabel: string;
   onCreate: () => void;
+  createDisabled?: boolean;
   menuLabel: string;
   menuItems: OverflowMenuItem[];
 };
@@ -33,7 +34,9 @@ export function ScreenHeader(props: Props) {
           {props.center != null ? (
             <div className="screen-header__detail-center">{props.center}</div>
           ) : null}
-          {props.trailing ? <div className="screen-header__detail-actions">{props.trailing}</div> : null}
+          {props.trailing ? (
+            <div className="screen-header__detail-actions">{props.trailing}</div>
+          ) : null}
         </div>
       </header>
     );
@@ -42,7 +45,12 @@ export function ScreenHeader(props: Props) {
   return (
     <header className="screen-header screen-header--main">
       <div className="screen-header__main-row">
-        <button type="button" className="btn-pill glass" onClick={props.onCreate}>
+        <button
+          type="button"
+          className="btn-pill glass"
+          onClick={props.onCreate}
+          disabled={props.createDisabled}
+        >
           {props.createLabel}
         </button>
         <h1 className="screen-header__title screen-header__title--main">{props.title}</h1>

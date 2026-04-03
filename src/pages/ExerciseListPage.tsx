@@ -111,7 +111,10 @@ export function ExerciseListPage() {
           <div className="list-with-index__scroll" ref={scrollRef}>
             {showIndex ? (
               grouped.map((section) => (
-                <section key={section.key} aria-labelledby={`ex-section-${section.key === "#" ? "sym" : section.key}`}>
+                <section
+                  key={section.key}
+                  aria-labelledby={`ex-section-${section.key === "#" ? "sym" : section.key}`}
+                >
                   <h2
                     className="list-section-label"
                     id={`ex-section-${section.key === "#" ? "sym" : section.key}`}
@@ -122,13 +125,19 @@ export function ExerciseListPage() {
                     {section.items.map((ex) => (
                       <li key={ex.id}>
                         <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
-                          <Link to={`/exercises/${ex.id}`} className="list-row-link" style={{ flex: 1 }}>
+                          <Link
+                            to={`/exercises/${ex.id}`}
+                            className="list-row-link"
+                            style={{ flex: 1 }}
+                          >
                             <span className="list-row-link__thumb" aria-hidden>
                               {initials(ex.name)}
                             </span>
                             <span className="list-row-link__body">
                               <p className="row-title">{ex.name}</p>
-                              <p className="row-sub">{ex.categories.join(", ") || "No categories"}</p>
+                              <p className="row-sub">
+                                {ex.categories.join(", ") || "No categories"}
+                              </p>
                             </span>
                             <IconChevronRight className="list-row-link__chevron" />
                           </Link>
@@ -136,7 +145,11 @@ export function ExerciseListPage() {
                             <button
                               type="button"
                               className="btn btn-ghost"
-                              style={{ alignSelf: "center", padding: "0.35rem 0.5rem", flexShrink: 0 }}
+                              style={{
+                                alignSelf: "center",
+                                padding: "0.35rem 0.5rem",
+                                flexShrink: 0,
+                              }}
                               aria-label={`Delete ${ex.name}`}
                               onClick={(ev) => void removeExercise(ev, ex)}
                             >
@@ -154,7 +167,11 @@ export function ExerciseListPage() {
                 {filtered.map((ex) => (
                   <li key={ex.id}>
                     <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
-                      <Link to={`/exercises/${ex.id}`} className="list-row-link" style={{ flex: 1 }}>
+                      <Link
+                        to={`/exercises/${ex.id}`}
+                        className="list-row-link"
+                        style={{ flex: 1 }}
+                      >
                         <span className="list-row-link__thumb" aria-hidden>
                           {initials(ex.name)}
                         </span>

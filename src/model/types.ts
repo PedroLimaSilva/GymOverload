@@ -15,7 +15,13 @@ export function isExerciseCategory(s: string): s is ExerciseCategory {
   return (EXERCISE_CATEGORIES as readonly string[]).includes(s);
 }
 
-export const TRAINING_CATEGORIES = ["Strength", "Hypertrophy", "Endurance", "Mobility", "Skill"] as const;
+export const TRAINING_CATEGORIES = [
+  "Strength",
+  "Hypertrophy",
+  "Endurance",
+  "Mobility",
+  "Skill",
+] as const;
 export type TrainingCategory = (typeof TRAINING_CATEGORIES)[number];
 
 export const EQUIPMENT_PRESETS = [
@@ -109,7 +115,11 @@ export function newId(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-export function exerciseFromDTO(dto: ExerciseDTO, id = newId(), createdAt = new Date().toISOString()): Exercise {
+export function exerciseFromDTO(
+  dto: ExerciseDTO,
+  id = newId(),
+  createdAt = new Date().toISOString(),
+): Exercise {
   return {
     id,
     createdAt,
