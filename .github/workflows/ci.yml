@@ -10,18 +10,33 @@ jobs:
   web:
     name: Web — test & build
     runs-on: ubuntu-latest
+    env:
+      # Corepack must not prompt in CI when downloading the pinned Yarn release.
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Do not use cache: yarn here: setup-node runs `yarn` before Corepack is enabled,
+      # so the runner's global Yarn 1 would run against a Yarn Berry lockfile.
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-          cache: yarn
 
       - name: Enable Corepack (Yarn)
         run: corepack enable
+
+      - name: Install Yarn from packageManager
+        run: corepack install
+
+      - name: Yarn cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.yarn/berry/cache
+          key: ${{ runner.os }}-yarn-berry-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-berry-
 
       - name: Install
         run: yarn install --immutable
