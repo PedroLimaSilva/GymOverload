@@ -30,7 +30,7 @@ GymOverload is a **progressive web app (PWA)** for **strength training**. It tar
 |------|------|
 | `src/` | React UI, Dexie schema, routing, PWA registration |
 | `public/seed/` | Bundled `exercises.json` and `workouts.json` (first-run seed) |
-| `scripts/app-icon-source.png` | 1024×1024 master artwork (from the original iOS asset); `make-pwa-icons.mjs` emits brand-green silhouettes (`#28cd41`) for PWA icons, favicons, and `apple-touch-icon.png` from the gray source art |
+| `scripts/app-icon-source.png` | 1024×1024 master artwork (from the original iOS asset); `make-pwa-icons.mjs` emits `#28cd41` icons (PWA, favicons, Apple touch) using the source alpha; RGB is replaced, alpha is not luminance-scaled |
 | `vite.config.ts` | Vite + `vite-plugin-pwa` (manifest + service worker) |
 
 ## Scripts
