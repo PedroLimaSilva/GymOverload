@@ -53,11 +53,16 @@ export interface PlannedExerciseDTO {
   name: string;
   sets: number;
   targetReps: number;
+  /** Per-set planned weight (kg/lb per exercise settings); length should match `sets` when present */
+  weightsBySet?: number[];
+  /** Per-set planned reps; falls back to `targetReps` when missing */
+  repsBySet?: number[];
 }
 
 export interface WorkoutDTO {
   name: string;
   plannedExercises: PlannedExerciseDTO[];
+  notes?: string | null;
 }
 
 export interface Exercise extends ExerciseDTO {
@@ -73,6 +78,7 @@ export interface Workout {
   id: string;
   name: string;
   plannedExercises: PlannedExercise[];
+  notes?: string;
 }
 
 export interface WorkoutSession {
@@ -123,7 +129,31 @@ export function exerciseFromDTO(dto: ExerciseDTO, id = newId(), createdAt = new 
 }
 
 export function plannedFromDTO(dto: PlannedExerciseDTO, id = newId()): PlannedExercise {
-  return { id, name: dto.name, sets: dto.sets, targetReps: dto.targetReps };
+  return {
+    id,
+    name: dto.name,
+    sets: dto.sets,
+    targetReps: dto.targetReps,
+    weightsBySet: dto.weightsBySet,
+    repsBySet: dto.repsBySet,
+  };
+}
+
+/** Default weight/reps for each planned set (persisted overrides + fallbacks). */
+export function planRowDefaults(planned: PlannedExercise): { weight: number; reps: number }[] {
+  const out: { weight: number; reps: number }[] = [];
+  for (let i = 0; i < planned.sets; i++) {
+    const w = planned.weightsBySet?.[i];
+    const r = planned.repsBySet?.[i];
+    out.push({
+      weight: typeof w === "number" && Number.isFinite(w) ? w : 0,
+      reps:
+        typeof r === "number" && Number.isFinite(r) && r >= 1
+          ? Math.round(r)
+          : planned.targetReps,
+    });
+  }
+  return out;
 }
 
 export function workoutFromDTO(dto: WorkoutDTO, id = newId()): Workout {
@@ -131,6 +161,7 @@ export function workoutFromDTO(dto: WorkoutDTO, id = newId()): Workout {
     id,
     name: dto.name,
     plannedExercises: dto.plannedExercises.map((p) => plannedFromDTO(p)),
+    notes: dto.notes ?? undefined,
   };
 }
 
