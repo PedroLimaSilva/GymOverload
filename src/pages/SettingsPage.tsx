@@ -56,7 +56,9 @@ export function SettingsPage() {
         `${added.workoutSessions} session${added.workoutSessions === 1 ? "" : "s"}`,
         `${added.loggedExerciseEntries} logged set${added.loggedExerciseEntries === 1 ? "" : "s"}`,
       ];
-      showSuccess(`Import finished. Added ${parts.join(", ")}. Nothing you already had was removed or overwritten.`);
+      showSuccess(
+        `Import finished. Added ${parts.join(", ")}. Nothing you already had was removed or overwritten.`,
+      );
     } catch (e) {
       showError(e instanceof Error ? e.message : "Import failed.");
     } finally {
@@ -66,10 +68,18 @@ export function SettingsPage() {
   }
 
   async function confirmDeleteAll() {
-    if (!confirm("Delete all exercises, workout plans, sessions, and logged sets? This cannot be undone.")) {
+    if (
+      !confirm(
+        "Delete all exercises, workout plans, sessions, and logged sets? This cannot be undone.",
+      )
+    ) {
       return;
     }
-    if (!confirm("Are you sure? Everything in this app on this device will be removed.")) {
+    if (
+      !confirm(
+        "Are you sure? Everything in this app on this device will be removed.",
+      )
+    ) {
       return;
     }
     setDeleteBusy(true);
@@ -86,37 +96,34 @@ export function SettingsPage() {
 
   return (
     <div className="list-screen">
-      <ScreenHeader
-        variant="main"
-        title="Settings"
-        createLabel="Export"
-        onCreate={() => void downloadJson()}
-        createDisabled={exportBusy}
-        menuLabel="Settings menu"
-        menuItems={[
-          {
-            label: exportBusy ? "Exporting…" : "Download backup (JSON)…",
-            onSelect: () => void downloadJson(),
-            disabled: exportBusy,
-          },
-          {
-            label: importBusy ? "Importing…" : "Import from JSON…",
-            onSelect: () => fileInputRef.current?.click(),
-            disabled: importBusy,
-          },
-        ]}
-      />
-      <div className="list-with-index__scroll" style={{ paddingBottom: "1rem" }}>
+      <h1>Settings</h1>
+      <div
+        className="list-with-index__scroll"
+        style={{ paddingBottom: "1rem" }}
+      >
         <div className="form" style={{ marginTop: 0 }}>
           <p className="muted" style={{ marginTop: 0 }}>
-            Download a JSON backup of everything stored in this app on this device. Use import to copy that data in from
-            a file (for example after switching browsers or devices).
+            Download a JSON backup of everything stored in this app on this
+            device. Use import to copy that data in from a file (for example
+            after switching browsers or devices).
           </p>
 
           <section className="form-section">
             <h2>Export</h2>
-            <div className="toolbar" style={{ marginTop: 0, justifyContent: "flex-start", flexWrap: "wrap" }}>
-              <button type="button" className="btn btn-primary" disabled={exportBusy} onClick={() => void downloadJson()}>
+            <div
+              className="toolbar"
+              style={{
+                marginTop: 0,
+                justifyContent: "flex-start",
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={exportBusy}
+                onClick={() => void downloadJson()}
+              >
                 Download backup (JSON)
               </button>
             </div>
@@ -124,24 +131,37 @@ export function SettingsPage() {
 
           <section className="form-section">
             <h2>Import</h2>
-            <p className="muted" style={{ marginTop: 0, marginBottom: "0.65rem", fontSize: "0.9rem" }}>
-              Choose a JSON file exported from GymOverload (same format as Download backup). Here is what happens:
+            <p
+              className="muted"
+              style={{
+                marginTop: 0,
+                marginBottom: "0.65rem",
+                fontSize: "0.9rem",
+              }}
+            >
+              Choose a JSON file exported from GymOverload (same format as
+              Download backup). Here is what happens:
             </p>
             <ul className="profile-import-list muted">
               <li>
-                The import merges with what is already here: every exercise, workout plan, completed session, and logged
-                set in the file is inserted as new data. Nothing you already have is removed or overwritten. Importing the
-                same file twice adds a second copy of everything in that file.
+                The import merges with what is already here: every exercise,
+                workout plan, completed session, and logged set in the file is
+                inserted as new data. Nothing you already have is removed or
+                overwritten. Importing the same file twice adds a second copy of
+                everything in that file.
               </li>
               <li>
-                Each imported record gets a new ID so it cannot clash with existing rows. References inside the backup
-                are updated accordingly: sessions point at the newly created workout plans, and logged sets point at the
-                new sessions and planned exercise rows.
+                Each imported record gets a new ID so it cannot clash with
+                existing rows. References inside the backup are updated
+                accordingly: sessions point at the newly created workout plans,
+                and logged sets point at the new sessions and planned exercise
+                rows.
               </li>
               <li>
-                Sessions are only imported when their workout plan is included in the same file. Logged sets are only
-                imported when they can be tied to a remapped session and planned exercise. Anything in the file that would
-                leave a dangling reference is skipped.
+                Sessions are only imported when their workout plan is included
+                in the same file. Logged sets are only imported when they can be
+                tied to a remapped session and planned exercise. Anything in the
+                file that would leave a dangling reference is skipped.
               </li>
             </ul>
             <input
@@ -167,7 +187,12 @@ export function SettingsPage() {
 
           <section className="form-section">
             <h2>Danger zone</h2>
-            <button type="button" className="btn btn-danger" disabled={deleteBusy} onClick={() => void confirmDeleteAll()}>
+            <button
+              type="button"
+              className="btn btn-danger"
+              disabled={deleteBusy}
+              onClick={() => void confirmDeleteAll()}
+            >
               {deleteBusy ? "Deleting…" : "Delete all data"}
             </button>
           </section>
