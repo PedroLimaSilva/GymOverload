@@ -25,7 +25,9 @@ export function ScreenHeader(props: Props) {
       <header className="screen-header screen-header--detail">
         <div className="screen-header__detail-row">
           {props.leading}
-          {props.trailing ? <div className="screen-header__detail-actions">{props.trailing}</div> : null}
+          {props.trailing ? (
+            <div className="screen-header__detail-actions">{props.trailing}</div>
+          ) : null}
         </div>
       </header>
     );

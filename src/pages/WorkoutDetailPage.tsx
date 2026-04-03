@@ -20,7 +20,7 @@ export function WorkoutDetailPage() {
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
   const sessionsForWorkout = useLiveQuery(
     () => (id ? db.workoutSessions.where("workoutId").equals(id).toArray() : []),
-    [id]
+    [id],
   );
   const latestSession = sessionsForWorkout
     ? [...sessionsForWorkout].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1))[0]
@@ -30,7 +30,7 @@ export function WorkoutDetailPage() {
       latestSession
         ? db.loggedExerciseEntries.where("sessionId").equals(latestSession.id).toArray()
         : [],
-    [latestSession?.id]
+    [latestSession?.id],
   );
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export function WorkoutDetailPage() {
   function addSelected(selected: Exercise[]) {
     if (!draft) return;
     const additions = selected.map((ex) =>
-      plannedFromDTO({ name: ex.name, sets: 4, targetReps: 10 })
+      plannedFromDTO({ name: ex.name, sets: 4, targetReps: 10 }),
     );
     void persist({
       ...draft,
@@ -98,12 +98,22 @@ export function WorkoutDetailPage() {
             <Link
               to={`/workouts/${draft.id}/session`}
               className="btn btn-primary"
-              style={{ display: "block", width: "100%", textAlign: "center", marginBottom: "0.5rem" }}
+              style={{
+                display: "block",
+                width: "100%",
+                textAlign: "center",
+                marginBottom: "0.5rem",
+              }}
             >
               Start workout
             </Link>
           ) : (
-            <button type="button" className="btn btn-primary" disabled style={{ width: "100%", marginBottom: "0.5rem" }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled
+              style={{ width: "100%", marginBottom: "0.5rem" }}
+            >
               Start workout
             </button>
           )}
@@ -154,7 +164,7 @@ export function WorkoutDetailPage() {
                   void persist({
                     ...draft,
                     plannedExercises: draft.plannedExercises.map((p) =>
-                      p.id === pe.id ? next : p
+                      p.id === pe.id ? next : p,
                     ),
                   })
                 }
@@ -162,7 +172,12 @@ export function WorkoutDetailPage() {
             ))
           )}
         </div>
-        <button type="button" className="btn btn-primary" style={{ width: "100%", marginTop: "0.75rem" }} onClick={() => setPickerOpen(true)}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ width: "100%", marginTop: "0.75rem" }}
+          onClick={() => setPickerOpen(true)}
+        >
           Add exercise
         </button>
       </div>
@@ -189,15 +204,29 @@ function PlannedEditor({
   return (
     <div className="planned-card">
       <h3>{planned.name}</h3>
-      {lastSummary && <p className="muted" style={{ margin: "0 0 0.5rem", fontSize: "0.85rem" }}>{lastSummary}</p>}
+      {lastSummary && (
+        <p className="muted" style={{ margin: "0 0 0.5rem", fontSize: "0.85rem" }}>
+          {lastSummary}
+        </p>
+      )}
       <div className="field">
         <label>Target reps</label>
         <div className="stepper">
-          <button type="button" onClick={() => onChange({ ...planned, targetReps: Math.max(1, planned.targetReps - 1) })}>
+          <button
+            type="button"
+            onClick={() =>
+              onChange({ ...planned, targetReps: Math.max(1, planned.targetReps - 1) })
+            }
+          >
             −
           </button>
           <span style={{ minWidth: "2rem", textAlign: "center" }}>{planned.targetReps}</span>
-          <button type="button" onClick={() => onChange({ ...planned, targetReps: Math.min(30, planned.targetReps + 1) })}>
+          <button
+            type="button"
+            onClick={() =>
+              onChange({ ...planned, targetReps: Math.min(30, planned.targetReps + 1) })
+            }
+          >
             +
           </button>
         </div>
@@ -205,11 +234,17 @@ function PlannedEditor({
       <div className="field">
         <label>Sets</label>
         <div className="stepper">
-          <button type="button" onClick={() => onChange({ ...planned, sets: Math.max(1, planned.sets - 1) })}>
+          <button
+            type="button"
+            onClick={() => onChange({ ...planned, sets: Math.max(1, planned.sets - 1) })}
+          >
             −
           </button>
           <span style={{ minWidth: "2rem", textAlign: "center" }}>{planned.sets}</span>
-          <button type="button" onClick={() => onChange({ ...planned, sets: Math.min(10, planned.sets + 1) })}>
+          <button
+            type="button"
+            onClick={() => onChange({ ...planned, sets: Math.min(10, planned.sets + 1) })}
+          >
             +
           </button>
         </div>
@@ -241,10 +276,20 @@ function ReorderList({
       {items.map((pe, index) => (
         <div key={pe.id} className="reorder-row">
           <span>{pe.name}</span>
-          <button type="button" className="btn btn-ghost" onClick={() => move(index, -1)} disabled={index === 0}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => move(index, -1)}
+            disabled={index === 0}
+          >
             ↑
           </button>
-          <button type="button" className="btn btn-ghost" onClick={() => move(index, 1)} disabled={index === items.length - 1}>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => move(index, 1)}
+            disabled={index === items.length - 1}
+          >
             ↓
           </button>
           <button type="button" className="btn btn-ghost" onClick={() => onRemove(pe.id)}>
@@ -273,8 +318,7 @@ function ExerciseMultiPickerModal({
   const filtered = exercises.filter((ex) => {
     const q = search.trim().toLowerCase();
     const okSearch = !q || ex.name.toLowerCase().includes(q);
-    const okCat =
-      filterCats.length === 0 || ex.categories.some((c) => filterCats.includes(c));
+    const okCat = filterCats.length === 0 || ex.categories.some((c) => filterCats.includes(c));
     return okSearch && okCat;
   });
 
@@ -303,7 +347,11 @@ function ExerciseMultiPickerModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="modal" style={{ maxWidth: 520, maxHeight: "90dvh" }} onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal"
+        style={{ maxWidth: 520, maxHeight: "90dvh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <header>
           <h2 id="multi-picker-title">Add exercises</h2>
           <button type="button" className="btn btn-ghost" onClick={onClose}>
@@ -344,7 +392,14 @@ function ExerciseMultiPickerModal({
             {filtered.map((ex) => (
               <li key={ex.id}>
                 <button type="button" className="row" onClick={() => toggle(ex.id)}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: "0.75rem",
+                    }}
+                  >
                     <div>
                       <p className="row-title" style={{ margin: 0 }}>
                         {ex.name}

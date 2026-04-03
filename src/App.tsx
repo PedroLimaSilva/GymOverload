@@ -67,7 +67,7 @@ export function App() {
     (async () => {
       await ensureSeeded(
         `${import.meta.env.BASE_URL}seed/exercises.json`,
-        `${import.meta.env.BASE_URL}seed/workouts.json`
+        `${import.meta.env.BASE_URL}seed/workouts.json`,
       );
       if (!cancelled) setReady(true);
     })();

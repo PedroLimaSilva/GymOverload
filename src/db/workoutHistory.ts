@@ -2,7 +2,9 @@ import { db } from "./database";
 import type { LoggedExerciseEntry, PlannedExercise, Workout, WorkoutSession } from "../model/types";
 import { newId } from "../model/types";
 
-export async function getLatestCompletedSession(workoutId: string): Promise<WorkoutSession | undefined> {
+export async function getLatestCompletedSession(
+  workoutId: string,
+): Promise<WorkoutSession | undefined> {
   const rows = await db.workoutSessions.where("workoutId").equals(workoutId).toArray();
   rows.sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
   return rows[0];
@@ -21,7 +23,7 @@ function entryMap(entries: LoggedExerciseEntry[]): Map<string, LoggedExerciseEnt
 }
 
 export async function buildInitialSetStates(
-  workout: Workout
+  workout: Workout,
 ): Promise<Record<string, { weight: number; reps: number }[]>> {
   const session = await getLatestCompletedSession(workout.id);
   const entries = session ? await entriesForSession(session.id) : [];
@@ -52,7 +54,7 @@ export async function deleteSessionsForWorkout(workoutId: string): Promise<void>
 
 export async function saveCompletedWorkout(
   workout: Workout,
-  setStates: Record<string, { weight: number; reps: number }[]>
+  setStates: Record<string, { weight: number; reps: number }[]>,
 ): Promise<void> {
   const sessionId = newId();
   const completedAt = new Date().toISOString();
@@ -89,7 +91,7 @@ export async function saveCompletedWorkout(
 
 export function lastSessionSummaryForExercise(
   entries: LoggedExerciseEntry[],
-  planned: PlannedExercise
+  planned: PlannedExercise,
 ): string | null {
   const parts: string[] = [];
   for (let i = 0; i < planned.sets; i++) {

@@ -36,7 +36,12 @@ export class GymOverloadDB extends Dexie {
         const sessions = trans.table("workoutSessions");
         const sessRows = await sessions.toArray();
         for (const s of sessRows) {
-          const o = s as { id: string; completedAt: string; templateId?: string; workoutId?: string };
+          const o = s as {
+            id: string;
+            completedAt: string;
+            templateId?: string;
+            workoutId?: string;
+          };
           await sessions.put({
             id: o.id,
             completedAt: o.completedAt,
@@ -66,7 +71,12 @@ export class GymOverloadDB extends Dexie {
         const sessions = trans.table("workoutSessions");
         const sessRows = await sessions.toArray();
         for (const s of sessRows) {
-          const o = s as { id: string; completedAt: string; templateId?: string; workoutId?: string };
+          const o = s as {
+            id: string;
+            completedAt: string;
+            templateId?: string;
+            workoutId?: string;
+          };
           const wid = o.workoutId ?? o.templateId ?? "";
           if (wid !== (o as { workoutId?: string }).workoutId || o.templateId !== undefined) {
             await sessions.put({

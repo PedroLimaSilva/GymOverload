@@ -1,7 +1,4 @@
-import {
-  EXERCISE_CATEGORIES,
-  type ExerciseCategory,
-} from "../model/types";
+import { EXERCISE_CATEGORIES, type ExerciseCategory } from "../model/types";
 
 type Props = {
   title: string;
@@ -11,13 +8,7 @@ type Props = {
   onClose: () => void;
 };
 
-export function CategoryPickerModal({
-  title,
-  showClear,
-  selected,
-  onChange,
-  onClose,
-}: Props) {
+export function CategoryPickerModal({ title, showClear, selected, onChange, onClose }: Props) {
   function toggle(cat: ExerciseCategory) {
     if (selected.includes(cat)) {
       onChange(selected.filter((c) => c !== cat));

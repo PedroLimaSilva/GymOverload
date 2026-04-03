@@ -6,7 +6,6 @@ import {
   parseImportPayloadJson,
   triggerDownload,
 } from "../db/profileData";
-import { ScreenHeader } from "../components/ScreenHeader";
 
 type StatusKind = "idle" | "success" | "error";
 
@@ -75,11 +74,7 @@ export function SettingsPage() {
     ) {
       return;
     }
-    if (
-      !confirm(
-        "Are you sure? Everything in this app on this device will be removed.",
-      )
-    ) {
+    if (!confirm("Are you sure? Everything in this app on this device will be removed.")) {
       return;
     }
     setDeleteBusy(true);
@@ -97,15 +92,11 @@ export function SettingsPage() {
   return (
     <div className="list-screen">
       <h1>Settings</h1>
-      <div
-        className="list-with-index__scroll"
-        style={{ paddingBottom: "1rem" }}
-      >
+      <div className="list-with-index__scroll" style={{ paddingBottom: "1rem" }}>
         <div className="form" style={{ marginTop: 0 }}>
           <p className="muted" style={{ marginTop: 0 }}>
-            Download a JSON backup of everything stored in this app on this
-            device. Use import to copy that data in from a file (for example
-            after switching browsers or devices).
+            Download a JSON backup of everything stored in this app on this device. Use import to
+            copy that data in from a file (for example after switching browsers or devices).
           </p>
 
           <section className="form-section">
@@ -139,29 +130,26 @@ export function SettingsPage() {
                 fontSize: "0.9rem",
               }}
             >
-              Choose a JSON file exported from GymOverload (same format as
-              Download backup). Here is what happens:
+              Choose a JSON file exported from GymOverload (same format as Download backup). Here is
+              what happens:
             </p>
             <ul className="profile-import-list muted">
               <li>
-                The import merges with what is already here: every exercise,
-                workout plan, completed session, and logged set in the file is
-                inserted as new data. Nothing you already have is removed or
-                overwritten. Importing the same file twice adds a second copy of
+                The import merges with what is already here: every exercise, workout plan, completed
+                session, and logged set in the file is inserted as new data. Nothing you already
+                have is removed or overwritten. Importing the same file twice adds a second copy of
                 everything in that file.
               </li>
               <li>
-                Each imported record gets a new ID so it cannot clash with
-                existing rows. References inside the backup are updated
-                accordingly: sessions point at the newly created workout plans,
-                and logged sets point at the new sessions and planned exercise
-                rows.
+                Each imported record gets a new ID so it cannot clash with existing rows. References
+                inside the backup are updated accordingly: sessions point at the newly created
+                workout plans, and logged sets point at the new sessions and planned exercise rows.
               </li>
               <li>
-                Sessions are only imported when their workout plan is included
-                in the same file. Logged sets are only imported when they can be
-                tied to a remapped session and planned exercise. Anything in the
-                file that would leave a dangling reference is skipped.
+                Sessions are only imported when their workout plan is included in the same file.
+                Logged sets are only imported when they can be tied to a remapped session and
+                planned exercise. Anything in the file that would leave a dangling reference is
+                skipped.
               </li>
             </ul>
             <input

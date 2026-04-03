@@ -9,7 +9,9 @@ function firstCharKey(name: string): string {
   return LETTER_OTHER;
 }
 
-export function groupByFirstLetter<T extends { name: string }>(items: T[]): { key: string; items: T[] }[] {
+export function groupByFirstLetter<T extends { name: string }>(
+  items: T[],
+): { key: string; items: T[] }[] {
   const map = new Map<string, T[]>();
   for (const item of items) {
     const k = firstCharKey(item.name);
