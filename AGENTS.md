@@ -26,14 +26,14 @@ They must be able to:
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Exercise CRUD + categories + kind | Implemented in React (`ExerciseListPage`, `ExerciseDetailPage`), types in `src/model/types.ts`, persistence in Dexie (`src/db/database.ts`). |
 | Workouts with planned sets/reps   | Implemented (`WorkoutListPage`, `WorkoutDetailPage`). Planned rows have stable `id` fields in IndexedDB.                                     |
-| **Session logging / rest timer**  | Live session on `/workouts/:id?session=1`; finish saves history and opens session detail. Rest timer during session.                         |
+| **Session logging / rest timer**  | Live session on `/workouts/:id?session=1`; finish opens `/history/:sessionId`. History list at `/history`. Rest timer during session.        |
 | Export / charts / sync            | **Not implemented**.                                                                                                                         |
 | Native iOS / watchOS              | **Removed**. This repo is **web-only**.                                                                                                      |
 
 ## Technical stack
 
 - **Vite** + **React 19** + **TypeScript**
-- **React Router** for `/exercises`, `/exercises/:id`, `/workouts`, `/workouts/:id`, `/workouts/:id/sessions/:sessionId` (post-finish recap; legacy `/templates` URLs redirect)
+- **React Router** for `/exercises`, `/exercises/:id`, `/workouts`, `/workouts/:id`, `/history`, `/history/:id` (session detail); old `/workouts/:id/sessions/:sessionId` redirects to `/history/:sessionId` (legacy `/templates` URLs redirect)
 - **Dexie** (IndexedDB) for `exercises` and `workouts` tables
 - **vite-plugin-pwa**: Web App Manifest, `generateSW` Workbox build, `registerSW` in `src/pwa.ts`
 - **App icon**: `scripts/app-icon-source.png` (legacy 1024×1024); `scripts/make-pwa-icons.mjs` writes all shipped icons under `public/` as brand green (#28cd41) with the source PNG’s alpha channel (resize only): `pwa-192.png`, `pwa-512.png`, `favicon-32-light.png`, `favicon-32-dark.png`, `apple-touch-icon.png`, before `dev`/`build`

@@ -275,7 +275,7 @@ export function WorkoutDetailPage() {
       sessionElapsedMs,
     );
     setSearchParams({}, { replace: true });
-    navigate(`/workouts/${draft.id}/sessions/${sessionId}`, { replace: true });
+    navigate(`/history/${sessionId}`, { replace: true });
   }
 
   async function remove() {

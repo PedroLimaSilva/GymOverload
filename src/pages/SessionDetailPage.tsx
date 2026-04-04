@@ -1,6 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { BarChart3, ChevronLeft, Dumbbell, Heart, Plus, Trash2, Upload } from "lucide-react";
 import { ExerciseMultiPickerModal } from "../components/ExerciseMultiPickerModal";
 import { ScreenHeader } from "../components/ScreenHeader";
@@ -11,7 +11,7 @@ import {
   getSessionExerciseBlocks,
   putSessionWithLoggedEntries,
 } from "../db/workoutHistory";
-import type { Exercise, SessionExerciseSnapshot } from "../model/types";
+import type { Exercise, SessionExerciseSnapshot, Workout } from "../model/types";
 import { exerciseWithName, newId, plannedFromDTO, sessionTrainingVolume } from "../model/types";
 
 function formatSessionHeaderDate(iso: string): string {
@@ -157,16 +157,21 @@ function DurationEditModal({
 }
 
 export function SessionDetailPage() {
-  const { id: workoutId, sessionId } = useParams<{ id: string; sessionId: string }>();
+  const { id: sessionId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const sessionRow = useLiveQuery(
-    () => (sessionId ? db.workoutSessions.get(sessionId) : undefined),
-    [sessionId],
+  const sessionsAll = useLiveQuery(() => db.workoutSessions.toArray(), []);
+  const session = useMemo(
+    () => (sessionId && sessionsAll ? sessionsAll.find((s) => s.id === sessionId) : undefined),
+    [sessionsAll, sessionId],
   );
-  const workoutRow = useLiveQuery(
-    () => (workoutId ? db.workouts.get(workoutId) : undefined),
-    [workoutId],
+  const workoutRows = useLiveQuery(
+    () =>
+      session?.workoutId
+        ? db.workouts.where("id").equals(session.workoutId).toArray()
+        : Promise.resolve([] as Workout[]),
+    [session?.workoutId],
   );
+  const workout = workoutRows?.[0];
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
 
   const [blocks, setBlocks] = useState<SessionExerciseSnapshot[]>([]);
@@ -176,11 +181,8 @@ export function SessionDetailPage() {
   const [durationModalOpen, setDurationModalOpen] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
 
-  const workout = workoutRow;
-  const session = sessionRow;
-
   useEffect(() => {
-    if (!workoutId || !sessionId || !session || !workout) return;
+    if (!session || !workout) return;
     if (session.workoutId !== workout.id) {
       navigate("/workouts", { replace: true });
       return;
@@ -197,7 +199,7 @@ export function SessionDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [workoutId, sessionId, session, workout, navigate]);
+  }, [session, workout, navigate]);
 
   useEffect(() => {
     if (!session) return;
@@ -207,13 +209,6 @@ export function SessionDetailPage() {
         : 0,
     );
   }, [session?.id, session?.durationMs]);
-
-  useEffect(() => {
-    if (workoutId === undefined || sessionId === undefined) return;
-    if (sessionRow === undefined && workoutRow !== undefined) {
-      navigate(`/workouts/${workoutId}`, { replace: true });
-    }
-  }, [workoutId, sessionId, sessionRow, workoutRow, navigate]);
 
   const exerciseByName = useMemo(() => {
     const m = new Map<string, Exercise>();
@@ -293,10 +288,23 @@ export function SessionDetailPage() {
     )
       return;
     await deleteSession(sessionId);
-    navigate(`/workouts/${workout.id}`, { replace: true });
+    navigate("/history", { replace: true });
   }
 
-  if (!workout || !session || !blocksReady) {
+  if (sessionsAll !== undefined && sessionId && !session) {
+    return <Navigate to="/history" replace />;
+  }
+  if (session && workoutRows !== undefined && workoutRows.length === 0) {
+    return <Navigate to="/history" replace />;
+  }
+
+  if (
+    sessionsAll === undefined ||
+    !session ||
+    workoutRows === undefined ||
+    !workout ||
+    !blocksReady
+  ) {
     return <p className="empty">Loading…</p>;
   }
 

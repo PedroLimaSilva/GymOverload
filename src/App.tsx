@@ -5,6 +5,8 @@ import { ensureSeeded } from "./db/bootstrap";
 import { ExerciseDetailPage } from "./pages/ExerciseDetailPage";
 import { ExerciseListPage } from "./pages/ExerciseListPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { HistoryListPage } from "./pages/HistoryListPage";
+import { LegacySessionRedirect } from "./pages/LegacySessionRedirect";
 import { SessionDetailPage } from "./pages/SessionDetailPage";
 import { WorkoutDetailPage } from "./pages/WorkoutDetailPage";
 import { WorkoutListPage } from "./pages/WorkoutListPage";
@@ -30,12 +32,12 @@ function AppLayout() {
           </span>
           Workouts
         </NavLink>
-        <span className="tab-nav__disabled" aria-hidden="true">
+        <NavLink to="/history" title="History">
           <span className="tab-nav__icon-wrap">
             <History size={22} aria-hidden />
           </span>
           History
-        </span>
+        </NavLink>
         <NavLink to="/exercises" title="Exercises">
           <span className="tab-nav__icon-wrap">
             <Dumbbell size={22} aria-hidden />
@@ -86,7 +88,9 @@ export function App() {
         <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
         <Route path="/workouts" element={<WorkoutListPage />} />
         <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
-        <Route path="/workouts/:id/sessions/:sessionId" element={<SessionDetailPage />} />
+        <Route path="/workouts/:id/sessions/:sessionId" element={<LegacySessionRedirect />} />
+        <Route path="/history" element={<HistoryListPage />} />
+        <Route path="/history/:id" element={<SessionDetailPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<Navigate to="/settings" replace />} />
       </Route>

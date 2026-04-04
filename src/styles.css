@@ -125,6 +125,12 @@ textarea {
   justify-self: start;
 }
 
+.screen-header__create-placeholder {
+  justify-self: start;
+  min-width: 4.25rem;
+  height: 2.35rem;
+}
+
 .screen-header__main-row .overflow-menu {
   justify-self: end;
 }
@@ -1113,6 +1119,34 @@ a.workout-detail-hero__action {
   flex-shrink: 0;
   color: var(--muted);
   opacity: 0.65;
+}
+
+.history-list__item {
+  border-bottom: 1px solid var(--border);
+}
+
+.history-list__item:last-child {
+  border-bottom: none;
+}
+
+.history-list__link {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.85rem 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.history-list__name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.history-list__when {
+  font-size: 0.82rem;
 }
 
 .row-title {
