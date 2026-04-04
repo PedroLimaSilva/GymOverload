@@ -11,8 +11,13 @@ import {
   getSessionExerciseBlocks,
   putSessionWithLoggedEntries,
 } from "../db/workoutHistory";
-import type { Exercise, SessionExerciseSnapshot, Workout } from "../model/types";
+import type { Exercise, SessionExerciseSnapshot, Workout, WorkoutSession } from "../model/types";
 import { exerciseWithName, newId, plannedFromDTO, sessionTrainingVolume } from "../model/types";
+
+type SessionDetailLoad =
+  | { status: "not_found" }
+  | { status: "no_workout"; session: WorkoutSession }
+  | { status: "ready"; session: WorkoutSession; workout: Workout };
 
 function formatSessionHeaderDate(iso: string): string {
   const d = new Date(iso);
@@ -159,19 +164,14 @@ function DurationEditModal({
 export function SessionDetailPage() {
   const { id: sessionId } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const sessionsAll = useLiveQuery(() => db.workoutSessions.toArray(), []);
-  const session = useMemo(
-    () => (sessionId && sessionsAll ? sessionsAll.find((s) => s.id === sessionId) : undefined),
-    [sessionsAll, sessionId],
-  );
-  const workoutRows = useLiveQuery(
-    () =>
-      session?.workoutId
-        ? db.workouts.where("id").equals(session.workoutId).toArray()
-        : Promise.resolve([] as Workout[]),
-    [session?.workoutId],
-  );
-  const workout = workoutRows?.[0];
+  const loadState = useLiveQuery(async (): Promise<SessionDetailLoad> => {
+    if (!sessionId) return { status: "not_found" };
+    const session = await db.workoutSessions.get(sessionId);
+    if (!session) return { status: "not_found" };
+    const workout = await db.workouts.get(session.workoutId);
+    if (!workout) return { status: "no_workout", session };
+    return { status: "ready", session, workout };
+  }, [sessionId]);
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
 
   const [blocks, setBlocks] = useState<SessionExerciseSnapshot[]>([]);
@@ -181,16 +181,23 @@ export function SessionDetailPage() {
   const [durationModalOpen, setDurationModalOpen] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
 
+  const session = loadState?.status === "ready" ? loadState.session : undefined;
+  const workout = loadState?.status === "ready" ? loadState.workout : undefined;
+
+  const loadReadyKey =
+    loadState?.status === "ready" ? `${loadState.session.id}\0${loadState.workout.id}` : null;
+
   useEffect(() => {
-    if (!session || !workout) return;
-    if (session.workoutId !== workout.id) {
+    if (loadState?.status !== "ready") return;
+    const { session: s, workout: w } = loadState;
+    if (s.workoutId !== w.id) {
       navigate("/workouts", { replace: true });
       return;
     }
     let cancelled = false;
     setBlocksReady(false);
     void (async () => {
-      const b = await getSessionExerciseBlocks(session, workout);
+      const b = await getSessionExerciseBlocks(s, w);
       if (!cancelled) {
         setBlocks(b);
         setBlocksReady(true);
@@ -199,16 +206,19 @@ export function SessionDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [session, workout, navigate]);
+    // deps: loadReadyKey only — same session row updates (notes/duration) must not reset blocks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- loadState identity changes on every live query tick
+  }, [loadReadyKey, navigate]);
 
   useEffect(() => {
-    if (!session) return;
+    if (loadState?.status !== "ready") return;
+    const s = loadState.session;
     setDurationMs(
-      typeof session.durationMs === "number" && Number.isFinite(session.durationMs)
-        ? Math.max(0, session.durationMs)
+      typeof s.durationMs === "number" && Number.isFinite(s.durationMs)
+        ? Math.max(0, s.durationMs)
         : 0,
     );
-  }, [session?.id, session?.durationMs]);
+  }, [loadState]);
 
   const exerciseByName = useMemo(() => {
     const m = new Map<string, Exercise>();
@@ -250,7 +260,7 @@ export function SessionDetailPage() {
   );
 
   async function addSelected(selected: Exercise[]) {
-    if (!workout || !session) return;
+    if (loadState?.status !== "ready") return;
     const additions: SessionExerciseSnapshot[] = [];
     for (const ex of selected) {
       const planned = plannedFromDTO({ name: ex.name, sets: 4, targetReps: 10 }, newId());
@@ -280,7 +290,7 @@ export function SessionDetailPage() {
   }
 
   async function removeThisSession() {
-    if (!session || !workout || !sessionId) return;
+    if (loadState?.status !== "ready" || !sessionId) return;
     if (
       !confirm(
         "Delete this workout session from history? The workout plan stays; other sessions are kept.",
@@ -291,20 +301,14 @@ export function SessionDetailPage() {
     navigate("/history", { replace: true });
   }
 
-  if (sessionsAll !== undefined && sessionId && !session) {
+  if (loadState?.status === "not_found") {
     return <Navigate to="/history" replace />;
   }
-  if (session && workoutRows !== undefined && workoutRows.length === 0) {
+  if (loadState?.status === "no_workout") {
     return <Navigate to="/history" replace />;
   }
 
-  if (
-    sessionsAll === undefined ||
-    !session ||
-    workoutRows === undefined ||
-    !workout ||
-    !blocksReady
-  ) {
+  if (loadState?.status !== "ready" || !session || !workout || !blocksReady) {
     return <p className="empty">Loading…</p>;
   }
 
