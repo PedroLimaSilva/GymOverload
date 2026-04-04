@@ -9,11 +9,14 @@ export function ExerciseMultiPickerModal({
   onAdd,
   onQuickCreate,
   onClose,
+  quickCreateHint = "Saves to your exercise list and adds it to this workout.",
 }: {
   exercises: Exercise[];
   onAdd: (selected: Exercise[]) => void;
   onQuickCreate: (name: string) => void | Promise<void>;
   onClose: () => void;
+  /** Shown under the quick-create button (session vs workout wording). */
+  quickCreateHint?: string;
 }) {
   const [search, setSearch] = useState("");
   const [filterCats, setFilterCats] = useState<ExerciseCategory[]>([]);
@@ -140,9 +143,7 @@ export function ExerciseMultiPickerModal({
               >
                 {quickCreating ? "Adding…" : `Create “${searchTrimmed}”`}
               </button>
-              <p className="muted exercise-picker-quick-create__hint">
-                Saves to your exercise list and adds it to this workout.
-              </p>
+              <p className="muted exercise-picker-quick-create__hint">{quickCreateHint}</p>
             </div>
           ) : null}
           <ExerciseListBody

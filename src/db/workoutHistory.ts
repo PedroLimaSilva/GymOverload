@@ -250,19 +250,6 @@ export async function getSessionExerciseBlocks(
   return snapshotFromEntries(workout, entries);
 }
 
-/** Append a planned exercise to the workout template (session detail “add exercise”). */
-export async function mergePlannedExerciseIntoWorkout(
-  workoutId: string,
-  planned: PlannedExercise,
-): Promise<void> {
-  const w = await db.workouts.get(workoutId);
-  if (!w) return;
-  await db.workouts.put({
-    ...w,
-    plannedExercises: [...w.plannedExercises, planned],
-  });
-}
-
 export function lastSessionSummaryForExercise(
   entries: LoggedExerciseEntry[],
   planned: PlannedExercise,

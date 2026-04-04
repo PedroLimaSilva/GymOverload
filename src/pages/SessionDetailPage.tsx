@@ -9,11 +9,10 @@ import {
   deleteSession,
   getSessionById,
   getSessionExerciseBlocks,
-  mergePlannedExerciseIntoWorkout,
   putSessionWithLoggedEntries,
 } from "../db/workoutHistory";
 import type { Exercise, SessionExerciseSnapshot } from "../model/types";
-import { exerciseWithName, plannedFromDTO, sessionTrainingVolume } from "../model/types";
+import { exerciseWithName, newId, plannedFromDTO, sessionTrainingVolume } from "../model/types";
 
 function formatSessionHeaderDate(iso: string): string {
   const d = new Date(iso);
@@ -209,8 +208,7 @@ export function SessionDetailPage() {
     if (!workout || !session) return;
     const additions: SessionExerciseSnapshot[] = [];
     for (const ex of selected) {
-      const planned = plannedFromDTO({ name: ex.name, sets: 4, targetReps: 10 });
-      await mergePlannedExerciseIntoWorkout(workout.id, planned);
+      const planned = plannedFromDTO({ name: ex.name, sets: 4, targetReps: 10 }, newId());
       additions.push({
         plannedExerciseId: planned.id,
         exerciseName: planned.name,
@@ -511,6 +509,7 @@ export function SessionDetailPage() {
           onAdd={(sel) => void addSelected(sel)}
           onQuickCreate={(name) => void quickCreateExerciseFromPicker(name)}
           onClose={() => setPickerOpen(false)}
+          quickCreateHint="Saves to your exercise list; adds to this session only (not the workout plan)."
         />
       ) : null}
     </>
