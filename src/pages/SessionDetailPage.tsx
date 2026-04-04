@@ -6,6 +6,7 @@ import { ExerciseMultiPickerModal } from "../components/ExerciseMultiPickerModal
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import {
+  deleteSessionsForWorkout,
   getSessionById,
   getSessionExerciseBlocks,
   mergePlannedExerciseIntoWorkout,
@@ -235,6 +236,17 @@ export function SessionDetailPage() {
     await addSelected([ex]);
   }
 
+  async function removeWorkout() {
+    if (
+      !workout ||
+      !confirm(`Delete “${workout.name}”? This removes the workout and all its history.`)
+    )
+      return;
+    await deleteSessionsForWorkout(workout.id);
+    await db.workouts.delete(workout.id);
+    navigate("/workouts", { replace: true });
+  }
+
   if (!workout || !session || !blocksReady) {
     return <p className="empty">Loading…</p>;
   }
@@ -258,6 +270,18 @@ export function SessionDetailPage() {
           </Link>
         }
         center={formatSessionHeaderDate(session.completedAt)}
+        trailing={
+          <div className="workout-detail-header-actions">
+            <button
+              type="button"
+              className="btn-icon-circle"
+              aria-label="Delete workout"
+              onClick={() => void removeWorkout()}
+            >
+              <Trash2 size={20} aria-hidden strokeWidth={2} />
+            </button>
+          </div>
+        }
       />
 
       <div className="workout-detail-hero">
