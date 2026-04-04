@@ -102,6 +102,8 @@ export interface WorkoutSession {
   durationMs?: number;
   /** Snapshot of exercises and sets for this session (source of truth for session detail). */
   sessionExercises?: SessionExerciseSnapshot[];
+  /** Notes for this completed session only (not the workout plan). */
+  notes?: string;
 }
 
 export interface LoggedExerciseEntry {

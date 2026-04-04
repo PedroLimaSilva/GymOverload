@@ -47,6 +47,55 @@ function parseDurationToMs(input: string): number | null {
   return Math.round(n * 60 * 1000);
 }
 
+function SessionNotesModal({
+  initial,
+  onSave,
+  onClose,
+}: {
+  initial: string;
+  onSave: (notes: string) => void;
+  onClose: () => void;
+}) {
+  const [text, setText] = useState(initial);
+  return (
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="session-notes-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <header>
+          <h2 id="session-notes-title">Session notes</h2>
+          <button type="button" className="btn btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+        </header>
+        <div className="body">
+          <textarea
+            className="edit-card__textarea"
+            style={{ minHeight: "8rem", marginTop: "0.5rem" }}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Notes for this session only…"
+          />
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ width: "100%", marginTop: "0.75rem" }}
+            onClick={() => onSave(text)}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DurationEditModal({
   initialMs,
   onSave,
@@ -125,6 +174,7 @@ export function SessionDetailPage() {
   const [durationMs, setDurationMs] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [durationModalOpen, setDurationModalOpen] = useState(false);
+  const [notesModalOpen, setNotesModalOpen] = useState(false);
 
   const workout = workoutRow;
   const session = sessionRow;
@@ -290,9 +340,9 @@ export function SessionDetailPage() {
         <button
           type="button"
           className="workout-detail-hero__notes"
-          onClick={() => navigate(`/workouts/${workout.id}`)}
+          onClick={() => setNotesModalOpen(true)}
         >
-          {workout.notes?.trim() ? workout.notes.trim() : "Add notes"}
+          {session.notes?.trim() ? session.notes.trim() : "Add notes"}
         </button>
 
         <div className="session-detail-stats">
@@ -500,6 +550,26 @@ export function SessionDetailPage() {
             setDurationModalOpen(false);
           }}
           onClose={() => setDurationModalOpen(false)}
+        />
+      ) : null}
+
+      {notesModalOpen ? (
+        <SessionNotesModal
+          initial={session.notes ?? ""}
+          onSave={(text) => {
+            void (async () => {
+              if (!sessionId) return;
+              const current = await getSessionById(sessionId);
+              if (!current) return;
+              const trimmed = text.trim();
+              await db.workoutSessions.put({
+                ...current,
+                notes: trimmed ? trimmed : undefined,
+              });
+              setNotesModalOpen(false);
+            })();
+          }}
+          onClose={() => setNotesModalOpen(false)}
         />
       ) : null}
 

@@ -31,6 +31,7 @@ interface NormalizedImportPayload {
     completedAt: string;
     durationMs?: number;
     sessionExercises?: SessionExerciseSnapshot[];
+    notes?: string;
   }>;
   loggedExerciseEntries: LoggedExerciseEntry[];
 }
@@ -101,6 +102,8 @@ function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportP
     const sessionExercises = Array.isArray(item.sessionExercises)
       ? (item.sessionExercises as SessionExerciseSnapshot[])
       : undefined;
+    const notesRaw = typeof item.notes === "string" ? item.notes.trim() : "";
+    const notes = notesRaw ? notesRaw : undefined;
     workoutSessions.push({
       id: typeof item.id === "string" ? item.id : undefined,
       workoutId,
@@ -108,6 +111,7 @@ function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportP
         typeof item.completedAt === "string" ? item.completedAt : new Date().toISOString(),
       durationMs,
       sessionExercises,
+      notes,
     });
   }
 
@@ -185,6 +189,8 @@ function remapImportedPayload(payload: NormalizedImportPayload): {
         return { ...block, plannedExerciseId: newPid };
       })
       .filter((b): b is SessionExerciseSnapshot => b != null);
+    const notesRemapped =
+      typeof s.notes === "string" && s.notes.trim() ? s.notes.trim() : undefined;
     workoutSessions.push({
       id: newSessionId,
       workoutId: workoutIdMap.get(s.workoutId)!,
@@ -194,6 +200,7 @@ function remapImportedPayload(payload: NormalizedImportPayload): {
           ? Math.round(s.durationMs)
           : undefined,
       sessionExercises: sessionExercisesRemapped?.length ? sessionExercisesRemapped : undefined,
+      notes: notesRemapped,
     });
   }
 
