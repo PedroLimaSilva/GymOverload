@@ -5,6 +5,7 @@ import { ensureSeeded } from "./db/bootstrap";
 import { ExerciseDetailPage } from "./pages/ExerciseDetailPage";
 import { ExerciseListPage } from "./pages/ExerciseListPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { SessionDetailPage } from "./pages/SessionDetailPage";
 import { WorkoutDetailPage } from "./pages/WorkoutDetailPage";
 import { WorkoutListPage } from "./pages/WorkoutListPage";
 
@@ -85,6 +86,7 @@ export function App() {
         <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
         <Route path="/workouts" element={<WorkoutListPage />} />
         <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
+        <Route path="/workouts/:id/sessions/:sessionId" element={<SessionDetailPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/profile" element={<Navigate to="/settings" replace />} />
       </Route>

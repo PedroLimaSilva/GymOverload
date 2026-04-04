@@ -249,6 +249,66 @@ textarea {
   cursor: pointer;
 }
 
+.session-detail-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem 0.75rem;
+  margin: 0.35rem 0 0.85rem;
+}
+
+.session-detail-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  text-align: left;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.session-detail-stat--tap {
+  cursor: pointer;
+  border-radius: var(--radius);
+  margin: -0.2rem;
+  padding: 0.2rem;
+  text-align: left;
+}
+
+.session-detail-stat--tap:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--on-accent) 45%, transparent);
+  outline-offset: 2px;
+}
+
+.session-detail-stat__label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.session-detail-stat__value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.session-detail-stat__dash {
+  opacity: 0.45;
+  font-weight: 600;
+}
+
+.session-detail-exercise-stats {
+  flex-shrink: 0;
+  max-width: 38%;
+  text-align: right;
+  line-height: 1.25;
+}
+
 .workout-detail-hero__actions {
   display: flex;
   align-items: flex-start;
