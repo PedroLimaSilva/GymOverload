@@ -26,7 +26,7 @@ They must be able to:
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | Exercise CRUD + categories + kind | Implemented in React (`ExerciseListPage`, `ExerciseDetailPage`), types in `src/model/types.ts`, persistence in Dexie (`src/db/database.ts`). |
 | Workouts with planned sets/reps   | Implemented (`WorkoutListPage`, `WorkoutDetailPage`). Planned rows have stable `id` fields in IndexedDB.                                     |
-| **Session logging / rest timer**  | Live session on `/workouts/:id?session=1`; finish saves history and opens session detail. Rest timer during session.                           |
+| **Session logging / rest timer**  | Live session on `/workouts/:id?session=1`; finish saves history and opens session detail. Rest timer during session.                         |
 | Export / charts / sync            | **Not implemented**.                                                                                                                         |
 | Native iOS / watchOS              | **Removed**. This repo is **web-only**.                                                                                                      |
 
