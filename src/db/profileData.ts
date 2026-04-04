@@ -1,4 +1,10 @@
-import type { Exercise, LoggedExerciseEntry, Workout, WorkoutSession } from "../model/types";
+import type {
+  Exercise,
+  LoggedExerciseEntry,
+  SessionExerciseSnapshot,
+  Workout,
+  WorkoutSession,
+} from "../model/types";
 import { newId } from "../model/types";
 import { db } from "./database";
 
@@ -19,7 +25,13 @@ export interface GymOverloadExport {
 interface NormalizedImportPayload {
   exercises: Exercise[];
   workouts: Workout[];
-  workoutSessions: Array<{ id?: string; workoutId: string; completedAt: string }>;
+  workoutSessions: Array<{
+    id?: string;
+    workoutId: string;
+    completedAt: string;
+    durationMs?: number;
+    sessionExercises?: SessionExerciseSnapshot[];
+  }>;
   loggedExerciseEntries: LoggedExerciseEntry[];
 }
 
@@ -82,11 +94,20 @@ function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportP
       (typeof item.templateId === "string" && item.templateId) ||
       "";
     if (!workoutId) continue;
+    const durationMs =
+      typeof item.durationMs === "number" && Number.isFinite(item.durationMs)
+        ? Math.round(item.durationMs)
+        : undefined;
+    const sessionExercises = Array.isArray(item.sessionExercises)
+      ? (item.sessionExercises as SessionExerciseSnapshot[])
+      : undefined;
     workoutSessions.push({
       id: typeof item.id === "string" ? item.id : undefined,
       workoutId,
       completedAt:
         typeof item.completedAt === "string" ? item.completedAt : new Date().toISOString(),
+      durationMs,
+      sessionExercises,
     });
   }
 
@@ -157,10 +178,22 @@ function remapImportedPayload(payload: NormalizedImportPayload): {
     if (!s.workoutId || !workoutIdMap.has(s.workoutId)) continue;
     const newSessionId = newId();
     if (s.id) sessionIdMap.set(s.id, newSessionId);
+    const sessionExercisesRemapped = s.sessionExercises
+      ?.map((block) => {
+        const newPid = plannedExerciseIdMap.get(block.plannedExerciseId);
+        if (!newPid) return null;
+        return { ...block, plannedExerciseId: newPid };
+      })
+      .filter((b): b is SessionExerciseSnapshot => b != null);
     workoutSessions.push({
       id: newSessionId,
       workoutId: workoutIdMap.get(s.workoutId)!,
       completedAt: s.completedAt || new Date().toISOString(),
+      durationMs:
+        typeof s.durationMs === "number" && Number.isFinite(s.durationMs)
+          ? Math.round(s.durationMs)
+          : undefined,
+      sessionExercises: sessionExercisesRemapped?.length ? sessionExercisesRemapped : undefined,
     });
   }
 
