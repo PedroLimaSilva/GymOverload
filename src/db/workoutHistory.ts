@@ -1,5 +1,11 @@
 import { db } from "./database";
-import type { LoggedExerciseEntry, PlannedExercise, Workout, WorkoutSession } from "../model/types";
+import type {
+  LoggedExerciseEntry,
+  PlannedExercise,
+  SessionExerciseSnapshot,
+  Workout,
+  WorkoutSession,
+} from "../model/types";
 import { newId, planRowDefaults } from "../model/types";
 
 export async function getLatestCompletedSession(
@@ -12,6 +18,35 @@ export async function getLatestCompletedSession(
 
 async function entriesForSession(sessionId: string): Promise<LoggedExerciseEntry[]> {
   return db.loggedExerciseEntries.where("sessionId").equals(sessionId).toArray();
+}
+
+function snapshotFromEntries(
+  workout: Workout,
+  entries: LoggedExerciseEntry[],
+): SessionExerciseSnapshot[] {
+  const byPe = new Map<string, LoggedExerciseEntry[]>();
+  for (const e of entries) {
+    const list = byPe.get(e.plannedExerciseId);
+    if (list) list.push(e);
+    else byPe.set(e.plannedExerciseId, [e]);
+  }
+  for (const list of byPe.values()) {
+    list.sort((a, b) => a.setIndex - b.setIndex);
+  }
+  return workout.plannedExercises.map((pe) => {
+    const list = byPe.get(pe.id) ?? [];
+    const sets = list.map((e) => ({ weight: e.weight, reps: e.reps }));
+    while (sets.length < pe.sets) {
+      const d = planRowDefaults(pe)[sets.length];
+      sets.push(d ?? { weight: 0, reps: pe.targetReps });
+    }
+    if (sets.length > pe.sets) sets.length = pe.sets;
+    return {
+      plannedExerciseId: pe.id,
+      exerciseName: pe.name,
+      sets,
+    };
+  });
 }
 
 function entryMap(entries: LoggedExerciseEntry[]): Map<string, LoggedExerciseEntry> {
@@ -33,7 +68,24 @@ export async function buildInitialSetStates(
   for (const pe of workout.plannedExercises) {
     const plannedRow = planRowDefaults(pe);
     const row: { weight: number; reps: number }[] = [];
+    const snapBlock = session?.sessionExercises?.find((b) => b.plannedExerciseId === pe.id);
     for (let setIndex = 0; setIndex < pe.sets; setIndex++) {
+      const fromSnap = snapBlock?.sets[setIndex];
+      if (fromSnap) {
+        row.push({
+          weight:
+            typeof fromSnap.weight === "number" && Number.isFinite(fromSnap.weight)
+              ? fromSnap.weight
+              : 0,
+          reps:
+            typeof fromSnap.reps === "number" &&
+            Number.isFinite(fromSnap.reps) &&
+            fromSnap.reps >= 1
+              ? Math.round(fromSnap.reps)
+              : pe.targetReps,
+        });
+        continue;
+      }
       const entry = byKey.get(`${pe.id}\0${setIndex}`);
       if (entry) row.push({ weight: entry.weight, reps: entry.reps });
       else {
@@ -56,6 +108,14 @@ export async function deleteSessionsForWorkout(workoutId: string): Promise<void>
   });
 }
 
+/** Remove one completed session and its logged sets (workout template unchanged). */
+export async function deleteSession(sessionId: string): Promise<void> {
+  await db.transaction("rw", db.workoutSessions, db.loggedExerciseEntries, async () => {
+    await db.loggedExerciseEntries.where("sessionId").equals(sessionId).delete();
+    await db.workoutSessions.delete(sessionId);
+  });
+}
+
 /** Same format as session UI: `${plannedExerciseId}:${setIndex}` */
 export function loggedSetKey(plannedExerciseId: string, setIndex: number): string {
   return `${plannedExerciseId}:${setIndex}`;
@@ -65,13 +125,33 @@ export async function saveCompletedWorkout(
   workout: Workout,
   setStates: Record<string, { weight: number; reps: number }[]>,
   completedSetKeys: ReadonlySet<string>,
-): Promise<void> {
+  durationMs?: number,
+): Promise<string> {
   const sessionId = newId();
   const completedAt = new Date().toISOString();
+  const sessionExercises: SessionExerciseSnapshot[] = workout.plannedExercises.map((pe) => {
+    const states = setStates[pe.id] ?? [];
+    const sets: { weight: number; reps: number }[] = [];
+    for (let setIndex = 0; setIndex < pe.sets; setIndex++) {
+      const s = states[setIndex];
+      sets.push(
+        s
+          ? { weight: s.weight, reps: s.reps }
+          : (planRowDefaults(pe)[setIndex] ?? { weight: 0, reps: pe.targetReps }),
+      );
+    }
+    return { plannedExerciseId: pe.id, exerciseName: pe.name, sets };
+  });
+
   const session: WorkoutSession = {
     id: sessionId,
     workoutId: workout.id,
     completedAt,
+    durationMs:
+      typeof durationMs === "number" && Number.isFinite(durationMs) && durationMs >= 0
+        ? Math.round(durationMs)
+        : undefined,
+    sessionExercises,
   };
 
   const entries: LoggedExerciseEntry[] = [];
@@ -96,8 +176,78 @@ export async function saveCompletedWorkout(
 
   await db.transaction("rw", db.workoutSessions, db.loggedExerciseEntries, async () => {
     await db.workoutSessions.add(session);
-    await db.loggedExerciseEntries.bulkAdd(entries);
+    if (entries.length) await db.loggedExerciseEntries.bulkAdd(entries);
   });
+
+  return sessionId;
+}
+
+function loggedEntriesFromSessionBlocks(
+  sessionId: string,
+  blocks: SessionExerciseSnapshot[],
+): LoggedExerciseEntry[] {
+  const entries: LoggedExerciseEntry[] = [];
+  for (const block of blocks) {
+    block.sets.forEach((s, setIndex) => {
+      entries.push({
+        id: newId(),
+        sessionId,
+        plannedExerciseId: block.plannedExerciseId,
+        exerciseName: block.exerciseName,
+        setIndex,
+        weight:
+          typeof s.weight === "number" && Number.isFinite(s.weight) && s.weight >= 0 ? s.weight : 0,
+        reps:
+          typeof s.reps === "number" && Number.isFinite(s.reps) && s.reps >= 1
+            ? Math.round(s.reps)
+            : 1,
+      });
+    });
+  }
+  return entries;
+}
+
+/** Rebuild log lines from the session snapshot (all sets). */
+export async function replaceLoggedEntriesFromSnapshot(session: WorkoutSession): Promise<void> {
+  const blocks = session.sessionExercises;
+  if (!blocks?.length) return;
+  const entries = loggedEntriesFromSessionBlocks(session.id, blocks);
+  await db.transaction("rw", db.loggedExerciseEntries, async () => {
+    await db.loggedExerciseEntries.where("sessionId").equals(session.id).delete();
+    if (entries.length) await db.loggedExerciseEntries.bulkAdd(entries);
+  });
+}
+
+/** Persist session row and logged entries in one transaction. */
+export async function putSessionWithLoggedEntries(session: WorkoutSession): Promise<void> {
+  const blocks = session.sessionExercises ?? [];
+  const entries = loggedEntriesFromSessionBlocks(session.id, blocks);
+  await db.transaction("rw", db.workoutSessions, db.loggedExerciseEntries, async () => {
+    await db.workoutSessions.put(session);
+    await db.loggedExerciseEntries.where("sessionId").equals(session.id).delete();
+    if (entries.length) await db.loggedExerciseEntries.bulkAdd(entries);
+  });
+}
+
+export async function getSessionById(sessionId: string): Promise<WorkoutSession | undefined> {
+  return db.workoutSessions.get(sessionId);
+}
+
+/** Session exercises for UI; hydrates from log rows when snapshot is missing (older data). */
+export async function getSessionExerciseBlocks(
+  session: WorkoutSession,
+  workout: Workout,
+): Promise<SessionExerciseSnapshot[]> {
+  if (session.sessionExercises?.length) return session.sessionExercises;
+  const entries = await entriesForSession(session.id);
+  if (entries.length === 0) {
+    return workout.plannedExercises.map((pe) => ({
+      plannedExerciseId: pe.id,
+      exerciseName: pe.name,
+      sets: planRowDefaults(pe),
+    }));
+  }
+  return snapshotFromEntries(workout, entries);
 }
 
 export function lastSessionSummaryForExercise(

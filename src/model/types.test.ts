@@ -5,6 +5,7 @@ import {
   exerciseFromDTO,
   exerciseWithName,
   isExerciseCategory,
+  sessionTrainingVolume,
   workoutFromDTO,
   type ExerciseDTO,
   type WorkoutDTO,
@@ -18,6 +19,26 @@ describe("exerciseWithName", () => {
     expect(ex.createdAt).toBeTruthy();
     expect(ex.kind).toBe("Weight, Reps");
     expect(ex.equipment).toBe("Barbell");
+  });
+});
+
+describe("sessionTrainingVolume", () => {
+  it("sums weight times reps and respects doubleWeightForVolume", () => {
+    const blocks = [
+      {
+        plannedExerciseId: "a",
+        exerciseName: "Squat",
+        sets: [
+          { weight: 100, reps: 5 },
+          { weight: 100, reps: 3 },
+        ],
+      },
+    ];
+    const byName = new Map([["Squat", { doubleWeightForVolume: false }]]);
+    expect(sessionTrainingVolume(blocks, byName)).toBe(100 * 5 + 100 * 3);
+
+    const byName2 = new Map([["Squat", { doubleWeightForVolume: true }]]);
+    expect(sessionTrainingVolume(blocks, byName2)).toBe(100 * 2 * 5 + 100 * 2 * 3);
   });
 });
 

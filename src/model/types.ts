@@ -87,10 +87,23 @@ export interface Workout {
   notes?: string;
 }
 
+/** Per-exercise rows stored on a completed session (editable on session detail). */
+export interface SessionExerciseSnapshot {
+  plannedExerciseId: string;
+  exerciseName: string;
+  sets: { weight: number; reps: number }[];
+}
+
 export interface WorkoutSession {
   id: string;
   workoutId: string;
   completedAt: string;
+  /** Wall-clock duration of the live session (milliseconds), when recorded. */
+  durationMs?: number;
+  /** Snapshot of exercises and sets for this session (source of truth for session detail). */
+  sessionExercises?: SessionExerciseSnapshot[];
+  /** Notes for this completed session only (not the workout plan). */
+  notes?: string;
 }
 
 export interface LoggedExerciseEntry {
@@ -101,6 +114,27 @@ export interface LoggedExerciseEntry {
   setIndex: number;
   weight: number;
   reps: number;
+}
+
+/**
+ * Training volume: sum of weight × reps per set (in each exercise’s stored weight unit).
+ * Doubles effective weight when the exercise has `doubleWeightForVolume`.
+ */
+export function sessionTrainingVolume(
+  exercises: SessionExerciseSnapshot[],
+  exerciseByName: Map<string, { doubleWeightForVolume?: boolean }>,
+): number {
+  let total = 0;
+  for (const block of exercises) {
+    const mult = exerciseByName.get(block.exerciseName)?.doubleWeightForVolume ? 2 : 1;
+    for (const s of block.sets) {
+      if (typeof s.weight === "number" && Number.isFinite(s.weight) && s.weight >= 0) {
+        const r = typeof s.reps === "number" && Number.isFinite(s.reps) && s.reps >= 0 ? s.reps : 0;
+        total += s.weight * mult * r;
+      }
+    }
+  }
+  return total;
 }
 
 export function newId(): string {

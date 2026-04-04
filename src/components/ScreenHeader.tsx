@@ -7,6 +7,8 @@ type MainProps = {
   createLabel: string;
   onCreate: () => void;
   createDisabled?: boolean;
+  /** When true, no Create button (keeps title centered vs menu), e.g. History. */
+  omitCreate?: boolean;
   menuLabel: string;
   menuItems: OverflowMenuItem[];
 };
@@ -45,14 +47,18 @@ export function ScreenHeader(props: Props) {
   return (
     <header className="screen-header screen-header--main">
       <div className="screen-header__main-row">
-        <button
-          type="button"
-          className="btn-pill glass"
-          onClick={props.onCreate}
-          disabled={props.createDisabled}
-        >
-          {props.createLabel}
-        </button>
+        {props.omitCreate ? (
+          <span className="screen-header__create-placeholder" aria-hidden />
+        ) : (
+          <button
+            type="button"
+            className="btn-pill glass"
+            onClick={props.onCreate}
+            disabled={props.createDisabled}
+          >
+            {props.createLabel}
+          </button>
+        )}
         <h1 className="screen-header__title screen-header__title--main">{props.title}</h1>
         <OverflowMenu label={props.menuLabel} items={props.menuItems} />
       </div>
