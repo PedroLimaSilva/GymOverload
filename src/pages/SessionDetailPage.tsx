@@ -6,7 +6,7 @@ import { ExerciseMultiPickerModal } from "../components/ExerciseMultiPickerModal
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import {
-  deleteSessionsForWorkout,
+  deleteSession,
   getSessionById,
   getSessionExerciseBlocks,
   mergePlannedExerciseIntoWorkout,
@@ -236,15 +236,16 @@ export function SessionDetailPage() {
     await addSelected([ex]);
   }
 
-  async function removeWorkout() {
+  async function removeThisSession() {
+    if (!session || !workout || !sessionId) return;
     if (
-      !workout ||
-      !confirm(`Delete “${workout.name}”? This removes the workout and all its history.`)
+      !confirm(
+        "Delete this workout session from history? The workout plan stays; other sessions are kept.",
+      )
     )
       return;
-    await deleteSessionsForWorkout(workout.id);
-    await db.workouts.delete(workout.id);
-    navigate("/workouts", { replace: true });
+    await deleteSession(sessionId);
+    navigate(`/workouts/${workout.id}`, { replace: true });
   }
 
   if (!workout || !session || !blocksReady) {
@@ -275,8 +276,8 @@ export function SessionDetailPage() {
             <button
               type="button"
               className="btn-icon-circle"
-              aria-label="Delete workout"
-              onClick={() => void removeWorkout()}
+              aria-label="Delete session from history"
+              onClick={() => void removeThisSession()}
             >
               <Trash2 size={20} aria-hidden strokeWidth={2} />
             </button>

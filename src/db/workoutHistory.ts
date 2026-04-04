@@ -108,6 +108,14 @@ export async function deleteSessionsForWorkout(workoutId: string): Promise<void>
   });
 }
 
+/** Remove one completed session and its logged sets (workout template unchanged). */
+export async function deleteSession(sessionId: string): Promise<void> {
+  await db.transaction("rw", db.workoutSessions, db.loggedExerciseEntries, async () => {
+    await db.loggedExerciseEntries.where("sessionId").equals(sessionId).delete();
+    await db.workoutSessions.delete(sessionId);
+  });
+}
+
 /** Same format as session UI: `${plannedExerciseId}:${setIndex}` */
 export function loggedSetKey(plannedExerciseId: string, setIndex: number): string {
   return `${plannedExerciseId}:${setIndex}`;
