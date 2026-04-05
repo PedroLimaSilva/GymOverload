@@ -22,13 +22,13 @@ They must be able to:
 
 ## Current implementation vs goals
 
-| Goal                              | Codebase reality                                                                                                                             |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| Exercise CRUD + categories + kind | Implemented in React (`ExerciseListPage`, `ExerciseDetailPage`), types in `src/model/types.ts`, persistence in Dexie (`src/db/database.ts`). |
-| Workouts with planned sets/reps   | Implemented (`WorkoutListPage`, `WorkoutDetailPage`). Planned rows have stable `id` fields in IndexedDB.                                     |
-| **Session logging / rest timer**  | Live session on `/workouts/:id?session=1`; finish opens `/history/:sessionId`. History list at `/history`. Rest timer during session.        |
-| Export / charts / sync            | **Not implemented**.                                                                                                                         |
-| Native iOS / watchOS              | **Removed**. This repo is **web-only**.                                                                                                      |
+| Goal                              | Codebase reality                                                                                                                                                                        |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exercise CRUD + categories + kind | Implemented in React (`ExerciseListPage`, `ExerciseDetailPage`), types in `src/model/types.ts`, persistence in Dexie (`src/db/database.ts`).                                            |
+| Workouts with planned sets/reps   | Implemented (`WorkoutListPage`, `WorkoutDetailPage`). Planned rows have stable `id` fields in IndexedDB.                                                                                |
+| **Session logging / rest timer**  | Live session on `/workouts/:id?session=1`; finish opens `/history/:sessionId`. History calendar at `/history` (≥3 months back from today or latest session). Rest timer during session. |
+| Export / charts / sync            | **Not implemented**.                                                                                                                                                                    |
+| Native iOS / watchOS              | **Removed**. This repo is **web-only**.                                                                                                                                                 |
 
 ## Technical stack
 
