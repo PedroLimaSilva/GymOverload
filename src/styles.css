@@ -1281,29 +1281,42 @@ a.workout-detail-hero__action {
 
 .history-calendar__bars {
   display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 2rem;
-  height: 3px;
-  border-radius: 2px;
-  overflow: hidden;
-  gap: 1px;
   flex-shrink: 0;
+  gap: 2px;
+}
+
+.history-calendar__bars:not(.history-calendar__bars--stack) {
+  height: 3px;
+}
+
+.history-calendar__bars--stack {
+  height: auto;
+  min-height: 3px;
 }
 
 .history-calendar__bars--empty {
   visibility: hidden;
+  height: 3px;
 }
 
-.history-calendar__bar--full {
-  flex: 1;
+.history-calendar__muscle-bar {
+  display: flex;
+  width: 100%;
   min-height: 3px;
+  height: 3px;
   border-radius: 2px;
+  overflow: hidden;
+  gap: 0;
+  flex-shrink: 0;
 }
 
-.history-calendar__bar--split {
-  flex: 1;
+.history-calendar__muscle-segment {
   min-width: 0;
   min-height: 3px;
+  border-radius: 0;
 }
 
 .history-calendar__hint {

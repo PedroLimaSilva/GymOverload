@@ -10,29 +10,14 @@ import {
   localDateKey,
   monthsInRange,
 } from "../lib/historyCalendar";
-import type { WorkoutSession } from "../model/types";
+import {
+  buildExerciseLookupMaps,
+  sessionMuscleBarSegments,
+  type SessionBarSegment,
+} from "../lib/sessionMuscleBar";
+import type { LoggedExerciseEntry, WorkoutSession } from "../model/types";
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"] as const;
-
-const SESSION_BAR_COLORS = [
-  "#0a84ff",
-  "#ff9f0a",
-  "#32d74b",
-  "#bf5af2",
-  "#ff453a",
-  "#64d2ff",
-  "#ffd60a",
-] as const;
-
-function hashToIndex(s: string, mod: number): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h) % mod;
-}
-
-function sessionBarColor(workoutId: string): string {
-  return SESSION_BAR_COLORS[hashToIndex(workoutId, SESSION_BAR_COLORS.length)]!;
-}
 
 function formatSessionSheetSubtitle(iso: string): string {
   const d = new Date(iso);
@@ -66,12 +51,33 @@ export function HistoryListPage() {
     [],
   );
   const workouts = useLiveQuery(() => db.workouts.toArray(), []);
+  const exercises = useLiveQuery(() => db.exercises.toArray(), []);
+  const loggedEntries = useLiveQuery(() => db.loggedExerciseEntries.toArray(), []);
 
   const workoutNameById = useMemo(() => {
     const m = new Map<string, string>();
     for (const w of workouts ?? []) m.set(w.id, w.name);
     return m;
   }, [workouts]);
+
+  const sessionMuscleSegmentsById = useMemo(() => {
+    const maps = buildExerciseLookupMaps(exercises ?? []);
+    const workoutById = new Map((workouts ?? []).map((w) => [w.id, w]));
+    const entriesBySession = new Map<string, LoggedExerciseEntry[]>();
+    for (const e of loggedEntries ?? []) {
+      const list = entriesBySession.get(e.sessionId);
+      if (list) list.push(e);
+      else entriesBySession.set(e.sessionId, [e]);
+    }
+    const out = new Map<string, SessionBarSegment[]>();
+    for (const s of sessions ?? []) {
+      out.set(
+        s.id,
+        sessionMuscleBarSegments(s, workoutById.get(s.workoutId), maps, entriesBySession.get(s.id)),
+      );
+    }
+    return out;
+  }, [sessions, workouts, exercises, loggedEntries]);
 
   const now = useMemo(() => new Date(), []);
 
@@ -226,25 +232,32 @@ export function HistoryListPage() {
                                   {cell.date.getDate()}
                                 </span>
                                 {hasSessions ? (
-                                  <span className="history-calendar__bars" aria-hidden>
-                                    {daySessions.length === 1 ? (
-                                      <span
-                                        className="history-calendar__bar history-calendar__bar--full"
-                                        style={{
-                                          background: sessionBarColor(daySessions[0]!.workoutId),
-                                        }}
-                                      />
-                                    ) : (
-                                      daySessions.map((s) => (
-                                        <span
-                                          key={s.id}
-                                          className="history-calendar__bar history-calendar__bar--split"
-                                          style={{
-                                            background: sessionBarColor(s.workoutId),
-                                          }}
-                                        />
-                                      ))
-                                    )}
+                                  <span
+                                    className={
+                                      daySessions.length > 1
+                                        ? "history-calendar__bars history-calendar__bars--stack"
+                                        : "history-calendar__bars"
+                                    }
+                                    aria-hidden
+                                  >
+                                    {daySessions.map((s) => {
+                                      const segs = sessionMuscleSegmentsById.get(s.id) ?? [];
+                                      return (
+                                        <span key={s.id} className="history-calendar__muscle-bar">
+                                          {segs.map((seg, i) => (
+                                            <span
+                                              key={i}
+                                              className="history-calendar__muscle-segment"
+                                              style={{
+                                                flexGrow: seg.flex,
+                                                flexBasis: 0,
+                                                background: seg.color,
+                                              }}
+                                            />
+                                          ))}
+                                        </span>
+                                      );
+                                    })}
                                   </span>
                                 ) : (
                                   <span className="history-calendar__bars history-calendar__bars--empty" />
