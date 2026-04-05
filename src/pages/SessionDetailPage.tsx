@@ -164,6 +164,14 @@ function DurationEditModal({
 export function SessionDetailPage() {
   const { id: sessionId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const goBackFromSession = useCallback(() => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/history");
+    }
+  }, [navigate]);
   const loadState = useLiveQuery(async (): Promise<SessionDetailLoad> => {
     if (!sessionId) return { status: "not_found" };
     const session = await db.workoutSessions.get(sessionId);
@@ -322,13 +330,14 @@ export function SessionDetailPage() {
       <ScreenHeader
         variant="detail"
         leading={
-          <Link
-            to={`/workouts/${workout.id}`}
+          <button
+            type="button"
             className="btn-icon-circle glass"
-            aria-label="Back to workout"
+            aria-label="Back"
+            onClick={goBackFromSession}
           >
             <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
-          </Link>
+          </button>
         }
         center={formatSessionHeaderDate(session.completedAt)}
         trailing={
