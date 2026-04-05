@@ -1,13 +1,12 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import {
   buildMonthGrid,
   calendarRangeEnd,
   calendarRangeStart,
-  dateFromLocalDateKey,
   localDateKey,
   monthsInRange,
 } from "../lib/historyCalendar";
@@ -35,15 +34,25 @@ function sessionBarColor(workoutId: string): string {
   return SESSION_BAR_COLORS[hashToIndex(workoutId, SESSION_BAR_COLORS.length)]!;
 }
 
-function formatSessionWhen(iso: string): string {
+function formatSessionSheetSubtitle(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleString(undefined, {
-    month: "short",
+  const part = d.toLocaleString(undefined, {
     day: "numeric",
+    month: "short",
+    year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
   });
+  return `@ ${part}`;
+}
+
+function formatDurationHm(ms: number | undefined): string {
+  if (typeof ms !== "number" || !Number.isFinite(ms) || ms < 0) return "0h:00m";
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return `${h}h:${String(m).padStart(2, "0")}m`;
 }
 
 function monthShortLabel(year: number, monthIndex: number): string {
@@ -51,6 +60,7 @@ function monthShortLabel(year: number, monthIndex: number): string {
 }
 
 export function HistoryListPage() {
+  const navigate = useNavigate();
   const sessions = useLiveQuery(
     () => db.workoutSessions.orderBy("completedAt").reverse().toArray(),
     [],
@@ -79,7 +89,7 @@ export function HistoryListPage() {
       else byKey.set(key, [s]);
     }
     for (const list of byKey.values()) {
-      list.sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
+      list.sort((a, b) => (a.completedAt < b.completedAt ? -1 : 1));
     }
     return {
       rangeStart: start,
@@ -89,19 +99,44 @@ export function HistoryListPage() {
     };
   }, [sessions, now]);
 
-  const todayKey = localDateKey(now);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const effectiveSelected = selectedKey ?? (sessionsByDayKey.has(todayKey) ? todayKey : null);
+  const [sheetDayKey, setSheetDayKey] = useState<string | null>(null);
+  const [selectedEmptyKey, setSelectedEmptyKey] = useState<string | null>(null);
+
+  const closeDaySheet = useCallback(() => setSheetDayKey(null), []);
+
+  useEffect(() => {
+    if (sheetDayKey == null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeDaySheet();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sheetDayKey, closeDaySheet]);
 
   const yearPill =
     rangeStart.getFullYear() === rangeEnd.getFullYear()
       ? String(rangeEnd.getFullYear())
       : `${rangeStart.getFullYear()}–${rangeEnd.getFullYear()}`;
 
-  const selectedSessions =
-    effectiveSelected != null ? (sessionsByDayKey.get(effectiveSelected) ?? []) : [];
+  const sheetSessions = sheetDayKey != null ? (sessionsByDayKey.get(sheetDayKey) ?? []) : [];
 
   const rows = sessions ?? [];
+
+  function onDayActivate(cellKey: string, daySessions: WorkoutSession[]) {
+    if (daySessions.length === 1) {
+      setSheetDayKey(null);
+      setSelectedEmptyKey(null);
+      navigate(`/history/${daySessions[0]!.id}`);
+      return;
+    }
+    if (daySessions.length > 1) {
+      setSelectedEmptyKey(null);
+      setSheetDayKey(cellKey);
+      return;
+    }
+    setSheetDayKey(null);
+    setSelectedEmptyKey(cellKey);
+  }
 
   return (
     <div className="list-screen history-calendar-screen">
@@ -156,7 +191,8 @@ export function HistoryListPage() {
                         {grid.map((cell) => {
                           const daySessions = sessionsByDayKey.get(cell.key) ?? [];
                           const hasSessions = daySessions.length > 0;
-                          const isSelected = effectiveSelected === cell.key;
+                          const isSelected =
+                            sheetDayKey === cell.key || selectedEmptyKey === cell.key;
                           const label = `${cell.date.toLocaleString(undefined, {
                             month: "long",
                             day: "numeric",
@@ -184,7 +220,7 @@ export function HistoryListPage() {
                                 aria-label={label}
                                 aria-pressed={isSelected}
                                 disabled={!cell.inRange}
-                                onClick={() => setSelectedKey(cell.key)}
+                                onClick={() => onDayActivate(cell.key, daySessions)}
                               >
                                 <span className="history-calendar__day-num">
                                   {cell.date.getDate()}
@@ -229,41 +265,56 @@ export function HistoryListPage() {
                 </p>
               ) : null}
 
-              {selectedSessions.length > 0 ? (
-                <div className="history-calendar__day-detail">
-                  <h3 className="history-calendar__day-detail-title">
-                    {dateFromLocalDateKey(effectiveSelected!).toLocaleDateString(undefined, {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </h3>
-                  <ul className="history-list" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-                    {selectedSessions.map((s: WorkoutSession) => {
-                      const name = workoutNameById.get(s.workoutId) ?? "Workout";
-                      return (
-                        <li key={s.id} className="history-list__item">
-                          <Link to={`/history/${s.id}`} className="history-list__link">
-                            <span className="history-list__name">{name}</span>
-                            <span className="history-list__when muted">
-                              {formatSessionWhen(s.completedAt)}
-                            </span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ) : selectedKey != null && effectiveSelected != null && rows.length > 0 ? (
+              {selectedEmptyKey != null && rows.length > 0 ? (
                 <p className="muted history-calendar__hint">
-                  No workouts on this day. Tap a day with a bar to open sessions.
+                  No workouts on this day. Tap a day with a bar to open a session.
                 </p>
               ) : null}
             </>
           )}
         </div>
       </div>
+
+      {sessions !== undefined && sheetDayKey != null && sheetSessions.length > 1 ? (
+        <div className="history-day-sheet-backdrop" role="presentation" onClick={closeDaySheet}>
+          <div
+            className="history-day-sheet glass"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Sessions on this day"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="history-day-sheet__handle" aria-hidden />
+            <ul className="history-day-sheet__list">
+              {sheetSessions.map((s: WorkoutSession) => {
+                const name = workoutNameById.get(s.workoutId) ?? "Workout";
+                return (
+                  <li key={s.id} className="history-day-sheet__item">
+                    <button
+                      type="button"
+                      className="history-day-sheet__row"
+                      onClick={() => {
+                        closeDaySheet();
+                        navigate(`/history/${s.id}`);
+                      }}
+                    >
+                      <span className="history-day-sheet__row-main">
+                        <span className="history-day-sheet__title">{name}</span>
+                        <span className="history-day-sheet__subtitle muted">
+                          {formatSessionSheetSubtitle(s.completedAt)}
+                        </span>
+                      </span>
+                      <span className="history-day-sheet__duration">
+                        {formatDurationHm(s.durationMs)}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
