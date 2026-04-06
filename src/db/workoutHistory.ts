@@ -100,12 +100,18 @@ export async function buildInitialSetStates(
 
 export async function deleteSessionsForWorkout(workoutId: string): Promise<void> {
   const sessions = await db.workoutSessions.where("workoutId").equals(workoutId).toArray();
-  await db.transaction("rw", db.workoutSessions, db.loggedExerciseEntries, async () => {
-    for (const s of sessions) {
-      await db.loggedExerciseEntries.where("sessionId").equals(s.id).delete();
-      await db.workoutSessions.delete(s.id);
-    }
-  });
+  await db.transaction(
+    "rw",
+    [db.workoutSessions, db.loggedExerciseEntries, db.liveWorkoutSessionDrafts],
+    async () => {
+      const draft = await db.liveWorkoutSessionDrafts.get("_live");
+      if (draft?.workoutId === workoutId) await db.liveWorkoutSessionDrafts.delete("_live");
+      for (const s of sessions) {
+        await db.loggedExerciseEntries.where("sessionId").equals(s.id).delete();
+        await db.workoutSessions.delete(s.id);
+      }
+    },
+  );
 }
 
 /** Remove one completed session and its logged sets (workout template unchanged). */

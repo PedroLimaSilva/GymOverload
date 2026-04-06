@@ -1,9 +1,10 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
+import { clearLiveWorkoutSessionDraft, getLiveWorkoutSessionDraft } from "../db/liveSessionDraft";
 import { deleteSessionsForWorkout } from "../db/workoutHistory";
 import { createWorkoutAndNavigate } from "../lib/navActions";
 import type { Workout } from "../model/types";
@@ -18,7 +19,16 @@ function initials(name: string): string {
 export function WorkoutListPage() {
   const navigate = useNavigate();
   const workouts = useLiveQuery(() => db.workouts.orderBy("name").toArray(), []);
+  const liveDraft = useLiveQuery(() => getLiveWorkoutSessionDraft(), []);
   const [deleteMode, setDeleteMode] = useState(false);
+
+  const resumeWorkout =
+    workouts && liveDraft ? workouts.find((w) => w.id === liveDraft.workoutId) : undefined;
+
+  useEffect(() => {
+    if (!workouts || !liveDraft) return;
+    if (!workouts.some((w) => w.id === liveDraft.workoutId)) void clearLiveWorkoutSessionDraft();
+  }, [workouts, liveDraft]);
 
   async function removeWorkout(e: React.MouseEvent, w: Workout) {
     e.preventDefault();
@@ -45,6 +55,20 @@ export function WorkoutListPage() {
         menuLabel="Workout list menu"
         menuItems={menuItems}
       />
+      {resumeWorkout ? (
+        <div className="glass" style={{ margin: "0.65rem 1rem 0", padding: "0.65rem 0.85rem" }}>
+          <p style={{ margin: 0, fontSize: "0.88rem" }} className="muted">
+            Workout in progress
+          </p>
+          <Link
+            to={`/workouts/${resumeWorkout.id}?session=1`}
+            className="btn btn-primary"
+            style={{ display: "block", width: "100%", marginTop: "0.45rem", textAlign: "center" }}
+          >
+            Resume “{resumeWorkout.name}”
+          </Link>
+        </div>
+      ) : null}
       {!workouts && <p className="empty">Loading…</p>}
       {workouts && workouts.length === 0 && <p className="empty">No workouts yet.</p>}
       {workouts && workouts.length > 0 && (

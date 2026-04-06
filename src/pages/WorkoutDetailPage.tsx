@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type PointerEvent } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowUpDown,
@@ -20,6 +20,16 @@ import { ExerciseMultiPickerModal } from "../components/ExerciseMultiPickerModal
 import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
 import {
+  clearLiveWorkoutSessionDraft,
+  flushLiveWorkoutSessionDraftSave,
+  getLiveWorkoutSessionDraft,
+  liveDraftMatchesWorkout,
+  mergeInitialSetStatesWithDraft,
+  normalizeFocusFromDraft,
+  pruneStaleLiveSessionDraft,
+  scheduleLiveWorkoutSessionDraftSave,
+} from "../db/liveSessionDraft";
+import {
   buildInitialSetStates,
   deleteSessionsForWorkout,
   lastPerformanceBySetForExercise,
@@ -29,7 +39,12 @@ import {
   saveCompletedWorkout,
 } from "../db/workoutHistory";
 import type { Exercise, PlannedExercise, Workout } from "../model/types";
-import { exerciseWithName, planRowDefaults, plannedFromDTO } from "../model/types";
+import {
+  exerciseWithName,
+  planRowDefaults,
+  plannedFromDTO,
+  workoutPlanFingerprint,
+} from "../model/types";
 
 function formatSessionHms(totalMs: number): string {
   const s = Math.max(0, Math.floor(totalMs / 1000));
@@ -85,7 +100,6 @@ export function WorkoutDetailPage() {
     setIndex: number;
   } | null>(null);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
-  const sessionInitializedRef = useRef(false);
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
   const sessionsForWorkout = useLiveQuery(
     () => (id ? db.workoutSessions.where("workoutId").equals(id).toArray() : []),
@@ -115,11 +129,7 @@ export function WorkoutDetailPage() {
     return m;
   }, [exercises]);
 
-  const plannedKey = useMemo(
-    () =>
-      draft ? draft.plannedExercises.map((p) => `${p.id}:${p.sets}:${p.targetReps}`).join("|") : "",
-    [draft],
-  );
+  const plannedKey = useMemo(() => (draft ? workoutPlanFingerprint(draft) : ""), [draft]);
 
   useEffect(() => {
     if (sessionActive) setEditMode(false);
@@ -155,11 +165,35 @@ export function WorkoutDetailPage() {
     setSessionReady(false);
     const workoutSnapshot = draft;
     void (async () => {
+      await pruneStaleLiveSessionDraft(workoutSnapshot);
+      const persisted = await getLiveWorkoutSessionDraft();
       const initial = await buildInitialSetStates(workoutSnapshot);
-      if (!cancelled) {
-        setSessionSetStates(initial);
-        setSessionReady(true);
+      const useDraft = persisted && liveDraftMatchesWorkout(persisted, workoutSnapshot);
+      const merged = useDraft
+        ? mergeInitialSetStatesWithDraft(initial, persisted, workoutSnapshot)
+        : initial;
+      if (cancelled) return;
+      setSessionSetStates(merged);
+      if (useDraft && persisted) {
+        setSessionWallTimer({
+          accumMs: persisted.wallAccumMs,
+          paused: persisted.wallPaused,
+          runSince:
+            !persisted.wallPaused && typeof persisted.wallRunSinceEpoch === "number"
+              ? persisted.wallRunSinceEpoch
+              : null,
+        });
+        setSessionCompletedKeys(new Set(persisted.completedSetKeys));
+        setSessionFocus(normalizeFocusFromDraft(persisted, workoutSnapshot));
+        setRestEndsAt(persisted.restEndsAt);
+      } else {
+        const first = workoutSnapshot.plannedExercises[0];
+        setSessionWallTimer({ accumMs: 0, paused: false, runSince: Date.now() });
+        setSessionCompletedKeys(new Set());
+        setSessionFocus(first ? { plannedId: first.id, setIndex: 0 } : null);
+        setRestEndsAt(null);
       }
+      setSessionReady(true);
     })();
     return () => {
       cancelled = true;
@@ -168,20 +202,64 @@ export function WorkoutDetailPage() {
   }, [sessionActive, id, plannedKey, setSearchParams]);
 
   useEffect(() => {
-    if (!sessionActive) {
-      sessionInitializedRef.current = false;
-      return;
+    if (!sessionActive || !draft) return;
+    void pruneStaleLiveSessionDraft(draft);
+  }, [sessionActive, draft, plannedKey]);
+
+  function cloneSessionSetStates(
+    src: Record<string, { weight: number; reps: number }[]>,
+  ): Record<string, { weight: number; reps: number }[]> {
+    const out: Record<string, { weight: number; reps: number }[]> = {};
+    for (const k of Object.keys(src)) {
+      out[k] = src[k]!.map((c) => ({ ...c }));
     }
-    if (!sessionReady) return;
-    const first = draft?.plannedExercises[0];
-    if (!first) return;
-    if (sessionInitializedRef.current) return;
-    sessionInitializedRef.current = true;
-    setSessionWallTimer({ accumMs: 0, paused: false, runSince: Date.now() });
-    setSessionCompletedKeys(new Set());
-    setSessionFocus({ plannedId: first.id, setIndex: 0 });
-    setRestEndsAt(null);
-  }, [sessionActive, sessionReady, draft]);
+    return out;
+  }
+
+  useEffect(() => {
+    if (!sessionActive || !sessionReady || !draft) return;
+    scheduleLiveWorkoutSessionDraftSave({
+      workoutId: draft.id,
+      planFingerprint: workoutPlanFingerprint(draft),
+      sessionSetStates: cloneSessionSetStates(sessionSetStates),
+      completedSetKeys: [...sessionCompletedKeys],
+      wallAccumMs: sessionWallTimer.accumMs,
+      wallPaused: sessionWallTimer.paused,
+      wallRunSinceEpoch: sessionWallTimer.paused ? null : sessionWallTimer.runSince,
+      focusPlannedId: sessionFocus?.plannedId ?? draft.plannedExercises[0]?.id ?? "",
+      focusSetIndex: sessionFocus?.setIndex ?? 0,
+      restEndsAt,
+    });
+  }, [
+    sessionActive,
+    sessionReady,
+    draft,
+    sessionSetStates,
+    sessionCompletedKeys,
+    sessionWallTimer.accumMs,
+    sessionWallTimer.paused,
+    sessionWallTimer.runSince,
+    sessionFocus,
+    restEndsAt,
+  ]);
+
+  useEffect(() => {
+    if (!sessionActive || !sessionReady) return;
+    const flush = () => {
+      void flushLiveWorkoutSessionDraftSave();
+    };
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    const onVis = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [sessionActive, sessionReady]);
 
   useEffect(() => {
     if (workout) setDraft(workout);
@@ -263,11 +341,13 @@ export function WorkoutDetailPage() {
 
   function discardSession() {
     if (!confirm("Discard this session? Nothing will be saved to your workout history.")) return;
+    void clearLiveWorkoutSessionDraft();
     setSearchParams({}, { replace: true });
   }
 
   async function finishSession() {
     if (!draft || !sessionReady) return;
+    await clearLiveWorkoutSessionDraft();
     const sessionId = await saveCompletedWorkout(
       draft,
       sessionSetStates,

@@ -227,11 +227,15 @@ export async function mergeImportPayload(
     remapImportedPayload(payload);
   await db.transaction(
     "rw",
-    db.exercises,
-    db.workouts,
-    db.workoutSessions,
-    db.loggedExerciseEntries,
+    [
+      db.exercises,
+      db.workouts,
+      db.workoutSessions,
+      db.loggedExerciseEntries,
+      db.liveWorkoutSessionDrafts,
+    ],
     async () => {
+      await db.liveWorkoutSessionDrafts.clear();
       if (exercises.length) await db.exercises.bulkAdd(exercises);
       if (workouts.length) await db.workouts.bulkAdd(workouts);
       if (workoutSessions.length) await db.workoutSessions.bulkAdd(workoutSessions);
@@ -252,13 +256,17 @@ export async function mergeImportPayload(
 export async function deleteAllUserData(): Promise<void> {
   await db.transaction(
     "rw",
-    db.exercises,
-    db.workouts,
-    db.workoutSessions,
-    db.loggedExerciseEntries,
+    [
+      db.exercises,
+      db.workouts,
+      db.workoutSessions,
+      db.loggedExerciseEntries,
+      db.liveWorkoutSessionDrafts,
+    ],
     async () => {
       await db.loggedExerciseEntries.clear();
       await db.workoutSessions.clear();
+      await db.liveWorkoutSessionDrafts.clear();
       await db.workouts.clear();
       await db.exercises.clear();
     },
