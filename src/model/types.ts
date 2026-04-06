@@ -106,6 +106,24 @@ export interface WorkoutSession {
   notes?: string;
 }
 
+/** Single-row IndexedDB draft so an in-flight workout survives reload or process death. */
+export interface LiveWorkoutSessionDraft {
+  id: "_live";
+  workoutId: string;
+  /** Matches `workoutPlanFingerprint` for the workout when the draft was saved. */
+  planFingerprint: string;
+  sessionSetStates: Record<string, { weight: number; reps: number }[]>;
+  completedSetKeys: string[];
+  wallAccumMs: number;
+  wallPaused: boolean;
+  /** When not paused, wall-clock segment start (epoch ms); null when paused. */
+  wallRunSinceEpoch: number | null;
+  focusPlannedId: string;
+  focusSetIndex: number;
+  restEndsAt: number | null;
+  updatedAt: string;
+}
+
 export interface LoggedExerciseEntry {
   id: string;
   sessionId: string;
@@ -205,6 +223,11 @@ export function workoutFromDTO(dto: WorkoutDTO, id = newId()): Workout {
     plannedExercises: dto.plannedExercises.map((p) => plannedFromDTO(p)),
     notes: dto.notes ?? undefined,
   };
+}
+
+/** Stable string when the set of planned exercises or their set counts/targets change. */
+export function workoutPlanFingerprint(workout: Workout): string {
+  return workout.plannedExercises.map((p) => `${p.id}:${p.sets}:${p.targetReps}`).join("|");
 }
 
 export function defaultExercise(): Exercise {
