@@ -3,8 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { BarChart3, ChevronLeft, Dumbbell, Heart, Plus, Trash2, Upload } from "lucide-react";
 import { ExerciseMultiPickerModal } from "../components/ExerciseMultiPickerModal";
-import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
+import { useTopNav } from "../layout/TopNavContext";
 import {
   deleteSession,
   getSessionById,
@@ -297,8 +297,8 @@ export function SessionDetailPage() {
     await addSelected([ex]);
   }
 
-  async function removeThisSession() {
-    if (loadState?.status !== "ready" || !sessionId) return;
+  const removeThisSession = useCallback(async () => {
+    if (!sessionId) return;
     if (
       !confirm(
         "Delete this workout session from history? The workout plan stays; other sessions are kept.",
@@ -307,7 +307,43 @@ export function SessionDetailPage() {
       return;
     await deleteSession(sessionId);
     navigate("/history", { replace: true });
-  }
+  }, [sessionId, navigate]);
+
+  const topNavKey =
+    loadState?.status === "ready" && blocksReady
+      ? `${loadState.session.id}\0${loadState.session.completedAt}`
+      : null;
+
+  useTopNav(() => {
+    if (!topNavKey || loadState?.status !== "ready") return null;
+    const s = loadState.session;
+    return {
+      variant: "detail" as const,
+      leading: (
+        <button
+          type="button"
+          className="btn-icon-circle glass"
+          aria-label="Back"
+          onClick={goBackFromSession}
+        >
+          <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
+        </button>
+      ),
+      center: formatSessionHeaderDate(s.completedAt),
+      trailing: (
+        <div className="workout-detail-header-actions">
+          <button
+            type="button"
+            className="btn-icon-circle"
+            aria-label="Delete session from history"
+            onClick={() => void removeThisSession()}
+          >
+            <Trash2 size={20} aria-hidden strokeWidth={2} />
+          </button>
+        </div>
+      ),
+    };
+  }, [topNavKey, goBackFromSession, removeThisSession]);
 
   if (loadState?.status === "not_found") {
     return <Navigate to="/history" replace />;
@@ -327,33 +363,6 @@ export function SessionDetailPage() {
 
   return (
     <>
-      <ScreenHeader
-        variant="detail"
-        leading={
-          <button
-            type="button"
-            className="btn-icon-circle glass"
-            aria-label="Back"
-            onClick={goBackFromSession}
-          >
-            <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
-          </button>
-        }
-        center={formatSessionHeaderDate(session.completedAt)}
-        trailing={
-          <div className="workout-detail-header-actions">
-            <button
-              type="button"
-              className="btn-icon-circle"
-              aria-label="Delete session from history"
-              onClick={() => void removeThisSession()}
-            >
-              <Trash2 size={20} aria-hidden strokeWidth={2} />
-            </button>
-          </div>
-        }
-      />
-
       <div className="workout-detail-hero">
         <h1 className="workout-detail-hero__title" style={{ margin: 0 }}>
           {workout.name}

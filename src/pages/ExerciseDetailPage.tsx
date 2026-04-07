@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Camera, Check, ChevronRight, ChevronsUpDown, X } from "lucide-react";
 import { db } from "../db/database";
+import { useTopNav } from "../layout/TopNavContext";
 import {
   EQUIPMENT_PRESETS,
   EXERCISE_CATEGORIES,
@@ -90,9 +91,9 @@ export function ExerciseDetailPage() {
     await db.exercises.put(next);
   }
 
-  function closeModal() {
+  const closeModal = useCallback(() => {
     leaveExerciseDetail();
-  }
+  }, [leaveExerciseDetail]);
 
   async function remove() {
     if (!draft || !confirm(`Delete “${draft.name}”?`)) return;
@@ -117,6 +118,37 @@ export function ExerciseDetailPage() {
   const primaryMuscle = draft?.categories[0] ?? null;
   const secondaryMuscles = draft?.categories.slice(1) ?? [];
 
+  useTopNav(
+    () =>
+      draft
+        ? {
+            variant: "detail" as const,
+            leading: (
+              <button
+                type="button"
+                className="btn-icon-circle glass"
+                aria-label="Close"
+                onClick={closeModal}
+              >
+                <X size={20} aria-hidden strokeWidth={2.2} />
+              </button>
+            ),
+            center: <span className="exercise-detail-nav__title">Edit exercise</span>,
+            trailing: (
+              <button
+                type="button"
+                className="btn-icon-circle glass"
+                aria-label="Done"
+                onClick={closeModal}
+              >
+                <Check size={20} aria-hidden strokeWidth={2.5} />
+              </button>
+            ),
+          }
+        : null,
+    [id, closeModal, draft?.id],
+  );
+
   if (!draft) {
     return (
       <div className="exercise-detail-modal">
@@ -127,26 +159,6 @@ export function ExerciseDetailPage() {
 
   return (
     <div className="exercise-detail-modal">
-      <div className="exercise-detail-modal__toolbar">
-        <button
-          type="button"
-          className="btn-circle-icon glass btn-circle-icon--surface"
-          aria-label="Close"
-          onClick={closeModal}
-        >
-          <X size={18} aria-hidden strokeWidth={2.2} />
-        </button>
-        <button
-          type="button"
-          className="btn-circle-icon glass btn-circle-icon--accent"
-          aria-label="Done"
-          onClick={closeModal}
-        >
-          <Check size={18} aria-hidden strokeWidth={2.5} />
-        </button>
-      </div>
-      <h1 className="exercise-detail-modal__title">Edit exercise</h1>
-
       {draft.imageDataUrl ? (
         <div style={{ marginBottom: "0.75rem", display: "flex", justifyContent: "center" }}>
           <img

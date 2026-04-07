@@ -17,8 +17,8 @@ import {
   Upload,
 } from "lucide-react";
 import { ExerciseMultiPickerModal } from "../components/ExerciseMultiPickerModal";
-import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
+import { useTopNav } from "../layout/TopNavContext";
 import {
   clearLiveWorkoutSessionDraft,
   flushLiveWorkoutSessionDraftSave,
@@ -339,11 +339,11 @@ export function WorkoutDetailPage() {
     }
   }, [draft, sessionFocus, restEndsAt, exerciseByName]);
 
-  function discardSession() {
+  const discardSession = useCallback(() => {
     if (!confirm("Discard this session? Nothing will be saved to your workout history.")) return;
     void clearLiveWorkoutSessionDraft();
     setSearchParams({}, { replace: true });
-  }
+  }, [setSearchParams]);
 
   async function finishSession() {
     if (!draft || !sessionReady) return;
@@ -358,12 +358,12 @@ export function WorkoutDetailPage() {
     navigate(`/history/${sessionId}`, { replace: true });
   }
 
-  async function remove() {
+  const remove = useCallback(async () => {
     if (!draft || !confirm(`Delete “${draft.name}”?`)) return;
     await deleteSessionsForWorkout(draft.id);
     await db.workouts.delete(draft.id);
     navigate("/workouts");
-  }
+  }, [draft, navigate]);
 
   function addSelected(selected: Exercise[]) {
     if (!draft) return;
@@ -393,6 +393,75 @@ export function WorkoutDetailPage() {
     return ms;
   }, [sessionWallTimer, sessionUiTick]);
 
+  useTopNav(() => {
+    if (!draft) return null;
+    return {
+      variant: "detail" as const,
+      leading: sessionActive ? (
+        <button
+          type="button"
+          className="btn-icon-circle glass"
+          aria-label="Leave session"
+          onClick={() => discardSession()}
+        >
+          <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
+        </button>
+      ) : (
+        <Link to="/workouts" className="btn-icon-circle glass" aria-label="Back to workouts">
+          <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
+        </Link>
+      ),
+      center:
+        sessionActive && sessionReady ? (
+          <span className="workout-session-header-timer" aria-live="polite">
+            {formatSessionHms(sessionElapsedMs)}
+          </span>
+        ) : undefined,
+      trailing: !sessionActive ? (
+        <div className="workout-detail-header-actions">
+          {editMode ? (
+            <button
+              type="button"
+              className="btn-icon-circle"
+              aria-label="Done reordering"
+              onClick={() => setEditMode(false)}
+            >
+              <Check size={20} aria-hidden strokeWidth={2.5} />
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="btn-icon-circle"
+                aria-label="Reorder exercises"
+                onClick={() => setEditMode(true)}
+              >
+                <ArrowUpDown size={20} aria-hidden strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                className="btn-icon-circle"
+                aria-label="Delete workout"
+                onClick={() => void remove()}
+              >
+                <Trash2 size={20} aria-hidden strokeWidth={2} />
+              </button>
+            </>
+          )}
+        </div>
+      ) : undefined,
+    };
+  }, [
+    draft,
+    sessionActive,
+    sessionReady,
+    sessionElapsedMs,
+    sessionUiTick,
+    editMode,
+    discardSession,
+    remove,
+  ]);
+
   if (!draft) {
     return <p className="empty">Loading…</p>;
   }
@@ -412,68 +481,6 @@ export function WorkoutDetailPage() {
 
   return (
     <>
-      <ScreenHeader
-        variant="detail"
-        leading={
-          sessionActive ? (
-            <button
-              type="button"
-              className="btn-icon-circle glass"
-              aria-label="Leave session"
-              onClick={() => discardSession()}
-            >
-              <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
-            </button>
-          ) : (
-            <Link to="/workouts" className="btn-icon-circle glass" aria-label="Back to workouts">
-              <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
-            </Link>
-          )
-        }
-        center={
-          sessionActive && sessionReady ? (
-            <span className="workout-session-header-timer" aria-live="polite">
-              {formatSessionHms(sessionElapsedMs)}
-            </span>
-          ) : undefined
-        }
-        trailing={
-          !sessionActive ? (
-            <div className="workout-detail-header-actions">
-              {editMode ? (
-                <button
-                  type="button"
-                  className="btn-icon-circle"
-                  aria-label="Done reordering"
-                  onClick={() => setEditMode(false)}
-                >
-                  <Check size={20} aria-hidden strokeWidth={2.5} />
-                </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="btn-icon-circle"
-                    aria-label="Reorder exercises"
-                    onClick={() => setEditMode(true)}
-                  >
-                    <ArrowUpDown size={20} aria-hidden strokeWidth={2} />
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-icon-circle"
-                    aria-label="Delete workout"
-                    onClick={() => void remove()}
-                  >
-                    <Trash2 size={20} aria-hidden strokeWidth={2} />
-                  </button>
-                </>
-              )}
-            </div>
-          ) : undefined
-        }
-      />
-
       <div className="workout-detail-hero">
         <input
           id="workout-detail-name"
