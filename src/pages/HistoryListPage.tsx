@@ -1,8 +1,8 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
+import { useTopNav } from "../layout/TopNavContext";
 import {
   buildMonthGrid,
   calendarRangeEnd,
@@ -128,6 +128,19 @@ export function HistoryListPage() {
 
   const rows = sessions ?? [];
 
+  useTopNav(
+    () => ({
+      variant: "main",
+      title: "History",
+      createLabel: "Create",
+      onCreate: () => {},
+      omitCreate: true,
+      menuLabel: "History menu",
+      menuItems: [],
+    }),
+    [],
+  );
+
   function onDayActivate(cellKey: string, daySessions: WorkoutSession[]) {
     if (daySessions.length === 1) {
       setSheetDayKey(null);
@@ -147,15 +160,6 @@ export function HistoryListPage() {
   return (
     <div className="list-screen history-calendar-screen">
       <div className="list-screen__sticky">
-        <ScreenHeader
-          variant="main"
-          title="History"
-          createLabel="Create"
-          onCreate={() => {}}
-          omitCreate
-          menuLabel="History menu"
-          menuItems={[]}
-        />
         <div className="history-calendar__toolbar">
           <span className="history-calendar__year-pill glass">{yearPill}</span>
         </div>

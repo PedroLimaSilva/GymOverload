@@ -1,9 +1,9 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
+import { useTopNav } from "../layout/TopNavContext";
 import { clearLiveWorkoutSessionDraft, getLiveWorkoutSessionDraft } from "../db/liveSessionDraft";
 import { deleteSessionsForWorkout } from "../db/workoutHistory";
 import { createWorkoutAndNavigate } from "../lib/navActions";
@@ -38,23 +38,30 @@ export function WorkoutListPage() {
     await db.workouts.delete(w.id);
   }
 
-  const menuItems = [
-    {
-      label: deleteMode ? "Done deleting" : "Delete workouts…",
-      onSelect: () => setDeleteMode((d) => !d),
-    },
-  ];
+  const menuItems = useMemo(
+    () => [
+      {
+        label: deleteMode ? "Done deleting" : "Delete workouts…",
+        onSelect: () => setDeleteMode((d) => !d),
+      },
+    ],
+    [deleteMode],
+  );
+
+  useTopNav(
+    () => ({
+      variant: "main",
+      title: "Workouts",
+      createLabel: "Create",
+      onCreate: () => void createWorkoutAndNavigate(navigate),
+      menuLabel: "Workout list menu",
+      menuItems,
+    }),
+    [navigate, menuItems],
+  );
 
   return (
     <div className="list-screen">
-      <ScreenHeader
-        variant="main"
-        title="Workouts"
-        createLabel="Create"
-        onCreate={() => void createWorkoutAndNavigate(navigate)}
-        menuLabel="Workout list menu"
-        menuItems={menuItems}
-      />
       {resumeWorkout ? (
         <div className="glass" style={{ margin: "0.65rem 1rem 0", padding: "0.65rem 0.85rem" }}>
           <p style={{ margin: 0, fontSize: "0.88rem" }} className="muted">
