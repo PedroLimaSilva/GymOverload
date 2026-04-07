@@ -17,6 +17,7 @@ import {
   Upload,
 } from "lucide-react";
 import { ExerciseMultiPickerModal } from "../components/ExerciseMultiPickerModal";
+import { ModalPortal } from "../components/ModalPortal";
 import { db } from "../db/database";
 import { useTopNav } from "../layout/TopNavContext";
 import {
@@ -743,41 +744,43 @@ function NotesModal({
 }) {
   const [text, setText] = useState(initial);
   return (
-    <div
-      className="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="workout-notes-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h2 id="workout-notes-title">Workout notes</h2>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Cancel
-          </button>
-        </header>
-        <div className="body">
-          <textarea
-            className="edit-card__textarea"
-            style={{ minHeight: "8rem", marginTop: "0.5rem" }}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Optional notes for this workout…"
-          />
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ width: "100%", marginTop: "0.75rem" }}
-            onClick={() => onSave(text)}
-          >
-            Save
-          </button>
+    <ModalPortal>
+      <div
+        className="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="workout-notes-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <header>
+            <h2 id="workout-notes-title">Workout notes</h2>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              Cancel
+            </button>
+          </header>
+          <div className="body">
+            <textarea
+              className="edit-card__textarea"
+              style={{ minHeight: "8rem", marginTop: "0.5rem" }}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Optional notes for this workout…"
+            />
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ width: "100%", marginTop: "0.75rem" }}
+              onClick={() => onSave(text)}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
 

@@ -2,6 +2,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Camera, Check, ChevronRight, ChevronsUpDown, X } from "lucide-react";
+import { ModalPortal } from "../components/ModalPortal";
 import { db } from "../db/database";
 import { useTopNav } from "../layout/TopNavContext";
 import {
@@ -32,36 +33,38 @@ function SecondaryMusclesModal({
   }
 
   return (
-    <div
-      className="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="secondary-muscles-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h2 id="secondary-muscles-title">Secondary muscles</h2>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Done
-          </button>
-        </header>
-        <div className="body">
-          {EXERCISE_CATEGORIES.filter((c) => c !== primary).map((cat) => (
-            <label key={cat} className="check-row">
-              <span>{cat}</span>
-              <input
-                type="checkbox"
-                checked={selected.includes(cat)}
-                onChange={() => toggle(cat)}
-              />
-            </label>
-          ))}
+    <ModalPortal>
+      <div
+        className="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="secondary-muscles-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <header>
+            <h2 id="secondary-muscles-title">Secondary muscles</h2>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              Done
+            </button>
+          </header>
+          <div className="body">
+            {EXERCISE_CATEGORIES.filter((c) => c !== primary).map((cat) => (
+              <label key={cat} className="check-row">
+                <span>{cat}</span>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(cat)}
+                  onChange={() => toggle(cat)}
+                />
+              </label>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
 

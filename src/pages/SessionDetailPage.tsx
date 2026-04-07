@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { BarChart3, ChevronLeft, Dumbbell, Heart, Plus, Trash2, Upload } from "lucide-react";
 import { ExerciseMultiPickerModal } from "../components/ExerciseMultiPickerModal";
+import { ModalPortal } from "../components/ModalPortal";
 import { db } from "../db/database";
 import { useTopNav } from "../layout/TopNavContext";
 import {
@@ -63,41 +64,43 @@ function SessionNotesModal({
 }) {
   const [text, setText] = useState(initial);
   return (
-    <div
-      className="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="session-notes-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h2 id="session-notes-title">Session notes</h2>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Cancel
-          </button>
-        </header>
-        <div className="body">
-          <textarea
-            className="edit-card__textarea"
-            style={{ minHeight: "8rem", marginTop: "0.5rem" }}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Notes for this session only…"
-          />
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ width: "100%", marginTop: "0.75rem" }}
-            onClick={() => onSave(text)}
-          >
-            Save
-          </button>
+    <ModalPortal>
+      <div
+        className="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-notes-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <header>
+            <h2 id="session-notes-title">Session notes</h2>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              Cancel
+            </button>
+          </header>
+          <div className="body">
+            <textarea
+              className="edit-card__textarea"
+              style={{ minHeight: "8rem", marginTop: "0.5rem" }}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Notes for this session only…"
+            />
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ width: "100%", marginTop: "0.75rem" }}
+              onClick={() => onSave(text)}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
 
@@ -114,50 +117,52 @@ function DurationEditModal({
   const m0 = Math.floor((initialMs % 3600000) / 60000);
   const [text, setText] = useState(`${h0}:${String(m0).padStart(2, "0")}`);
   return (
-    <div
-      className="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="session-duration-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h2 id="session-duration-title">Session duration</h2>
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Cancel
-          </button>
-        </header>
-        <div className="body">
-          <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
-            Enter hours and minutes as h:mm (e.g. 1:15), or minutes only (e.g. 45).
-          </p>
-          <input
-            className="edit-card__textarea"
-            style={{ marginTop: "0.5rem", minHeight: "2.5rem" }}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            inputMode="text"
-            autoComplete="off"
-            aria-label="Duration"
-          />
-          <button
-            type="button"
-            className="btn btn-primary"
-            style={{ width: "100%", marginTop: "0.75rem" }}
-            onClick={() => {
-              const ms = parseDurationToMs(text);
-              if (ms == null) return;
-              onSave(ms);
-            }}
-          >
-            Save
-          </button>
+    <ModalPortal>
+      <div
+        className="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-duration-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <header>
+            <h2 id="session-duration-title">Session duration</h2>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              Cancel
+            </button>
+          </header>
+          <div className="body">
+            <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
+              Enter hours and minutes as h:mm (e.g. 1:15), or minutes only (e.g. 45).
+            </p>
+            <input
+              className="edit-card__textarea"
+              style={{ marginTop: "0.5rem", minHeight: "2.5rem" }}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              inputMode="text"
+              autoComplete="off"
+              aria-label="Duration"
+            />
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ width: "100%", marginTop: "0.75rem" }}
+              onClick={() => {
+                const ms = parseDurationToMs(text);
+                if (ms == null) return;
+                onSave(ms);
+              }}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }
 
