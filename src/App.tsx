@@ -10,14 +10,15 @@ import { LegacySessionRedirect } from "./pages/LegacySessionRedirect";
 import { SessionDetailPage } from "./pages/SessionDetailPage";
 import { WorkoutDetailPage } from "./pages/WorkoutDetailPage";
 import { WorkoutListPage } from "./pages/WorkoutListPage";
+import { TopNavShell } from "./layout/TopNavContext";
 
 function AppLayout() {
   return (
     <>
       <div className="app-frame">
-        <main className="app-shell">
+        <TopNavShell>
           <Outlet />
-        </main>
+        </TopNavShell>
       </div>
       <nav className="tab-nav glass" aria-label="Main">
         <span className="tab-nav__disabled" aria-hidden="true">
