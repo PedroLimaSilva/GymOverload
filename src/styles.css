@@ -533,7 +533,7 @@ a.workout-detail-hero__action {
   z-index: 15;
   left: max(1rem, var(--safe-left));
   right: max(1rem, var(--safe-right));
-  bottom: calc(7rem + var(--safe-bottom));
+  bottom: calc(7rem);
   max-width: 680px;
   margin: 0 auto;
   border-radius: 32px;
