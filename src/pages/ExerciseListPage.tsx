@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
 import { ExerciseListBody } from "../components/ExerciseListBody";
-import { ScreenHeader } from "../components/ScreenHeader";
 import { db } from "../db/database";
+import { useTopNav } from "../layout/TopNavContext";
 import { createExerciseAndNavigate } from "../lib/navActions";
 import type { Exercise, ExerciseCategory } from "../model/types";
 
@@ -38,36 +38,43 @@ export function ExerciseListPage() {
     await db.exercises.delete(ex.id);
   }
 
-  const menuItems = [
-    {
-      label: filterCats.length ? "Edit filter…" : "Filter by category…",
-      onSelect: () => setFilterOpen(true),
-    },
-    ...(filterCats.length
-      ? [
-          {
-            label: "Clear filters",
-            onSelect: () => setFilterCats([]),
-          },
-        ]
-      : []),
-    {
-      label: deleteMode ? "Done deleting" : "Delete exercises…",
-      onSelect: () => setDeleteMode((d) => !d),
-    },
-  ];
+  const menuItems = useMemo(
+    () => [
+      {
+        label: filterCats.length ? "Edit filter…" : "Filter by category…",
+        onSelect: () => setFilterOpen(true),
+      },
+      ...(filterCats.length
+        ? [
+            {
+              label: "Clear filters",
+              onSelect: () => setFilterCats([]),
+            },
+          ]
+        : []),
+      {
+        label: deleteMode ? "Done deleting" : "Delete exercises…",
+        onSelect: () => setDeleteMode((d) => !d),
+      },
+    ],
+    [filterCats, deleteMode],
+  );
+
+  useTopNav(
+    () => ({
+      variant: "main",
+      title: "Exercises",
+      createLabel: "Create",
+      onCreate: () => void createExerciseAndNavigate(navigate),
+      menuLabel: "Exercise list menu",
+      menuItems,
+    }),
+    [navigate, menuItems],
+  );
 
   return (
     <div className="list-screen">
       <div className="list-screen__sticky">
-        <ScreenHeader
-          variant="main"
-          title="Exercises"
-          createLabel="Create"
-          onCreate={() => void createExerciseAndNavigate(navigate)}
-          menuLabel="Exercise list menu"
-          menuItems={menuItems}
-        />
         <label className="search-wrap glass">
           <Search size={18} aria-hidden strokeWidth={2} />
           <input

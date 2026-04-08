@@ -6,8 +6,11 @@ import {
   parseImportPayloadJson,
   triggerDownload,
 } from "../db/profileData";
+import { useTopNav } from "../layout/TopNavContext";
 
 type StatusKind = "idle" | "success" | "error";
+
+const SETTINGS_MENU_ITEMS: never[] = [];
 
 export function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,9 +92,21 @@ export function SettingsPage() {
     }
   }
 
+  useTopNav(
+    () => ({
+      variant: "main",
+      title: "Settings",
+      createLabel: "Create",
+      onCreate: () => {},
+      omitCreate: true,
+      menuLabel: "Settings menu",
+      menuItems: SETTINGS_MENU_ITEMS,
+    }),
+    [],
+  );
+
   return (
     <div className="list-screen">
-      <h1>Settings</h1>
       <div className="list-with-index__scroll" style={{ paddingBottom: "7rem" }}>
         <div className="form" style={{ marginTop: 0 }}>
           <section className="form-section">

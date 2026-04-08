@@ -1,4 +1,5 @@
 import { EXERCISE_CATEGORIES, type ExerciseCategory } from "../model/types";
+import { ModalPortal } from "./ModalPortal";
 
 type Props = {
   title: string;
@@ -18,42 +19,44 @@ export function CategoryPickerModal({ title, showClear, selected, onChange, onCl
   }
 
   return (
-    <div
-      className="modal-backdrop"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cat-picker-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <header>
-          <h2 id="cat-picker-title">{title}</h2>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            {showClear && (
-              <button type="button" className="btn btn-ghost" onClick={() => onChange([])}>
-                Clear
+    <ModalPortal>
+      <div
+        className="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cat-picker-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <header>
+            <h2 id="cat-picker-title">{title}</h2>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              {showClear && (
+                <button type="button" className="btn btn-ghost" onClick={() => onChange([])}>
+                  Clear
+                </button>
+              )}
+              <button type="button" className="btn btn-primary " onClick={onClose}>
+                Done
               </button>
-            )}
-            <button type="button" className="btn btn-primary " onClick={onClose}>
-              Done
-            </button>
+            </div>
+          </header>
+          <div className="body">
+            {EXERCISE_CATEGORIES.map((cat) => (
+              <label key={cat} className="check-row">
+                <span>{cat}</span>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(cat)}
+                  onChange={() => toggle(cat)}
+                />
+              </label>
+            ))}
           </div>
-        </header>
-        <div className="body">
-          {EXERCISE_CATEGORIES.map((cat) => (
-            <label key={cat} className="check-row">
-              <span>{cat}</span>
-              <input
-                type="checkbox"
-                checked={selected.includes(cat)}
-                onChange={() => toggle(cat)}
-              />
-            </label>
-          ))}
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

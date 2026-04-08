@@ -51,7 +51,8 @@
 html,
 body {
   margin: 0;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font);
@@ -60,9 +61,12 @@ body {
 }
 
 #root {
+  height: 100%;
   min-height: 100dvh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 a {
@@ -87,8 +91,6 @@ textarea {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  padding-left: max(1rem, var(--safe-left));
-  padding-right: max(1rem, var(--safe-right));
   padding-top: var(--safe-top);
   padding-bottom: 0;
   overflow-y: hidden;
@@ -100,6 +102,31 @@ textarea {
   flex-direction: column;
   min-height: 0;
   width: 100%;
+  position: relative;
+  --app-top-nav-height: 0px;
+}
+
+.app-top-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 19;
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+}
+
+.app-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: var(--app-top-nav-height);
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Legacy global header removed from layout; keep mark styles if needed elsewhere */
@@ -178,6 +205,16 @@ textarea {
   font-weight: 600;
   font-size: 1rem;
   letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.exercise-detail-nav__title {
+  display: block;
+  min-width: 0;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
   color: var(--text);
 }
 
@@ -851,7 +888,7 @@ a.workout-detail-hero__action {
 .list-screen {
   flex: 1;
   min-height: 0;
-  max-height: 100vh;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
 }
