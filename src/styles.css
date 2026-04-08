@@ -92,8 +92,6 @@ textarea {
   width: 100%;
   max-width: 720px;
   margin: 0 auto;
-  padding-left: max(1rem, var(--safe-left));
-  padding-right: max(1rem, var(--safe-right));
   padding-top: var(--safe-top);
   padding-bottom: 0;
   overflow-y: hidden;
@@ -115,6 +113,8 @@ textarea {
   right: 0;
   top: 0;
   z-index: 19;
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
 }
 
 .app-page {
@@ -123,6 +123,8 @@ textarea {
   display: flex;
   flex-direction: column;
   padding-top: var(--app-top-nav-height);
+  padding-left: max(1rem, var(--safe-left));
+  padding-right: max(1rem, var(--safe-right));
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
