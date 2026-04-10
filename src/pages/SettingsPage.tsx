@@ -54,6 +54,7 @@ export function SettingsPage() {
       const { added } = await mergeImportPayload(payload);
       const parts = [
         `${added.exercises} exercise${added.exercises === 1 ? "" : "s"}`,
+        `${added.workoutGroups} workout group${added.workoutGroups === 1 ? "" : "s"}`,
         `${added.workouts} workout plan${added.workouts === 1 ? "" : "s"}`,
         `${added.workoutSessions} session${added.workoutSessions === 1 ? "" : "s"}`,
         `${added.loggedExerciseEntries} logged set${added.loggedExerciseEntries === 1 ? "" : "s"}`,

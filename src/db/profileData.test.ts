@@ -12,6 +12,7 @@ function minimalExportV2(overrides: Partial<GymOverloadExport> = {}): GymOverloa
     exportedAt: "2026-01-01T00:00:00.000Z",
     exercises: [],
     workouts: [],
+    workoutGroups: [],
     workoutSessions: [],
     loggedExerciseEntries: [],
     ...overrides,

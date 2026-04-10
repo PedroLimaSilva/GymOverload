@@ -977,6 +977,86 @@ a.workout-detail-hero__action {
   margin-top: 0;
 }
 
+.workout-create-choice-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.35rem;
+}
+
+.workout-create-choice-modal__option {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.workout-create-choice-modal__option:active {
+  opacity: 0.92;
+}
+
+.workout-create-choice-modal__icon {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.workout-group-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.85rem 0 0.25rem;
+  padding: 0 0.15rem 0 0;
+}
+
+.workout-group-row:first-child {
+  margin-top: 0.35rem;
+}
+
+.workout-group-row__toggle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.25rem 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.workout-group-row__chevron {
+  flex-shrink: 0;
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.workout-group-row__chevron--open {
+  transform: rotate(90deg);
+}
+
+.workout-group-row__delete {
+  flex-shrink: 0;
+  padding: 0.35rem 0.5rem;
+  color: var(--accent);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
 .tab-nav {
   position: fixed;
   left: 1.1rem;

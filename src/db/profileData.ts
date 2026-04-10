@@ -3,6 +3,7 @@ import type {
   LoggedExerciseEntry,
   SessionExerciseSnapshot,
   Workout,
+  WorkoutGroup,
   WorkoutSession,
 } from "../model/types";
 import { newId } from "../model/types";
@@ -17,6 +18,7 @@ export interface GymOverloadExport {
   exportedAt: string;
   exercises: Exercise[];
   workouts: Workout[];
+  workoutGroups: WorkoutGroup[];
   workoutSessions: WorkoutSession[];
   loggedExerciseEntries: LoggedExerciseEntry[];
 }
@@ -25,6 +27,7 @@ export interface GymOverloadExport {
 interface NormalizedImportPayload {
   exercises: Exercise[];
   workouts: Workout[];
+  workoutGroups: WorkoutGroup[];
   workoutSessions: Array<{
     id?: string;
     workoutId: string;
@@ -37,17 +40,20 @@ interface NormalizedImportPayload {
 }
 
 export async function gatherExportPayload(): Promise<GymOverloadExport> {
-  const [exercises, workouts, workoutSessions, loggedExerciseEntries] = await Promise.all([
-    db.exercises.toArray(),
-    db.workouts.toArray(),
-    db.workoutSessions.toArray(),
-    db.loggedExerciseEntries.toArray(),
-  ]);
+  const [exercises, workouts, workoutGroups, workoutSessions, loggedExerciseEntries] =
+    await Promise.all([
+      db.exercises.toArray(),
+      db.workouts.toArray(),
+      db.workoutGroups.toArray(),
+      db.workoutSessions.toArray(),
+      db.loggedExerciseEntries.toArray(),
+    ]);
   return {
     version: EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
     exercises,
     workouts,
+    workoutGroups,
     workoutSessions,
     loggedExerciseEntries,
   };
@@ -77,14 +83,17 @@ function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportP
   }
 
   let workouts: Workout[];
+  let workoutGroups: WorkoutGroup[];
   if (v === EXPORT_FORMAT_VERSION) {
     if (!Array.isArray(raw.workouts)) throw new Error("Missing or invalid workouts array.");
     workouts = raw.workouts as Workout[];
+    workoutGroups = Array.isArray(raw.workoutGroups) ? (raw.workoutGroups as WorkoutGroup[]) : [];
   } else {
     if (!Array.isArray(raw.templates)) {
       throw new Error('Missing workouts: legacy exports (version 1) use a "templates" array.');
     }
     workouts = raw.templates as Workout[];
+    workoutGroups = [];
   }
 
   const workoutSessions: NormalizedImportPayload["workoutSessions"] = [];
@@ -118,6 +127,7 @@ function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportP
   return {
     exercises: raw.exercises as Exercise[],
     workouts,
+    workoutGroups,
     workoutSessions,
     loggedExerciseEntries: raw.loggedExerciseEntries as LoggedExerciseEntry[],
   };
@@ -138,6 +148,7 @@ export interface MergeImportResult {
   added: {
     exercises: number;
     workouts: number;
+    workoutGroups: number;
     workoutSessions: number;
     loggedExerciseEntries: number;
   };
@@ -146,6 +157,7 @@ export interface MergeImportResult {
 function remapImportedPayload(payload: NormalizedImportPayload): {
   exercises: Exercise[];
   workouts: Workout[];
+  workoutGroups: WorkoutGroup[];
   workoutSessions: WorkoutSession[];
   loggedExerciseEntries: LoggedExerciseEntry[];
 } {
@@ -155,6 +167,18 @@ function remapImportedPayload(payload: NormalizedImportPayload): {
       ...ex,
       id: newId(),
       createdAt: ex.createdAt || new Date().toISOString(),
+    });
+  }
+
+  const workoutGroupIdMap = new Map<string, string>();
+  const workoutGroups: WorkoutGroup[] = [];
+  for (const g of payload.workoutGroups) {
+    const newGId = newId();
+    if (g.id) workoutGroupIdMap.set(g.id, newGId);
+    workoutGroups.push({
+      ...g,
+      id: newGId,
+      sortOrder: typeof g.sortOrder === "number" && Number.isFinite(g.sortOrder) ? g.sortOrder : 0,
     });
   }
 
@@ -169,10 +193,15 @@ function remapImportedPayload(payload: NormalizedImportPayload): {
       if (pe.id) plannedExerciseIdMap.set(pe.id, newPeId);
       return { ...pe, id: newPeId };
     });
+    const mappedGroupId =
+      w.groupId && workoutGroupIdMap.has(w.groupId) ? workoutGroupIdMap.get(w.groupId) : undefined;
     workouts.push({
       ...w,
       id: newWId,
       plannedExercises,
+      groupId: mappedGroupId,
+      sortOrder:
+        typeof w.sortOrder === "number" && Number.isFinite(w.sortOrder) ? w.sortOrder : undefined,
     });
   }
 
@@ -217,19 +246,20 @@ function remapImportedPayload(payload: NormalizedImportPayload): {
     });
   }
 
-  return { exercises, workouts, workoutSessions, loggedExerciseEntries };
+  return { exercises, workouts, workoutGroups, workoutSessions, loggedExerciseEntries };
 }
 
 export async function mergeImportPayload(
   payload: NormalizedImportPayload,
 ): Promise<MergeImportResult> {
-  const { exercises, workouts, workoutSessions, loggedExerciseEntries } =
+  const { exercises, workouts, workoutGroups, workoutSessions, loggedExerciseEntries } =
     remapImportedPayload(payload);
   await db.transaction(
     "rw",
     [
       db.exercises,
       db.workouts,
+      db.workoutGroups,
       db.workoutSessions,
       db.loggedExerciseEntries,
       db.liveWorkoutSessionDrafts,
@@ -237,6 +267,7 @@ export async function mergeImportPayload(
     async () => {
       await db.liveWorkoutSessionDrafts.clear();
       if (exercises.length) await db.exercises.bulkAdd(exercises);
+      if (workoutGroups.length) await db.workoutGroups.bulkAdd(workoutGroups);
       if (workouts.length) await db.workouts.bulkAdd(workouts);
       if (workoutSessions.length) await db.workoutSessions.bulkAdd(workoutSessions);
       if (loggedExerciseEntries.length)
@@ -247,6 +278,7 @@ export async function mergeImportPayload(
     added: {
       exercises: exercises.length,
       workouts: workouts.length,
+      workoutGroups: workoutGroups.length,
       workoutSessions: workoutSessions.length,
       loggedExerciseEntries: loggedExerciseEntries.length,
     },
@@ -259,6 +291,7 @@ export async function deleteAllUserData(): Promise<void> {
     [
       db.exercises,
       db.workouts,
+      db.workoutGroups,
       db.workoutSessions,
       db.loggedExerciseEntries,
       db.liveWorkoutSessionDrafts,
@@ -268,6 +301,7 @@ export async function deleteAllUserData(): Promise<void> {
       await db.workoutSessions.clear();
       await db.liveWorkoutSessionDrafts.clear();
       await db.workouts.clear();
+      await db.workoutGroups.clear();
       await db.exercises.clear();
     },
   );
