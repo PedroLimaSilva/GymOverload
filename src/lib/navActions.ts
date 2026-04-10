@@ -8,11 +8,16 @@ export async function createExerciseAndNavigate(navigate: NavigateFunction) {
   navigate(`/exercises/${ex.id}`);
 }
 
-export async function createWorkoutAndNavigate(navigate: NavigateFunction) {
+export async function createWorkoutAndNavigate(
+  navigate: NavigateFunction,
+  opts?: { groupId?: string; sortOrder?: number },
+) {
   const w: Workout = {
     id: newId(),
     name: "New workout",
     plannedExercises: [],
+    groupId: opts?.groupId,
+    sortOrder: opts?.sortOrder,
   };
   await db.workouts.add(w);
   navigate(`/workouts/${w.id}`);

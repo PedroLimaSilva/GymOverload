@@ -80,11 +80,23 @@ export interface PlannedExercise extends PlannedExerciseDTO {
   id: string;
 }
 
+/** Folder for organizing workout plans on the list screen (not a workout itself). */
+export interface WorkoutGroup {
+  id: string;
+  name: string;
+  /** Lower values appear first among groups. */
+  sortOrder: number;
+}
+
 export interface Workout {
   id: string;
   name: string;
   plannedExercises: PlannedExercise[];
   notes?: string;
+  /** When set, the workout appears under this group on the workouts list. */
+  groupId?: string;
+  /** Order within a group (or among ungrouped workouts); lower first. */
+  sortOrder?: number;
 }
 
 /** Per-exercise rows stored on a completed session (editable on session detail). */
@@ -222,6 +234,15 @@ export function workoutFromDTO(dto: WorkoutDTO, id = newId()): Workout {
     name: dto.name,
     plannedExercises: dto.plannedExercises.map((p) => plannedFromDTO(p)),
     notes: dto.notes ?? undefined,
+  };
+}
+
+export function workoutGroupWithName(name: string, sortOrder = 0): WorkoutGroup {
+  const trimmed = name.trim();
+  return {
+    id: newId(),
+    name: trimmed || "New group",
+    sortOrder,
   };
 }
 
