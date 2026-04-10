@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { db } from "../db/database";
 import { useTopNav } from "../layout/TopNavContext";
@@ -107,8 +107,23 @@ export function HistoryListPage() {
 
   const [sheetDayKey, setSheetDayKey] = useState<string | null>(null);
   const [selectedEmptyKey, setSelectedEmptyKey] = useState<string | null>(null);
+  const calendarScrollRef = useRef<HTMLDivElement>(null);
+  const didInitialCalendarScrollRef = useRef(false);
 
   const closeDaySheet = useCallback(() => setSheetDayKey(null), []);
+
+  useLayoutEffect(() => {
+    if (sessions === undefined || didInitialCalendarScrollRef.current) return;
+    const scrollEl = calendarScrollRef.current;
+    const monthEl = document.getElementById("history-calendar-current-month");
+    if (!scrollEl) return;
+    if (monthEl) {
+      const c = scrollEl.getBoundingClientRect();
+      const m = monthEl.getBoundingClientRect();
+      scrollEl.scrollTop = Math.max(0, scrollEl.scrollTop + (m.top - c.top));
+    }
+    didInitialCalendarScrollRef.current = true;
+  }, [sessions, months]);
 
   useEffect(() => {
     if (sheetDayKey == null) return;
@@ -165,7 +180,7 @@ export function HistoryListPage() {
         </div>
       </div>
       <div className="list-with-index">
-        <div className="list-with-index__scroll history-calendar__scroll">
+        <div ref={calendarScrollRef} className="list-with-index__scroll history-calendar__scroll">
           {sessions === undefined ? (
             <p className="empty">Loading…</p>
           ) : (
@@ -178,6 +193,7 @@ export function HistoryListPage() {
                   return (
                     <section
                       key={`${year}-${monthIndex}`}
+                      id={isCurrentMonth ? "history-calendar-current-month" : undefined}
                       className="history-calendar__month"
                       aria-label={`${monthShortLabel(year, monthIndex)} ${year}`}
                     >
