@@ -2002,14 +2002,10 @@ button.edit-card__row:disabled {
 
 .exercise-detail-modal__advanced {
   margin-top: 1rem;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  background: var(--surface);
-  overflow: hidden;
 }
 
 .exercise-detail-modal__advanced summary {
-  padding: 0.85rem 1rem;
+  padding: 0.65rem 0;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--muted);
@@ -2021,16 +2017,7 @@ button.edit-card__row:disabled {
   display: none;
 }
 
-.exercise-detail-modal__advanced .form-section {
-  margin-top: 0;
-  padding: 0 1rem 0.75rem;
-}
-
-.exercise-detail-modal__advanced .field {
-  border-bottom-color: var(--border);
-}
-
-.exercise-detail-modal__advanced .field:last-child {
+.exercise-detail-modal__advanced .toggle-row:last-child {
   border-bottom: none;
 }
 

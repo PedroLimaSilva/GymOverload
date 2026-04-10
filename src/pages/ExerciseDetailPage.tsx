@@ -331,65 +331,63 @@ export function ExerciseDetailPage() {
 
       <details className="exercise-detail-modal__advanced">
         <summary>Advanced</summary>
-        <div className="form-section">
-          <div className="field">
-            <label htmlFor="ex-rest">Rest (seconds)</label>
-            <input
-              id="ex-rest"
-              type="number"
-              min={0}
-              step={1}
-              value={draft.defaultRestSeconds}
-              onChange={(e) =>
-                void persist({ ...draft, defaultRestSeconds: Number(e.target.value) || 0 })
-              }
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="ex-unit">Weight unit</label>
-            <select
-              id="ex-unit"
-              value={draft.weightUnit}
-              onChange={(e) => void persist({ ...draft, weightUnit: e.target.value })}
-            >
-              <option value="kg">kg</option>
-              <option value="lb">lb</option>
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="ex-inkg">Increment (kg)</label>
-            <input
-              id="ex-inkg"
-              type="number"
-              min={0}
-              step={0.5}
-              value={draft.weightIncrementKg}
-              onChange={(e) =>
-                void persist({ ...draft, weightIncrementKg: Number(e.target.value) || 0 })
-              }
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="ex-inlb">Increment (lb)</label>
-            <input
-              id="ex-inlb"
-              type="number"
-              min={0}
-              step={0.5}
-              value={draft.weightIncrementLb}
-              onChange={(e) =>
-                void persist({ ...draft, weightIncrementLb: Number(e.target.value) || 0 })
-              }
-            />
-          </div>
-          <div className="toggle-row">
-            <span>Double weight for volume</span>
-            <input
-              type="checkbox"
-              checked={draft.doubleWeightForVolume}
-              onChange={(e) => void persist({ ...draft, doubleWeightForVolume: e.target.checked })}
-            />
-          </div>
+        <div className="field">
+          <label htmlFor="ex-rest">Rest (seconds)</label>
+          <input
+            id="ex-rest"
+            type="number"
+            min={0}
+            step={1}
+            value={draft.defaultRestSeconds}
+            onChange={(e) =>
+              void persist({ ...draft, defaultRestSeconds: Number(e.target.value) || 0 })
+            }
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="ex-unit">Weight unit</label>
+          <select
+            id="ex-unit"
+            value={draft.weightUnit}
+            onChange={(e) => void persist({ ...draft, weightUnit: e.target.value })}
+          >
+            <option value="kg">kg</option>
+            <option value="lb">lb</option>
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="ex-inkg">Increment (kg)</label>
+          <input
+            id="ex-inkg"
+            type="number"
+            min={0}
+            step={0.5}
+            value={draft.weightIncrementKg}
+            onChange={(e) =>
+              void persist({ ...draft, weightIncrementKg: Number(e.target.value) || 0 })
+            }
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="ex-inlb">Increment (lb)</label>
+          <input
+            id="ex-inlb"
+            type="number"
+            min={0}
+            step={0.5}
+            value={draft.weightIncrementLb}
+            onChange={(e) =>
+              void persist({ ...draft, weightIncrementLb: Number(e.target.value) || 0 })
+            }
+          />
+        </div>
+        <div className="toggle-row">
+          <span>Double weight for volume</span>
+          <input
+            type="checkbox"
+            checked={draft.doubleWeightForVolume}
+            onChange={(e) => void persist({ ...draft, doubleWeightForVolume: e.target.checked })}
+          />
         </div>
       </details>
 
