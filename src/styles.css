@@ -7,6 +7,7 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --header-mark-size: 36px;
 }
 
@@ -1784,8 +1785,8 @@ a.workout-detail-hero__action {
   color: var(--text);
   display: flex;
   flex-direction: column;
-  padding: max(0.5rem, var(--safe-top)) max(1rem, var(--safe-left)) 7rem
-    max(1rem, var(--safe-right));
+  padding: max(0.5rem, var(--safe-top)) max(1rem, var(--safe-left))
+    calc(8.5rem + var(--safe-bottom)) max(1rem, var(--safe-right));
   max-width: 720px;
   margin: 0 auto;
   width: 100%;
