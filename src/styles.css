@@ -1076,6 +1076,75 @@ a.workout-detail-hero__action {
   line-height: 1;
 }
 
+.workout-list-section {
+  list-style: none;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.workout-list-row {
+  list-style: none;
+}
+
+.workout-list-row--dragging {
+  opacity: 0.45;
+}
+
+.workout-list-row__inner {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.workout-list-row__drag {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  /* background: var(--surface); */
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+.workout-list-row__drag:active {
+  cursor: grabbing;
+}
+
+.workout-list-empty-drop {
+  list-style: none;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.65rem 0.75rem;
+  text-align: center;
+  font-size: 0.88rem;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.workout-list-empty-drop--active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.workout-list-row--overlay {
+  list-style: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.workout-list-empty-hint {
+  list-style: none;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.35rem 0;
+}
+
 .tab-nav {
   position: fixed;
   left: 1.1rem;
@@ -1201,7 +1270,7 @@ a.workout-detail-hero__action {
   padding: 0;
 }
 
-.list li {
+.list > li {
   border-bottom: 1px solid var(--border);
 }
 
@@ -1216,6 +1285,7 @@ a.workout-detail-hero__action {
   width: 100%;
   text-align: left;
   padding: 0.75rem 0;
+  padding-right: 0.75rem;
   background: none;
   border: none;
   cursor: pointer;
