@@ -7,8 +7,8 @@
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --header-mark-size: 36px;
+  --bottom-nav-height: 7rem;
 }
 
 :root {
@@ -570,7 +570,7 @@ a.workout-detail-hero__action {
   z-index: 15;
   left: max(1rem, var(--safe-left));
   right: max(1rem, var(--safe-right));
-  bottom: calc(7rem);
+  bottom: var(--bottom-nav-height);
   max-width: 680px;
   margin: 0 auto;
   border-radius: 32px;
@@ -1009,6 +1009,24 @@ a.workout-detail-hero__action {
 .workout-create-choice-modal__icon {
   flex-shrink: 0;
   color: var(--accent);
+}
+
+.resume-workout-card {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 2rem;
+  padding: 1rem;
+}
+
+.resume-workout-card .btn-pill {
+  width: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.resume-workout-card .muted {
+  margin: 0;
+  margin-left: 1rem;
+  font-size: 0.88rem;
 }
 
 .workout-group-row {
@@ -1928,16 +1946,12 @@ a.workout-detail-hero__action {
 }
 
 /* Full-screen exercise edit modal */
-.exercise-detail-modal {
-  min-height: 100dvh;
-  min-height: 100vh;
-  background: var(--modal-canvas);
+.exercise-detail-page {
   color: var(--text);
   display: flex;
   flex-direction: column;
-  padding: max(0.5rem, var(--safe-top)) max(1rem, var(--safe-left))
-    calc(8.5rem + var(--safe-bottom)) max(1rem, var(--safe-right));
   max-width: 720px;
+  padding-bottom: var(--bottom-nav-height);
   margin: 0 auto;
   width: 100%;
   border-radius: 20px 20px 0 0;
@@ -1945,14 +1959,14 @@ a.workout-detail-hero__action {
 }
 
 @media (min-width: 720px) {
-  .exercise-detail-modal {
+  .exercise-detail-page {
     border-radius: 20px;
     margin-top: 1rem;
     min-height: calc(100dvh - 2rem);
   }
 }
 
-.exercise-detail-modal__toolbar {
+.exercise-detail-page__toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1984,7 +1998,7 @@ a.workout-detail-hero__action {
   color: #fff;
 }
 
-.exercise-detail-modal__title {
+.exercise-detail-page__title {
   margin: 0.35rem 0 1rem;
   font-size: 1.5rem;
   font-weight: 700;
@@ -1995,7 +2009,6 @@ a.workout-detail-hero__action {
 .edit-exercise-card {
   background: var(--surface);
   border-radius: 14px;
-  overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
 }
 
@@ -2129,7 +2142,7 @@ button.edit-card__row:disabled {
   flex-shrink: 0;
 }
 
-.exercise-detail-modal__delete {
+.exercise-detail-page__delete {
   display: block;
   width: 100%;
   margin-top: 1.25rem;
@@ -2144,18 +2157,21 @@ button.edit-card__row:disabled {
   cursor: pointer;
 }
 
-.exercise-detail-modal__fab {
+.exercise-detail-page__fab {
   display: flex;
   justify-content: center;
   margin-top: 1.5rem;
 }
 
-.exercise-detail-modal__advanced {
+.exercise-detail-page__advanced {
   margin-top: 1rem;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: var(--surface);
 }
 
-.exercise-detail-modal__advanced summary {
-  padding: 0.65rem 0;
+.exercise-detail-page__advanced summary {
+  padding: 0.85rem 1rem;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--muted);
@@ -2163,11 +2179,20 @@ button.edit-card__row:disabled {
   list-style: none;
 }
 
-.exercise-detail-modal__advanced summary::-webkit-details-marker {
+.exercise-detail-page__advanced summary::-webkit-details-marker {
   display: none;
 }
 
-.exercise-detail-modal__advanced .toggle-row:last-child {
+.exercise-detail-page__advanced .form-section {
+  margin-top: 0;
+  padding: 0 1rem 0.75rem;
+}
+
+.exercise-detail-page__advanced .field {
+  border-bottom-color: var(--border);
+}
+
+.exercise-detail-page__advanced .field:last-child {
   border-bottom: none;
 }
 

@@ -154,14 +154,14 @@ export function ExerciseDetailPage() {
 
   if (!draft) {
     return (
-      <div className="exercise-detail-modal">
+      <div className="exercise-detail-page">
         <p className="empty">Loading…</p>
       </div>
     );
   }
 
   return (
-    <div className="exercise-detail-modal">
+    <div className="exercise-detail-page">
       {draft.imageDataUrl ? (
         <div style={{ marginBottom: "0.75rem", display: "flex", justifyContent: "center" }}>
           <img
@@ -297,11 +297,11 @@ export function ExerciseDetailPage() {
         </div>
       </div>
 
-      <button type="button" className="exercise-detail-modal__delete" onClick={() => void remove()}>
+      <button type="button" className="exercise-detail-page__delete" onClick={() => void remove()}>
         DELETE
       </button>
 
-      <div className="exercise-detail-modal__fab">
+      <div className="exercise-detail-page__fab">
         <input
           ref={fileRef}
           type="file"
@@ -329,65 +329,67 @@ export function ExerciseDetailPage() {
         </button>
       </div>
 
-      <details className="exercise-detail-modal__advanced">
+      <details className="exercise-detail-page__advanced">
         <summary>Advanced</summary>
-        <div className="field">
-          <label htmlFor="ex-rest">Rest (seconds)</label>
-          <input
-            id="ex-rest"
-            type="number"
-            min={0}
-            step={1}
-            value={draft.defaultRestSeconds}
-            onChange={(e) =>
-              void persist({ ...draft, defaultRestSeconds: Number(e.target.value) || 0 })
-            }
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="ex-unit">Weight unit</label>
-          <select
-            id="ex-unit"
-            value={draft.weightUnit}
-            onChange={(e) => void persist({ ...draft, weightUnit: e.target.value })}
-          >
-            <option value="kg">kg</option>
-            <option value="lb">lb</option>
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="ex-inkg">Increment (kg)</label>
-          <input
-            id="ex-inkg"
-            type="number"
-            min={0}
-            step={0.5}
-            value={draft.weightIncrementKg}
-            onChange={(e) =>
-              void persist({ ...draft, weightIncrementKg: Number(e.target.value) || 0 })
-            }
-          />
-        </div>
-        <div className="field">
-          <label htmlFor="ex-inlb">Increment (lb)</label>
-          <input
-            id="ex-inlb"
-            type="number"
-            min={0}
-            step={0.5}
-            value={draft.weightIncrementLb}
-            onChange={(e) =>
-              void persist({ ...draft, weightIncrementLb: Number(e.target.value) || 0 })
-            }
-          />
-        </div>
-        <div className="toggle-row">
-          <span>Double weight for volume</span>
-          <input
-            type="checkbox"
-            checked={draft.doubleWeightForVolume}
-            onChange={(e) => void persist({ ...draft, doubleWeightForVolume: e.target.checked })}
-          />
+        <div className="form-section">
+          <div className="field">
+            <label htmlFor="ex-rest">Rest (seconds)</label>
+            <input
+              id="ex-rest"
+              type="number"
+              min={0}
+              step={1}
+              value={draft.defaultRestSeconds}
+              onChange={(e) =>
+                void persist({ ...draft, defaultRestSeconds: Number(e.target.value) || 0 })
+              }
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="ex-unit">Weight unit</label>
+            <select
+              id="ex-unit"
+              value={draft.weightUnit}
+              onChange={(e) => void persist({ ...draft, weightUnit: e.target.value })}
+            >
+              <option value="kg">kg</option>
+              <option value="lb">lb</option>
+            </select>
+          </div>
+          <div className="field">
+            <label htmlFor="ex-inkg">Increment (kg)</label>
+            <input
+              id="ex-inkg"
+              type="number"
+              min={0}
+              step={0.5}
+              value={draft.weightIncrementKg}
+              onChange={(e) =>
+                void persist({ ...draft, weightIncrementKg: Number(e.target.value) || 0 })
+              }
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="ex-inlb">Increment (lb)</label>
+            <input
+              id="ex-inlb"
+              type="number"
+              min={0}
+              step={0.5}
+              value={draft.weightIncrementLb}
+              onChange={(e) =>
+                void persist({ ...draft, weightIncrementLb: Number(e.target.value) || 0 })
+              }
+            />
+          </div>
+          <div className="toggle-row">
+            <span>Double weight for volume</span>
+            <input
+              type="checkbox"
+              checked={draft.doubleWeightForVolume}
+              onChange={(e) => void persist({ ...draft, doubleWeightForVolume: e.target.checked })}
+            />
+          </div>
         </div>
       </details>
 
