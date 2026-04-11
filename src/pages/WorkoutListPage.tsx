@@ -166,13 +166,13 @@ export function WorkoutListPage() {
   return (
     <div className="list-screen">
       {resumeWorkout ? (
-        <div className="glass" style={{ margin: "0.65rem 1rem 0", padding: "0.65rem 0.85rem" }}>
-          <p style={{ margin: 0, fontSize: "0.88rem" }} className="muted">
+        <div className="resume-workout-card">
+          <p className="muted">
             Workout in progress
           </p>
           <Link
             to={`/workouts/${resumeWorkout.id}?session=1`}
-            className="btn btn-primary"
+            className="btn btn-primary btn-pill"
             style={{ display: "block", width: "100%", marginTop: "0.45rem", textAlign: "center" }}
           >
             Resume “{resumeWorkout.name}”

@@ -1011,6 +1011,24 @@ a.workout-detail-hero__action {
   color: var(--accent);
 }
 
+.resume-workout-card {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 2rem;
+  padding: 1rem;
+}
+
+.resume-workout-card .btn-pill {
+  width: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.resume-workout-card .muted {
+  margin: 0;
+  margin-left: 1rem;
+  font-size: 0.88rem;
+}
+
 .workout-group-row {
   display: flex;
   align-items: center;
