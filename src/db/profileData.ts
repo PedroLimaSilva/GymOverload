@@ -59,6 +59,52 @@ export async function gatherExportPayload(): Promise<GymOverloadExport> {
   };
 }
 
+function plannedExerciseNames(workouts: Workout[]): Set<string> {
+  const names = new Set<string>();
+  for (const w of workouts) {
+    for (const p of w.plannedExercises) {
+      const n = p.name.trim();
+      if (n) names.add(n);
+    }
+  }
+  return names;
+}
+
+/** Subset export: one group, its workouts, related sessions/entries, and exercises referenced by name in those plans. */
+export async function gatherGroupExportPayload(groupId: string): Promise<GymOverloadExport> {
+  const [exercises, allWorkouts, workoutGroups, workoutSessions, loggedExerciseEntries] =
+    await Promise.all([
+      db.exercises.toArray(),
+      db.workouts.toArray(),
+      db.workoutGroups.toArray(),
+      db.workoutSessions.toArray(),
+      db.loggedExerciseEntries.toArray(),
+    ]);
+  const group = workoutGroups.find((g) => g.id === groupId);
+  if (!group) throw new Error("Workout group not found.");
+  const workouts = allWorkouts.filter((w) => w.groupId === groupId);
+  const workoutIds = new Set(workouts.map((w) => w.id));
+  const sessions = workoutSessions.filter((s) => workoutIds.has(s.workoutId));
+  const sessionIds = new Set(sessions.map((s) => s.id));
+  const entries = loggedExerciseEntries.filter((e) => sessionIds.has(e.sessionId));
+  const nameSet = plannedExerciseNames(workouts);
+  const exportExercises = exercises.filter((ex) => nameSet.has(ex.name));
+  return {
+    version: EXPORT_FORMAT_VERSION,
+    exportedAt: new Date().toISOString(),
+    exercises: exportExercises,
+    workouts,
+    workoutGroups: [group],
+    workoutSessions: sessions,
+    loggedExerciseEntries: entries,
+  };
+}
+
+export async function exportGroupJsonBlob(groupId: string): Promise<Blob> {
+  const payload = await gatherGroupExportPayload(groupId);
+  return new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+}
+
 export async function exportJsonBlob(): Promise<Blob> {
   const payload = await gatherExportPayload();
   return new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
