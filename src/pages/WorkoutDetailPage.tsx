@@ -607,7 +607,7 @@ export function WorkoutDetailPage() {
         </div>
       </div>
 
-      <div className="form" style={{ marginTop: 0, marginBottom: "7rem" }}>
+      <div className="form" style={{ marginTop: 0, marginBottom: "var(--bottom-nav-height)" }}>
         {editMode ? (
           <div className="form-section" style={{ marginTop: "1rem" }}>
             <ReorderList

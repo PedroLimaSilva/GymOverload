@@ -146,7 +146,7 @@ export function ExerciseListBody(props: ExerciseListBodyProps) {
       <div
         className="list-with-index__scroll"
         ref={scrollRef}
-        style={{ paddingBottom: props.mode === "link" ? "7rem" : 0 }}
+        style={{ paddingBottom: props.mode === "link" ? "var(--bottom-nav-height)" : 0 }}
       >
         {showIndex ? (
           grouped.map((section) => (

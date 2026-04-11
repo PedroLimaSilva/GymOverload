@@ -440,7 +440,7 @@ export function SessionDetailPage() {
         </div>
       </div>
 
-      <div className="form" style={{ marginTop: 0, marginBottom: "7rem" }}>
+      <div className="form" style={{ marginTop: 0, marginBottom: "var(--bottom-nav-height)" }}>
         <div className="workout-detail-exercises">
           {blocks.map((block) => {
             const ex = exerciseByName.get(block.exerciseName);
