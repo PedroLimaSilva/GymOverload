@@ -106,7 +106,6 @@ export function WorkoutDetailPage() {
     () => (id ? db.workoutSessions.where("workoutId").equals(id).toArray() : []),
     [id],
   );
-  const workoutGroups = useLiveQuery(() => db.workoutGroups.orderBy("sortOrder").toArray(), []);
   const sortedSessions = useMemo(() => {
     if (!sessionsForWorkout) return [];
     return [...sessionsForWorkout].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
@@ -501,29 +500,6 @@ export function WorkoutDetailPage() {
         >
           {draft.notes?.trim() ? draft.notes.trim() : "Add notes"}
         </button>
-        {!sessionActive && workoutGroups && workoutGroups.length > 0 ? (
-          <label className="field" style={{ marginTop: "0.65rem", width: "100%" }}>
-            <span>Group</span>
-            <select
-              aria-label="Workout group"
-              value={draft.groupId ?? ""}
-              onChange={(e) => {
-                const v = e.target.value;
-                const next = { ...draft };
-                if (v) next.groupId = v;
-                else delete next.groupId;
-                void persist(next);
-              }}
-            >
-              <option value="">None</option>
-              {workoutGroups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
         <div className="workout-detail-hero__actions">
           {sessionActive ? (
             sessionReady ? (
