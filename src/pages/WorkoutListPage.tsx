@@ -160,15 +160,14 @@ function WorkoutSortableRow({
     >
       <div className="workout-list-row__inner">
         {!deleteMode ? (
-          <button
-            type="button"
+          <div
             className="workout-list-row__drag"
             aria-label={`Reorder ${w.name}`}
             {...attributes}
             {...listeners}
           >
             <GripVertical size={20} aria-hidden strokeWidth={2} />
-          </button>
+          </div>
         ) : null}
         <Link to={`/workouts/${w.id}`} className="list-row-link" style={{ flex: 1 }}>
           <span className="list-row-link__thumb" aria-hidden>
@@ -516,7 +515,7 @@ export function WorkoutListPage() {
       <ul className="list" style={{ marginTop: "0.65rem" }}>
         {sections.map((section) =>
           section.kind === "group" ? (
-            <li key={`g-${section.group.id}`} style={{ listStyle: "none" }}>
+            <li key={`g-${section.group.id}`} style={{ listStyle: "none", border: "none" }}>
               <div
                 className="workout-group-row"
                 onPointerEnter={() => {
@@ -568,17 +567,9 @@ export function WorkoutListPage() {
           ) : (
             <li key="ungrouped" style={{ listStyle: "none" }}>
               {sortedGroups.length > 0 ? (
-                <>
-                  <p className="list-section-label" style={{ marginTop: "0.85rem" }}>
-                    Other workouts
-                  </p>
-                  <p
-                    className="muted workout-list-ungrouped-hint"
-                    style={{ margin: "0.15rem 0 0" }}
-                  >
-                    Drag here to take a plan out of every group.
-                  </p>
-                </>
+                <p className="list-section-label" style={{ marginTop: "0.85rem" }}>
+                  Other workouts
+                </p>
               ) : null}
               <ul
                 className="list workout-list-section"

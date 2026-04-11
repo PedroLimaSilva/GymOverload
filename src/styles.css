@@ -1060,6 +1060,9 @@ a.workout-detail-hero__action {
 
 .workout-list-section {
   list-style: none;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
 }
 
 .workout-list-row {
@@ -1085,8 +1088,7 @@ a.workout-detail-hero__action {
   padding: 0;
   margin: 0;
   border: none;
-  border-right: 1px solid var(--border);
-  background: var(--surface);
+  /* background: var(--surface); */
   color: var(--muted);
   cursor: grab;
   touch-action: none;
@@ -1100,8 +1102,6 @@ a.workout-detail-hero__action {
   list-style: none;
   margin: 0.25rem 0 0.5rem;
   padding: 0.65rem 0.75rem;
-  border: 1px dashed var(--border);
-  border-radius: 10px;
   text-align: center;
   font-size: 0.88rem;
   transition:
@@ -1119,12 +1119,6 @@ a.workout-detail-hero__action {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   border-radius: 12px;
   border: 1px solid var(--border);
-}
-
-.workout-list-ungrouped-hint {
-  font-size: 0.78rem;
-  line-height: 1.35;
-  padding: 0 0.15rem;
 }
 
 .workout-list-empty-hint {
@@ -1258,7 +1252,7 @@ a.workout-detail-hero__action {
   padding: 0;
 }
 
-.list li {
+.list > li {
   border-bottom: 1px solid var(--border);
 }
 
@@ -1273,6 +1267,7 @@ a.workout-detail-hero__action {
   width: 100%;
   text-align: left;
   padding: 0.75rem 0;
+  padding-right: 0.75rem;
   background: none;
   border: none;
   cursor: pointer;
