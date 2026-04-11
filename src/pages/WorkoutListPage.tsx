@@ -1,5 +1,25 @@
+import {
+  closestCenter,
+  DndContext,
+  DragOverlay,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  PointerSensor,
+  TouchSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, GripVertical } from "lucide-react";
 import { db } from "../db/database";
@@ -61,230 +81,168 @@ function buildSections(workouts: Workout[], sortedGroups: WorkoutGroup[]): ListS
   return out;
 }
 
-function moveWorkoutBetweenSections(
-  all: Workout[],
+function workoutIdsBySection(
+  workouts: Workout[],
   sortedGroups: WorkoutGroup[],
-  draggedId: string,
-  destSectionKey: string,
-  destBeforeIndex: number,
-): Workout[] {
-  const sections = buildSections(all, sortedGroups);
-
-  let sourceKey: string | null = null;
-  let sourceIndex = -1;
-  for (const sec of sections) {
-    const i = sec.workouts.findIndex((w) => w.id === draggedId);
-    if (i >= 0) {
-      sourceKey = sectionKey(sec);
-      sourceIndex = i;
-      break;
-    }
+): Record<string, string[]> {
+  const sections = buildSections(workouts, sortedGroups);
+  const out: Record<string, string[]> = {};
+  for (const s of sections) {
+    out[sectionKey(s)] = s.workouts.map((w) => w.id);
   }
-  if (sourceKey === null || sourceIndex < 0) return all;
-
-  const destSectionIndex = sections.findIndex((s) => sectionKey(s) === destSectionKey);
-  if (destSectionIndex < 0) return all;
-
-  const cloned: ListSection[] = sections.map((s) => ({
-    ...s,
-    workouts: [...s.workouts],
-  }));
-
-  const srcSec = cloned.find((s) => sectionKey(s) === sourceKey);
-  const destSec = cloned[destSectionIndex];
-  if (!srcSec || !destSec) return all;
-
-  const [moved] = srcSec.workouts.splice(sourceIndex, 1);
-  if (!moved) return all;
-
-  let insertAt = Math.max(0, Math.min(destBeforeIndex, destSec.workouts.length));
-  if (sourceKey === destSectionKey && sourceIndex < insertAt) insertAt -= 1;
-  destSec.workouts.splice(insertAt, 0, moved);
-
-  const byId = new Map(all.map((w) => [w.id, { ...w }]));
-
-  const assignSection = (sec: ListSection) => {
-    sec.workouts.forEach((w, i) => {
-      const base = byId.get(w.id);
-      if (!base) return;
-      if (sec.kind === "group") {
-        byId.set(w.id, { ...base, groupId: sec.group.id, sortOrder: i * 10 });
-      } else {
-        const { groupId: _g, ...rest } = base;
-        byId.set(w.id, { ...rest, sortOrder: i * 10 });
-      }
-    });
-  };
-
-  assignSection(srcSec);
-  if (sectionKey(srcSec) !== sectionKey(destSec)) assignSection(destSec);
-
-  return all.map((w) => byId.get(w.id) ?? w);
+  return out;
 }
 
-const DND_TYPE = "application/x-gymoverload-workout-id";
+function findContainer(containers: Record<string, string[]>, itemId: string): string | null {
+  for (const [key, ids] of Object.entries(containers)) {
+    if (ids.includes(itemId)) return key;
+  }
+  return null;
+}
 
-function WorkoutListRow({
+function emptyDropId(sectionKeyStr: string): string {
+  return `empty-${sectionKeyStr}`;
+}
+
+function parseEmptyDropId(overId: string): string | null {
+  if (!overId.startsWith("empty-")) return null;
+  return overId.slice("empty-".length);
+}
+
+function applyContainersToWorkouts(
+  containers: Record<string, string[]>,
+  workouts: Workout[],
+): Workout[] {
+  const byId = new Map(workouts.map((w) => [w.id, { ...w }]));
+  for (const [secKey, ids] of Object.entries(containers)) {
+    if (secKey === "u") {
+      ids.forEach((id, i) => {
+        const base = byId.get(id);
+        if (!base) return;
+        const { groupId: _g, ...rest } = base;
+        byId.set(id, { ...rest, sortOrder: i * 10 });
+      });
+    } else if (secKey.startsWith("g:")) {
+      const gid = secKey.slice(2);
+      ids.forEach((id, i) => {
+        const base = byId.get(id);
+        if (!base) return;
+        byId.set(id, { ...base, groupId: gid, sortOrder: i * 10 });
+      });
+    }
+  }
+  return workouts.map((w) => byId.get(w.id) ?? w);
+}
+
+function WorkoutSortableRow({
   w,
   deleteMode,
-  sectionKey,
-  beforeIndex,
-  dragWorkoutId,
-  setDragWorkoutId,
-  dropHint,
-  setDropHint,
-  onApplyDrop,
   onRemoveWorkout,
 }: {
   w: Workout;
   deleteMode: boolean;
-  sectionKey: string;
-  beforeIndex: number;
-  dragWorkoutId: string | null;
-  setDragWorkoutId: (id: string | null) => void;
-  dropHint: { sectionKey: string; beforeIndex: number } | null;
-  setDropHint: (h: { sectionKey: string; beforeIndex: number } | null) => void;
-  onApplyDrop: (draggedId: string, destSectionKey: string, destBeforeIndex: number) => void;
   onRemoveWorkout: (e: React.MouseEvent, w: Workout) => void;
 }) {
-  const isDragging = dragWorkoutId === w.id;
-  const dropActive =
-    !deleteMode &&
-    dropHint != null &&
-    dropHint.sectionKey === sectionKey &&
-    dropHint.beforeIndex === beforeIndex;
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: w.id,
+    disabled: deleteMode,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   return (
-    <>
-      {!deleteMode ? (
-        <li
-          className={
-            dropActive
-              ? "workout-list-drop-slot workout-list-drop-slot--active"
-              : "workout-list-drop-slot"
-          }
-          onDragOver={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            e.dataTransfer.dropEffect = "move";
-            setDropHint({ sectionKey, beforeIndex });
-          }}
-          onDragLeave={(e) => {
-            if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-            setDropHint(null);
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const id = e.dataTransfer.getData(DND_TYPE) || e.dataTransfer.getData("text/plain");
-            if (id) onApplyDrop(id.trim(), sectionKey, beforeIndex);
-          }}
-        />
-      ) : null}
-      <li
-        className={isDragging ? "workout-list-row workout-list-row--dragging" : "workout-list-row"}
-      >
-        <div className="workout-list-row__inner">
-          {!deleteMode ? (
-            <button
-              type="button"
-              className="workout-list-row__drag"
-              draggable
-              aria-label={`Reorder ${w.name}`}
-              onDragStart={(e) => {
-                e.stopPropagation();
-                setDragWorkoutId(w.id);
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData(DND_TYPE, w.id);
-                try {
-                  e.dataTransfer.setData("text/plain", w.id);
-                } catch {
-                  /* ignore */
-                }
-              }}
-              onDragEnd={() => {
-                setDragWorkoutId(null);
-                setDropHint(null);
-              }}
-            >
-              <GripVertical size={20} aria-hidden strokeWidth={2} />
-            </button>
-          ) : null}
-          <Link to={`/workouts/${w.id}`} className="list-row-link" style={{ flex: 1 }}>
-            <span className="list-row-link__thumb" aria-hidden>
-              {initials(w.name)}
-            </span>
-            <span className="list-row-link__body">
-              <p className="row-title">{w.name}</p>
-              <p className="row-sub">
-                {w.plannedExercises.length
-                  ? `${w.plannedExercises.length} exercises`
-                  : "No exercises yet"}
-              </p>
-            </span>
-            <ChevronRight
-              className="list-row-link__chevron"
-              size={14}
-              aria-hidden
-              strokeWidth={2.5}
-            />
-          </Link>
-          {deleteMode ? (
-            <button
-              type="button"
-              className="btn btn-ghost"
-              style={{ alignSelf: "center", padding: "0.35rem 0.5rem", flexShrink: 0 }}
-              aria-label={`Delete ${w.name}`}
-              onClick={(ev) => onRemoveWorkout(ev, w)}
-            >
-              ✕
-            </button>
-          ) : null}
-        </div>
-      </li>
-    </>
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={isDragging ? "workout-list-row workout-list-row--dragging" : "workout-list-row"}
+    >
+      <div className="workout-list-row__inner">
+        {!deleteMode ? (
+          <button
+            type="button"
+            className="workout-list-row__drag"
+            aria-label={`Reorder ${w.name}`}
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical size={20} aria-hidden strokeWidth={2} />
+          </button>
+        ) : null}
+        <Link to={`/workouts/${w.id}`} className="list-row-link" style={{ flex: 1 }}>
+          <span className="list-row-link__thumb" aria-hidden>
+            {initials(w.name)}
+          </span>
+          <span className="list-row-link__body">
+            <p className="row-title">{w.name}</p>
+            <p className="row-sub">
+              {w.plannedExercises.length
+                ? `${w.plannedExercises.length} exercises`
+                : "No exercises yet"}
+            </p>
+          </span>
+          <ChevronRight
+            className="list-row-link__chevron"
+            size={14}
+            aria-hidden
+            strokeWidth={2.5}
+          />
+        </Link>
+        {deleteMode ? (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            style={{ alignSelf: "center", padding: "0.35rem 0.5rem", flexShrink: 0 }}
+            aria-label={`Delete ${w.name}`}
+            onClick={(ev) => onRemoveWorkout(ev, w)}
+          >
+            ✕
+          </button>
+        ) : null}
+      </div>
+    </li>
   );
 }
 
-function EmptySectionDropZone({
-  sectionKey,
+function SectionEmptyDropTarget({
+  sectionKeyStr,
   deleteMode,
-  setDropHint,
-  onApplyDrop,
+  isUngrouped,
 }: {
-  sectionKey: string;
+  sectionKeyStr: string;
   deleteMode: boolean;
-  setDropHint: (h: { sectionKey: string; beforeIndex: number } | null) => void;
-  onApplyDrop: (draggedId: string, destSectionKey: string, destBeforeIndex: number) => void;
+  isUngrouped: boolean;
 }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: emptyDropId(sectionKeyStr),
+    disabled: deleteMode,
+  });
+
   if (deleteMode) {
     return (
-      <li className="workout-list-empty-hint">
+      <li className="workout-list-empty-hint" ref={setNodeRef}>
         <span className="muted" style={{ fontSize: "0.88rem" }}>
           No workouts in this group
         </span>
       </li>
     );
   }
+
   return (
     <li
-      className="workout-list-empty-drop"
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = "move";
-        setDropHint({ sectionKey, beforeIndex: 0 });
-      }}
-      onDragLeave={(e) => {
-        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-        setDropHint(null);
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        const id = e.dataTransfer.getData(DND_TYPE) || e.dataTransfer.getData("text/plain");
-        if (id) onApplyDrop(id.trim(), sectionKey, 0);
-      }}
+      ref={setNodeRef}
+      className={
+        isOver
+          ? "workout-list-empty-drop workout-list-empty-drop--active"
+          : "workout-list-empty-drop"
+      }
     >
-      <span className="muted">Drop here to add to this group</span>
+      <span className="muted">
+        {isUngrouped
+          ? "Drop here to remove from all groups (Other workouts)"
+          : "Drop here to add to this group"}
+      </span>
     </li>
   );
 }
@@ -298,9 +256,13 @@ export function WorkoutListPage() {
   const [createChoiceOpen, setCreateChoiceOpen] = useState(false);
   const [groupNameModalOpen, setGroupNameModalOpen] = useState(false);
   const [collapsedGroupIds, setCollapsedGroupIds] = useState<Record<string, boolean>>({});
-  const [dragWorkoutId, setDragWorkoutId] = useState<string | null>(null);
-  const [dropHint, setDropHint] = useState<{ sectionKey: string; beforeIndex: number } | null>(
-    null,
+  const [dragState, setDragState] = useState<Record<string, string[]> | null>(null);
+  const dragStateRef = useRef<Record<string, string[]> | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
   );
 
   const resumeWorkout =
@@ -318,16 +280,17 @@ export function WorkoutListPage() {
     return buildSections(workouts, sortedGroups);
   }, [workouts, sortedGroups]);
 
-  const applyDrop = useCallback(
-    async (draggedId: string, destSectionKey: string, destBeforeIndex: number) => {
-      if (!workouts || !groups) return;
-      const next = moveWorkoutBetweenSections(
-        workouts,
-        sortedGroups,
-        draggedId,
-        destSectionKey,
-        destBeforeIndex,
-      );
+  const computedContainers = useMemo((): Record<string, string[]> | null => {
+    if (!workouts || !groups) return null;
+    return workoutIdsBySection(workouts, sortedGroups);
+  }, [workouts, sortedGroups]);
+
+  const displayContainers = dragState ?? computedContainers;
+
+  const persistContainers = useCallback(
+    async (nextContainers: Record<string, string[]>) => {
+      if (!workouts) return;
+      const next = applyContainersToWorkouts(nextContainers, workouts);
       await db.transaction("rw", db.workouts, async () => {
         for (const w of next) {
           const prev = workouts.find((x) => x.id === w.id);
@@ -339,28 +302,88 @@ export function WorkoutListPage() {
           if (gPrev !== gNext || oPrev !== oNext) await db.workouts.put(w);
         }
       });
-      setDropHint(null);
-      setDragWorkoutId(null);
     },
-    [workouts, sortedGroups],
+    [workouts],
   );
 
-  const handleDrop = useCallback(
-    (draggedId: string, destSectionKey: string, destBeforeIndex: number) => {
-      void applyDrop(draggedId, destSectionKey, destBeforeIndex);
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      setActiveDragId(String(event.active.id));
+      if (computedContainers) {
+        const copy = Object.fromEntries(
+          Object.entries(computedContainers).map(([k, v]) => [k, [...v]]),
+        ) as Record<string, string[]>;
+        dragStateRef.current = copy;
+        setDragState(copy);
+      }
     },
-    [applyDrop],
+    [computedContainers],
   );
 
-  useEffect(() => {
-    if (!dragWorkoutId) return;
-    function end() {
-      setDragWorkoutId(null);
-      setDropHint(null);
-    }
-    window.addEventListener("dragend", end);
-    return () => window.removeEventListener("dragend", end);
-  }, [dragWorkoutId]);
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const { active, over } = event;
+      if (!over) return;
+      const base = dragStateRef.current ?? computedContainers;
+      if (!base) return;
+
+      const activeId = String(active.id);
+      const overId = String(over.id);
+      const emptyTarget = parseEmptyDropId(overId);
+      const activeContainer = findContainer(base, activeId);
+      if (!activeContainer) return;
+      const overContainer = emptyTarget ?? findContainer(base, overId);
+      if (!overContainer) return;
+
+      let next: Record<string, string[]>;
+      if (activeContainer === overContainer) {
+        if (emptyTarget) return;
+        const items = [...base[activeContainer]];
+        const oldIndex = items.indexOf(activeId);
+        const newIndex = items.indexOf(overId);
+        if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return;
+        next = { ...base, [activeContainer]: arrayMove(items, oldIndex, newIndex) };
+      } else {
+        const fromList = [...base[activeContainer]];
+        const toList = [...base[overContainer]];
+        const fromIdx = fromList.indexOf(activeId);
+        if (fromIdx === -1) return;
+        fromList.splice(fromIdx, 1);
+        let insertAt: number;
+        if (emptyTarget) insertAt = toList.length;
+        else {
+          const overIdx = toList.indexOf(overId);
+          insertAt = overIdx === -1 ? toList.length : overIdx;
+        }
+        toList.splice(insertAt, 0, activeId);
+        next = { ...base, [activeContainer]: fromList, [overContainer]: toList };
+      }
+
+      dragStateRef.current = next;
+      setDragState(next);
+    },
+    [computedContainers],
+  );
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { over } = event;
+      setActiveDragId(null);
+      const final = dragStateRef.current;
+      dragStateRef.current = null;
+      setDragState(null);
+      if (!final || !workouts) return;
+      if (!over) return;
+      await persistContainers(final);
+    },
+    [persistContainers, workouts],
+  );
+
+  const handleDragCancel = useCallback(() => {
+    setActiveDragId(null);
+    dragStateRef.current = null;
+    setDragState(null);
+  }, []);
 
   const maxWorkoutSortOrder = useMemo(() => {
     if (!workouts || workouts.length === 0) return -10;
@@ -449,6 +472,125 @@ export function WorkoutListPage() {
   );
 
   const loading = !workouts || !groups;
+  const activeWorkout =
+    activeDragId && workouts ? workouts.find((w) => w.id === activeDragId) : undefined;
+
+  function renderSectionBody(section: ListSection) {
+    const key = sectionKey(section);
+    const ids = displayContainers?.[key] ?? section.workouts.map((w) => w.id);
+    const isUngrouped = section.kind === "ungrouped";
+
+    if (ids.length === 0) {
+      return (
+        <SectionEmptyDropTarget
+          sectionKeyStr={key}
+          deleteMode={deleteMode}
+          isUngrouped={isUngrouped}
+        />
+      );
+    }
+
+    return (
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+        {ids.map((id) => {
+          const w = workouts?.find((x) => x.id === id);
+          if (!w) return null;
+          return (
+            <WorkoutSortableRow
+              key={id}
+              w={w}
+              deleteMode={deleteMode}
+              onRemoveWorkout={removeWorkout}
+            />
+          );
+        })}
+      </SortableContext>
+    );
+  }
+
+  const listInner =
+    !loading &&
+    (workouts!.length > 0 || sortedGroups.length > 0) &&
+    sections &&
+    displayContainers ? (
+      <ul className="list" style={{ marginTop: "0.65rem" }}>
+        {sections.map((section) =>
+          section.kind === "group" ? (
+            <li key={`g-${section.group.id}`} style={{ listStyle: "none" }}>
+              <div
+                className="workout-group-row"
+                onPointerEnter={() => {
+                  if (activeDragId) {
+                    setCollapsedGroupIds((p) => ({ ...p, [section.group.id]: false }));
+                  }
+                }}
+              >
+                <button
+                  type="button"
+                  className="workout-group-row__toggle"
+                  aria-expanded={!collapsedGroupIds[section.group.id]}
+                  onClick={() => toggleGroupCollapsed(section.group.id)}
+                >
+                  <ChevronRight
+                    size={18}
+                    aria-hidden
+                    strokeWidth={2.5}
+                    className={
+                      collapsedGroupIds[section.group.id]
+                        ? "workout-group-row__chevron"
+                        : "workout-group-row__chevron workout-group-row__chevron--open"
+                    }
+                  />
+                  <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {section.group.name}
+                  </span>
+                </button>
+                {deleteMode && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost workout-group-row__delete"
+                    aria-label={`Delete group ${section.group.name}`}
+                    onClick={(ev) => void removeGroup(ev, section.group)}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              {!collapsedGroupIds[section.group.id] && (
+                <ul
+                  className="list workout-list-section"
+                  style={{ marginTop: 0, marginBottom: "0.35rem" }}
+                >
+                  {renderSectionBody(section)}
+                </ul>
+              )}
+            </li>
+          ) : (
+            <li key="ungrouped" style={{ listStyle: "none" }}>
+              {sortedGroups.length > 0 ? (
+                <>
+                  <p className="list-section-label" style={{ marginTop: "0.85rem" }}>
+                    Other workouts
+                  </p>
+                  <p
+                    className="muted workout-list-ungrouped-hint"
+                    style={{ margin: "0.15rem 0 0" }}
+                  >
+                    Drag here to take a plan out of every group.
+                  </p>
+                </>
+              ) : null}
+              <ul
+                className="list workout-list-section"
+                style={{ marginTop: sortedGroups.length > 0 ? "0.25rem" : 0 }}
+              >
+                {renderSectionBody(section)}
+              </ul>
+            </li>
+          ),
+        )}
+      </ul>
+    ) : null;
 
   return (
     <div className="list-screen">
@@ -470,189 +612,38 @@ export function WorkoutListPage() {
       {!loading && workouts!.length === 0 && sortedGroups.length === 0 && (
         <p className="empty">No workouts yet.</p>
       )}
-      {!loading && (workouts!.length > 0 || sortedGroups.length > 0) && sections && (
-        <ul className="list" style={{ marginTop: "0.65rem" }}>
-          {sections.map((section) =>
-            section.kind === "group" ? (
-              <li key={`g-${section.group.id}`} style={{ listStyle: "none" }}>
-                <div
-                  className="workout-group-row"
-                  onDragEnter={() =>
-                    setCollapsedGroupIds((p) => ({ ...p, [section.group.id]: false }))
-                  }
-                >
-                  <button
-                    type="button"
-                    className="workout-group-row__toggle"
-                    aria-expanded={!collapsedGroupIds[section.group.id]}
-                    onClick={() => toggleGroupCollapsed(section.group.id)}
-                  >
-                    <ChevronRight
-                      size={18}
-                      aria-hidden
-                      strokeWidth={2.5}
-                      className={
-                        collapsedGroupIds[section.group.id]
-                          ? "workout-group-row__chevron"
-                          : "workout-group-row__chevron workout-group-row__chevron--open"
-                      }
-                    />
-                    <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {section.group.name}
+      {!deleteMode && listInner ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={(e) => void handleDragEnd(e)}
+          onDragCancel={handleDragCancel}
+        >
+          {listInner}
+          <DragOverlay dropAnimation={null}>
+            {activeWorkout ? (
+              <div className="workout-list-row workout-list-row--overlay glass">
+                <div className="workout-list-row__inner">
+                  <span className="workout-list-row__drag" style={{ cursor: "grabbing" }}>
+                    <GripVertical size={20} aria-hidden strokeWidth={2} />
+                  </span>
+                  <div className="list-row-link" style={{ flex: 1, pointerEvents: "none" }}>
+                    <span className="list-row-link__thumb" aria-hidden>
+                      {initials(activeWorkout.name)}
                     </span>
-                  </button>
-                  {deleteMode && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost workout-group-row__delete"
-                      aria-label={`Delete group ${section.group.name}`}
-                      onClick={(ev) => void removeGroup(ev, section.group)}
-                    >
-                      ✕
-                    </button>
-                  )}
+                    <span className="list-row-link__body">
+                      <p className="row-title">{activeWorkout.name}</p>
+                    </span>
+                  </div>
                 </div>
-                {!collapsedGroupIds[section.group.id] && (
-                  <ul
-                    className="list workout-list-section"
-                    style={{ marginTop: 0, marginBottom: "0.35rem" }}
-                    onDragEnter={() =>
-                      setCollapsedGroupIds((p) => ({ ...p, [section.group.id]: false }))
-                    }
-                  >
-                    {section.workouts.length === 0 ? (
-                      <EmptySectionDropZone
-                        sectionKey={sectionKey(section)}
-                        deleteMode={deleteMode}
-                        setDropHint={setDropHint}
-                        onApplyDrop={handleDrop}
-                      />
-                    ) : (
-                      <>
-                        {section.workouts.map((w, i) => (
-                          <WorkoutListRow
-                            key={w.id}
-                            w={w}
-                            deleteMode={deleteMode}
-                            sectionKey={sectionKey(section)}
-                            beforeIndex={i}
-                            dragWorkoutId={dragWorkoutId}
-                            setDragWorkoutId={setDragWorkoutId}
-                            dropHint={dropHint}
-                            setDropHint={setDropHint}
-                            onApplyDrop={handleDrop}
-                            onRemoveWorkout={removeWorkout}
-                          />
-                        ))}
-                        {!deleteMode ? (
-                          <li
-                            className={
-                              dropHint != null &&
-                              dropHint.sectionKey === sectionKey(section) &&
-                              dropHint.beforeIndex === section.workouts.length
-                                ? "workout-list-drop-slot workout-list-drop-slot--active"
-                                : "workout-list-drop-slot"
-                            }
-                            onDragOver={(e) => {
-                              e.preventDefault();
-                              e.dataTransfer.dropEffect = "move";
-                              setDropHint({
-                                sectionKey: sectionKey(section),
-                                beforeIndex: section.workouts.length,
-                              });
-                            }}
-                            onDragLeave={(e) => {
-                              if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-                              setDropHint(null);
-                            }}
-                            onDrop={(e) => {
-                              e.preventDefault();
-                              const id =
-                                e.dataTransfer.getData(DND_TYPE) ||
-                                e.dataTransfer.getData("text/plain");
-                              if (id)
-                                handleDrop(id.trim(), sectionKey(section), section.workouts.length);
-                            }}
-                          />
-                        ) : null}
-                      </>
-                    )}
-                  </ul>
-                )}
-              </li>
-            ) : (
-              <li key="ungrouped" style={{ listStyle: "none" }}>
-                {sortedGroups.length > 0 ? (
-                  <p className="list-section-label" style={{ marginTop: "0.85rem" }}>
-                    Other workouts
-                  </p>
-                ) : null}
-                <ul
-                  className="list workout-list-section"
-                  style={{ marginTop: sortedGroups.length > 0 ? "0.25rem" : 0 }}
-                >
-                  {section.workouts.length === 0 && sortedGroups.length > 0 ? (
-                    <EmptySectionDropZone
-                      sectionKey={sectionKey(section)}
-                      deleteMode={deleteMode}
-                      setDropHint={setDropHint}
-                      onApplyDrop={handleDrop}
-                    />
-                  ) : (
-                    <>
-                      {section.workouts.map((w, i) => (
-                        <WorkoutListRow
-                          key={w.id}
-                          w={w}
-                          deleteMode={deleteMode}
-                          sectionKey={sectionKey(section)}
-                          beforeIndex={i}
-                          dragWorkoutId={dragWorkoutId}
-                          setDragWorkoutId={setDragWorkoutId}
-                          dropHint={dropHint}
-                          setDropHint={setDropHint}
-                          onApplyDrop={handleDrop}
-                          onRemoveWorkout={removeWorkout}
-                        />
-                      ))}
-                      {!deleteMode && section.workouts.length > 0 ? (
-                        <li
-                          className={
-                            dropHint != null &&
-                            dropHint.sectionKey === sectionKey(section) &&
-                            dropHint.beforeIndex === section.workouts.length
-                              ? "workout-list-drop-slot workout-list-drop-slot--active"
-                              : "workout-list-drop-slot"
-                          }
-                          onDragOver={(e) => {
-                            e.preventDefault();
-                            e.dataTransfer.dropEffect = "move";
-                            setDropHint({
-                              sectionKey: sectionKey(section),
-                              beforeIndex: section.workouts.length,
-                            });
-                          }}
-                          onDragLeave={(e) => {
-                            if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-                            setDropHint(null);
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            const id =
-                              e.dataTransfer.getData(DND_TYPE) ||
-                              e.dataTransfer.getData("text/plain");
-                            if (id)
-                              handleDrop(id.trim(), sectionKey(section), section.workouts.length);
-                          }}
-                        />
-                      ) : null}
-                    </>
-                  )}
-                </ul>
-              </li>
-            ),
-          )}
-        </ul>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      ) : (
+        listInner
       )}
       {createChoiceOpen ? (
         <WorkoutCreateChoiceModal

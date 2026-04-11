@@ -1096,21 +1096,6 @@ a.workout-detail-hero__action {
   cursor: grabbing;
 }
 
-.workout-list-drop-slot {
-  list-style: none;
-  height: 4px;
-  margin: 0;
-  padding: 0;
-  border-radius: 2px;
-  transition: background 0.12s ease;
-}
-
-.workout-list-drop-slot--active {
-  height: 6px;
-  margin: 2px 0;
-  background: var(--accent);
-}
-
 .workout-list-empty-drop {
   list-style: none;
   margin: 0.25rem 0 0.5rem;
@@ -1119,6 +1104,27 @@ a.workout-detail-hero__action {
   border-radius: 10px;
   text-align: center;
   font-size: 0.88rem;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.workout-list-empty-drop--active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.workout-list-row--overlay {
+  list-style: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.workout-list-ungrouped-hint {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  padding: 0 0.15rem;
 }
 
 .workout-list-empty-hint {
