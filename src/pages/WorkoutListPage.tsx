@@ -587,9 +587,7 @@ export function WorkoutListPage() {
     <div className="list-screen">
       {resumeWorkout ? (
         <div className="resume-workout-card">
-          <p className="muted">
-            Workout in progress
-          </p>
+          <p className="muted">Workout in progress</p>
           <Link
             to={`/workouts/${resumeWorkout.id}?session=1`}
             className="btn btn-primary btn-pill"
