@@ -132,9 +132,15 @@ export async function saveCompletedWorkout(
   setStates: Record<string, { weight: number; reps: number }[]>,
   completedSetKeys: ReadonlySet<string>,
   durationMs?: number,
+  opts?: { startedAtEpoch?: number },
 ): Promise<string> {
   const sessionId = newId();
   const completedAt = new Date().toISOString();
+  const startedAtEpoch =
+    typeof opts?.startedAtEpoch === "number" && Number.isFinite(opts.startedAtEpoch)
+      ? opts.startedAtEpoch
+      : undefined;
+  const startedAt = startedAtEpoch != null ? new Date(startedAtEpoch).toISOString() : completedAt;
   const sessionExercises: SessionExerciseSnapshot[] = workout.plannedExercises.map((pe) => {
     const states = setStates[pe.id] ?? [];
     const sets: { weight: number; reps: number }[] = [];
@@ -153,6 +159,7 @@ export async function saveCompletedWorkout(
     id: sessionId,
     workoutId: workout.id,
     completedAt,
+    startedAt,
     durationMs:
       typeof durationMs === "number" && Number.isFinite(durationMs) && durationMs >= 0
         ? Math.round(durationMs)

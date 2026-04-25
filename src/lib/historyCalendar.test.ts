@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { WorkoutSession } from "../model/types";
 import {
   buildMonthGrid,
   calendarRangeEnd,
@@ -7,7 +8,17 @@ import {
   localDateKey,
   monthsInRange,
   parseIsoToLocalDay,
+  sessionCalendarPlacementIso,
 } from "./historyCalendar";
+
+function session(over: Partial<WorkoutSession>): WorkoutSession {
+  return {
+    id: "s1",
+    workoutId: "w1",
+    completedAt: "2026-06-16T10:00:00.000Z",
+    ...over,
+  };
+}
 
 describe("historyCalendar", () => {
   it("calendarRangeEnd uses today when there are no sessions", () => {
@@ -60,5 +71,24 @@ describe("historyCalendar", () => {
   it("dateFromLocalDateKey round-trips with localDateKey", () => {
     const d = new Date(2026, 0, 5);
     expect(localDateKey(dateFromLocalDateKey(localDateKey(d)))).toBe(localDateKey(d));
+  });
+
+  it("sessionCalendarPlacementIso uses startedAt when valid and not after completedAt", () => {
+    const started = "2026-06-15T08:00:00.000Z";
+    expect(sessionCalendarPlacementIso(session({ startedAt: started }))).toBe(started);
+  });
+
+  it("sessionCalendarPlacementIso falls back to completedAt when startedAt is missing", () => {
+    const c = "2026-06-16T10:00:00.000Z";
+    expect(sessionCalendarPlacementIso(session({ completedAt: c }))).toBe(c);
+  });
+
+  it("sessionCalendarPlacementIso ignores startedAt after completedAt", () => {
+    const c = "2026-06-10T12:00:00.000Z";
+    expect(
+      sessionCalendarPlacementIso(
+        session({ completedAt: c, startedAt: "2026-06-11T00:00:00.000Z" }),
+      ),
+    ).toBe(c);
   });
 });

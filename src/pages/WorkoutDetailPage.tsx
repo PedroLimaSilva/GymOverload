@@ -101,6 +101,8 @@ export function WorkoutDetailPage() {
     setIndex: number;
   } | null>(null);
   const [restEndsAt, setRestEndsAt] = useState<number | null>(null);
+  /** Epoch ms when this live session began (calendar day); set once per session mount. */
+  const [sessionStartedAtEpoch, setSessionStartedAtEpoch] = useState<number | null>(null);
   const exercises = useLiveQuery(() => db.exercises.orderBy("name").toArray(), []);
   const sessionsForWorkout = useLiveQuery(
     () => (id ? db.workoutSessions.where("workoutId").equals(id).toArray() : []),
@@ -176,6 +178,15 @@ export function WorkoutDetailPage() {
       if (cancelled) return;
       setSessionSetStates(merged);
       if (useDraft && persisted) {
+        const startEpoch =
+          typeof persisted.sessionStartedAtEpoch === "number" &&
+          Number.isFinite(persisted.sessionStartedAtEpoch)
+            ? persisted.sessionStartedAtEpoch
+            : (() => {
+                const t = new Date(persisted.updatedAt).getTime();
+                return Number.isFinite(t) ? t : Date.now();
+              })();
+        setSessionStartedAtEpoch(startEpoch);
         setSessionWallTimer({
           accumMs: persisted.wallAccumMs,
           paused: persisted.wallPaused,
@@ -189,7 +200,9 @@ export function WorkoutDetailPage() {
         setRestEndsAt(persisted.restEndsAt);
       } else {
         const first = workoutSnapshot.plannedExercises[0];
-        setSessionWallTimer({ accumMs: 0, paused: false, runSince: Date.now() });
+        const now = Date.now();
+        setSessionStartedAtEpoch(now);
+        setSessionWallTimer({ accumMs: 0, paused: false, runSince: now });
         setSessionCompletedKeys(new Set());
         setSessionFocus(first ? { plannedId: first.id, setIndex: 0 } : null);
         setRestEndsAt(null);
@@ -230,6 +243,7 @@ export function WorkoutDetailPage() {
       focusPlannedId: sessionFocus?.plannedId ?? draft.plannedExercises[0]?.id ?? "",
       focusSetIndex: sessionFocus?.setIndex ?? 0,
       restEndsAt,
+      sessionStartedAtEpoch: sessionStartedAtEpoch ?? undefined,
     });
   }, [
     sessionActive,
@@ -242,6 +256,7 @@ export function WorkoutDetailPage() {
     sessionWallTimer.runSince,
     sessionFocus,
     restEndsAt,
+    sessionStartedAtEpoch,
   ]);
 
   useEffect(() => {
@@ -354,6 +369,12 @@ export function WorkoutDetailPage() {
       sessionSetStates,
       sessionCompletedKeys,
       sessionElapsedMs,
+      {
+        startedAtEpoch:
+          typeof sessionStartedAtEpoch === "number" && Number.isFinite(sessionStartedAtEpoch)
+            ? sessionStartedAtEpoch
+            : undefined,
+      },
     );
     setSearchParams({}, { replace: true });
     navigate(`/history/${sessionId}`, { replace: true });

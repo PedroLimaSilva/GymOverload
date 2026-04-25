@@ -32,6 +32,7 @@ function baseDraft(over: Partial<LiveWorkoutSessionDraft> = {}): LiveWorkoutSess
     focusPlannedId: workout.plannedExercises[0]!.id,
     focusSetIndex: 0,
     restEndsAt: null,
+    sessionStartedAtEpoch: Date.now(),
     updatedAt: new Date().toISOString(),
     ...over,
   };
