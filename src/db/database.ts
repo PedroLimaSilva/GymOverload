@@ -59,6 +59,23 @@ export class GymOverloadDB extends Dexie {
           await workoutsTable.put({ ...w, sortOrder });
         }
       });
+    this.version(5)
+      .stores({
+        exercises: "id, createdAt, name",
+        workouts: "id, name, groupId, sortOrder",
+        workoutGroups: "id, name, sortOrder",
+        workoutSessions: "id, workoutId, completedAt",
+        loggedExerciseEntries: "id, sessionId, [sessionId+plannedExerciseId+setIndex]",
+        liveWorkoutSessionDrafts: "id, workoutId, updatedAt",
+      })
+      .upgrade(async (tx) => {
+        const sessionsTable = tx.table("workoutSessions");
+        const sessions = (await sessionsTable.toArray()) as WorkoutSession[];
+        for (const s of sessions) {
+          if (typeof s.startedAt === "string" && s.startedAt.trim()) continue;
+          await sessionsTable.put({ ...s, startedAt: s.completedAt });
+        }
+      });
   }
 }
 

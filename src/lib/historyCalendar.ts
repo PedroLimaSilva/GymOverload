@@ -1,3 +1,17 @@
+import type { WorkoutSession } from "../model/types";
+
+/** ISO timestamp for which local calendar day a session appears on (start time, not finish). */
+export function sessionCalendarPlacementIso(s: WorkoutSession): string {
+  if (s.startedAt) {
+    const t = new Date(s.startedAt).getTime();
+    if (Number.isFinite(t)) {
+      const end = new Date(s.completedAt).getTime();
+      if (!Number.isFinite(end) || t <= end) return s.startedAt;
+    }
+  }
+  return s.completedAt;
+}
+
 /** Local calendar day at midnight (no time zone string parsing). */
 export function startOfLocalDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());

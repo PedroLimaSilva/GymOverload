@@ -32,6 +32,7 @@ interface NormalizedImportPayload {
     id?: string;
     workoutId: string;
     completedAt: string;
+    startedAt?: string;
     durationMs?: number;
     sessionExercises?: SessionExerciseSnapshot[];
     notes?: string;
@@ -113,11 +114,14 @@ function normalizeImportPayload(raw: Record<string, unknown>): NormalizedImportP
       : undefined;
     const notesRaw = typeof item.notes === "string" ? item.notes.trim() : "";
     const notes = notesRaw ? notesRaw : undefined;
+    const completedAtRaw =
+      typeof item.completedAt === "string" ? item.completedAt : new Date().toISOString();
+    const startedAtRaw = typeof item.startedAt === "string" ? item.startedAt.trim() : "";
     workoutSessions.push({
       id: typeof item.id === "string" ? item.id : undefined,
       workoutId,
-      completedAt:
-        typeof item.completedAt === "string" ? item.completedAt : new Date().toISOString(),
+      completedAt: completedAtRaw,
+      startedAt: startedAtRaw || undefined,
       durationMs,
       sessionExercises,
       notes,
@@ -220,10 +224,12 @@ function remapImportedPayload(payload: NormalizedImportPayload): {
       .filter((b): b is SessionExerciseSnapshot => b != null);
     const notesRemapped =
       typeof s.notes === "string" && s.notes.trim() ? s.notes.trim() : undefined;
+    const completedAt = s.completedAt || new Date().toISOString();
     workoutSessions.push({
       id: newSessionId,
       workoutId: workoutIdMap.get(s.workoutId)!,
-      completedAt: s.completedAt || new Date().toISOString(),
+      completedAt,
+      startedAt: typeof s.startedAt === "string" && s.startedAt.trim() ? s.startedAt : completedAt,
       durationMs:
         typeof s.durationMs === "number" && Number.isFinite(s.durationMs)
           ? Math.round(s.durationMs)

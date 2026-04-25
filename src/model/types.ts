@@ -110,6 +110,8 @@ export interface WorkoutSession {
   id: string;
   workoutId: string;
   completedAt: string;
+  /** When the live session was first started (ISO). Drives history calendar day; falls back to `completedAt` if missing. */
+  startedAt?: string;
   /** Wall-clock duration of the live session (milliseconds), when recorded. */
   durationMs?: number;
   /** Snapshot of exercises and sets for this session (source of truth for session detail). */
@@ -133,6 +135,8 @@ export interface LiveWorkoutSessionDraft {
   focusPlannedId: string;
   focusSetIndex: number;
   restEndsAt: number | null;
+  /** Epoch ms when the user started this session (first tap into live mode); restored for accurate calendar day after reload. */
+  sessionStartedAtEpoch?: number;
   updatedAt: string;
 }
 

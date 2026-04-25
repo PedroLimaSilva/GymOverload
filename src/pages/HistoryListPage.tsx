@@ -9,6 +9,7 @@ import {
   calendarRangeStart,
   localDateKey,
   monthsInRange,
+  sessionCalendarPlacementIso,
 } from "../lib/historyCalendar";
 import {
   buildExerciseLookupMaps,
@@ -82,12 +83,12 @@ export function HistoryListPage() {
   const now = useMemo(() => new Date(), []);
 
   const { rangeStart, rangeEnd, months, sessionsByDayKey } = useMemo(() => {
-    const completedAts = (sessions ?? []).map((s) => s.completedAt);
-    const end = calendarRangeEnd(now, completedAts);
+    const placementIsos = (sessions ?? []).map(sessionCalendarPlacementIso);
+    const end = calendarRangeEnd(now, placementIsos);
     const start = calendarRangeStart(end);
     const byKey = new Map<string, WorkoutSession[]>();
     for (const s of sessions ?? []) {
-      const d = new Date(s.completedAt);
+      const d = new Date(sessionCalendarPlacementIso(s));
       if (Number.isNaN(d.getTime())) continue;
       const key = localDateKey(new Date(d.getFullYear(), d.getMonth(), d.getDate()));
       const list = byKey.get(key);
