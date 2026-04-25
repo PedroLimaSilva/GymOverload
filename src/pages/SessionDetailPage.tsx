@@ -12,6 +12,7 @@ import {
   getSessionExerciseBlocks,
   putSessionWithLoggedEntries,
 } from "../db/workoutHistory";
+import { sessionCalendarPlacementIso } from "../lib/historyCalendar";
 import type { Exercise, SessionExerciseSnapshot, Workout, WorkoutSession } from "../model/types";
 import { exerciseWithName, newId, plannedFromDTO, sessionTrainingVolume } from "../model/types";
 
@@ -29,6 +30,38 @@ function formatSessionHeaderDate(iso: string): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/** Value for `<input type="datetime-local" />` in the user's local timezone. */
+function localDateTimeInputValueFromIso(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Parse `YYYY-MM-DDTHH:mm` as local civil time → ISO UTC string. */
+function isoFromLocalDateTimeInputValue(localValue: string): string | null {
+  const m = localValue.trim().match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+  if (!m) return null;
+  const y = parseInt(m[1]!, 10);
+  const mo = parseInt(m[2]!, 10) - 1;
+  const day = parseInt(m[3]!, 10);
+  const h = parseInt(m[4]!, 10);
+  const min = parseInt(m[5]!, 10);
+  if ([y, mo, day, h, min].some((n) => !Number.isFinite(n))) return null;
+  if (mo < 0 || mo > 11 || day < 1 || day > 31 || h > 23 || min > 59) return null;
+  const d = new Date(y, mo, day, h, min, 0, 0);
+  if (
+    d.getFullYear() !== y ||
+    d.getMonth() !== mo ||
+    d.getDate() !== day ||
+    d.getHours() !== h ||
+    d.getMinutes() !== min
+  ) {
+    return null;
+  }
+  return d.toISOString();
 }
 
 function formatDurationHm(ms: number): string {
@@ -51,6 +84,86 @@ function parseDurationToMs(input: string): number | null {
   const n = parseFloat(t.replace(",", "."));
   if (!Number.isFinite(n) || n < 0) return null;
   return Math.round(n * 60 * 1000);
+}
+
+function SessionStartedAtEditModal({
+  initialIso,
+  completedAtIso,
+  onSave,
+  onClose,
+}: {
+  initialIso: string;
+  completedAtIso: string;
+  onSave: (startedAtIso: string) => void;
+  onClose: () => void;
+}) {
+  const [value, setValue] = useState(() => localDateTimeInputValueFromIso(initialIso));
+  const [rangeError, setRangeError] = useState<string | null>(null);
+  return (
+    <ModalPortal>
+      <div
+        className="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-started-at-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <header>
+            <h2 id="session-started-at-title">Started at</h2>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              Cancel
+            </button>
+          </header>
+          <div className="body">
+            <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
+              Which calendar day and time this session counts as starting. Must be on or before when
+              you finished.
+            </p>
+            <input
+              type="datetime-local"
+              className="edit-card__textarea"
+              style={{ marginTop: "0.75rem", minHeight: "2.75rem", width: "100%" }}
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value);
+                setRangeError(null);
+              }}
+              aria-label="Session start date and time"
+            />
+            {rangeError ? (
+              <p
+                className="muted"
+                style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "var(--danger)" }}
+              >
+                {rangeError}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ width: "100%", marginTop: "0.75rem" }}
+              onClick={() => {
+                const iso = isoFromLocalDateTimeInputValue(value);
+                if (iso == null) return;
+                const end = new Date(completedAtIso).getTime();
+                const start = new Date(iso).getTime();
+                if (Number.isFinite(end) && Number.isFinite(start) && start > end) {
+                  setRangeError("Start time must be on or before the finish time.");
+                  return;
+                }
+                onSave(iso);
+              }}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </ModalPortal>
+  );
 }
 
 function SessionNotesModal({
@@ -192,6 +305,7 @@ export function SessionDetailPage() {
   const [durationMs, setDurationMs] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [durationModalOpen, setDurationModalOpen] = useState(false);
+  const [startedAtModalOpen, setStartedAtModalOpen] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
 
   const session = loadState?.status === "ready" ? loadState.session : undefined;
@@ -316,7 +430,7 @@ export function SessionDetailPage() {
 
   const topNavKey =
     loadState?.status === "ready" && blocksReady
-      ? `${loadState.session.id}\0${loadState.session.completedAt}`
+      ? `${loadState.session.id}\0${loadState.session.completedAt}\0${loadState.session.startedAt ?? ""}`
       : null;
 
   useTopNav(() => {
@@ -334,7 +448,7 @@ export function SessionDetailPage() {
           <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
         </button>
       ),
-      center: formatSessionHeaderDate(s.completedAt),
+      center: formatSessionHeaderDate(sessionCalendarPlacementIso(s)),
       trailing: (
         <div className="workout-detail-header-actions">
           <button
@@ -381,6 +495,16 @@ export function SessionDetailPage() {
         </button>
 
         <div className="session-detail-stats">
+          <button
+            type="button"
+            className="session-detail-stat session-detail-stat--tap"
+            onClick={() => setStartedAtModalOpen(true)}
+          >
+            <span className="session-detail-stat__label">Started</span>
+            <span className="session-detail-stat__value">
+              {formatSessionHeaderDate(sessionCalendarPlacementIso(session))}
+            </span>
+          </button>
           <button
             type="button"
             className="session-detail-stat session-detail-stat--tap"
@@ -575,6 +699,26 @@ export function SessionDetailPage() {
           Add exercises
         </button>
       </div>
+
+      {startedAtModalOpen ? (
+        <SessionStartedAtEditModal
+          initialIso={sessionCalendarPlacementIso(session)}
+          completedAtIso={session.completedAt}
+          onSave={(startedAtIso) => {
+            void (async () => {
+              if (!sessionId) return;
+              const current = await getSessionById(sessionId);
+              if (!current) return;
+              await db.workoutSessions.put({
+                ...current,
+                startedAt: startedAtIso,
+              });
+              setStartedAtModalOpen(false);
+            })();
+          }}
+          onClose={() => setStartedAtModalOpen(false)}
+        />
+      ) : null}
 
       {durationModalOpen ? (
         <DurationEditModal
