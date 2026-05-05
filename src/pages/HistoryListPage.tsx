@@ -335,7 +335,7 @@ export function HistoryListPage() {
                       <span className="history-day-sheet__row-main">
                         <span className="history-day-sheet__title">{name}</span>
                         <span className="history-day-sheet__subtitle muted">
-                          {formatSessionSheetSubtitle(s.completedAt)}
+                          {formatSessionSheetSubtitle(sessionCalendarPlacementIso(s))}
                         </span>
                       </span>
                       <span className="history-day-sheet__duration">
