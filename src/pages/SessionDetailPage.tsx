@@ -31,6 +31,38 @@ function formatSessionHeaderDate(iso: string): string {
   });
 }
 
+/** Value for `<input type="datetime-local" />` in the user's local timezone. */
+function localDateTimeInputValueFromIso(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Parse `YYYY-MM-DDTHH:mm` as local civil time → ISO UTC string. */
+function isoFromLocalDateTimeInputValue(localValue: string): string | null {
+  const m = localValue.trim().match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+  if (!m) return null;
+  const y = parseInt(m[1]!, 10);
+  const mo = parseInt(m[2]!, 10) - 1;
+  const day = parseInt(m[3]!, 10);
+  const h = parseInt(m[4]!, 10);
+  const min = parseInt(m[5]!, 10);
+  if ([y, mo, day, h, min].some((n) => !Number.isFinite(n))) return null;
+  if (mo < 0 || mo > 11 || day < 1 || day > 31 || h > 23 || min > 59) return null;
+  const d = new Date(y, mo, day, h, min, 0, 0);
+  if (
+    d.getFullYear() !== y ||
+    d.getMonth() !== mo ||
+    d.getDate() !== day ||
+    d.getHours() !== h ||
+    d.getMinutes() !== min
+  ) {
+    return null;
+  }
+  return d.toISOString();
+}
+
 function formatDurationHm(ms: number): string {
   const s = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(s / 3600);
@@ -94,6 +126,65 @@ function SessionNotesModal({
               className="btn btn-primary"
               style={{ width: "100%", marginTop: "0.75rem" }}
               onClick={() => onSave(text)}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </ModalPortal>
+  );
+}
+
+function SessionDateEditModal({
+  initialIso,
+  onSave,
+  onClose,
+}: {
+  initialIso: string;
+  onSave: (completedAtIso: string) => void;
+  onClose: () => void;
+}) {
+  const [value, setValue] = useState(() => localDateTimeInputValueFromIso(initialIso));
+  return (
+    <ModalPortal>
+      <div
+        className="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-date-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+      >
+        <div className="modal" onClick={(e) => e.stopPropagation()}>
+          <header>
+            <h2 id="session-date-title">Session date</h2>
+            <button type="button" className="btn btn-ghost" onClick={onClose}>
+              Cancel
+            </button>
+          </header>
+          <div className="body">
+            <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
+              When this session is shown on the calendar and in history.
+            </p>
+            <input
+              type="datetime-local"
+              className="edit-card__textarea"
+              style={{ marginTop: "0.75rem", minHeight: "2.75rem", width: "100%" }}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              aria-label="Session date and time"
+            />
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ width: "100%", marginTop: "0.75rem" }}
+              onClick={() => {
+                const iso = isoFromLocalDateTimeInputValue(value);
+                if (iso == null) return;
+                onSave(iso);
+              }}
             >
               Save
             </button>
@@ -192,6 +283,7 @@ export function SessionDetailPage() {
   const [durationMs, setDurationMs] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [durationModalOpen, setDurationModalOpen] = useState(false);
+  const [dateModalOpen, setDateModalOpen] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
 
   const session = loadState?.status === "ready" ? loadState.session : undefined;
@@ -381,6 +473,16 @@ export function SessionDetailPage() {
         </button>
 
         <div className="session-detail-stats">
+          <button
+            type="button"
+            className="session-detail-stat session-detail-stat--tap"
+            onClick={() => setDateModalOpen(true)}
+          >
+            <span className="session-detail-stat__label">Date</span>
+            <span className="session-detail-stat__value">
+              {formatSessionHeaderDate(session.completedAt)}
+            </span>
+          </button>
           <button
             type="button"
             className="session-detail-stat session-detail-stat--tap"
@@ -575,6 +677,25 @@ export function SessionDetailPage() {
           Add exercises
         </button>
       </div>
+
+      {dateModalOpen ? (
+        <SessionDateEditModal
+          initialIso={session.completedAt}
+          onSave={(completedAtIso) => {
+            void (async () => {
+              if (!sessionId) return;
+              const current = await getSessionById(sessionId);
+              if (!current) return;
+              await db.workoutSessions.put({
+                ...current,
+                completedAt: completedAtIso,
+              });
+              setDateModalOpen(false);
+            })();
+          }}
+          onClose={() => setDateModalOpen(false)}
+        />
+      ) : null}
 
       {durationModalOpen ? (
         <DurationEditModal
