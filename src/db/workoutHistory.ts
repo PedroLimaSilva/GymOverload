@@ -141,10 +141,12 @@ export async function saveCompletedWorkout(
       ? opts.startedAtEpoch
       : undefined;
   const startedAt = startedAtEpoch != null ? new Date(startedAtEpoch).toISOString() : completedAt;
-  const sessionExercises: SessionExerciseSnapshot[] = workout.plannedExercises.map((pe) => {
+  const sessionExercises: SessionExerciseSnapshot[] = [];
+  for (const pe of workout.plannedExercises) {
     const states = setStates[pe.id] ?? [];
     const sets: { weight: number; reps: number }[] = [];
     for (let setIndex = 0; setIndex < pe.sets; setIndex++) {
+      if (!completedSetKeys.has(loggedSetKey(pe.id, setIndex))) continue;
       const s = states[setIndex];
       sets.push(
         s
@@ -152,8 +154,10 @@ export async function saveCompletedWorkout(
           : (planRowDefaults(pe)[setIndex] ?? { weight: 0, reps: pe.targetReps }),
       );
     }
-    return { plannedExerciseId: pe.id, exerciseName: pe.name, sets };
-  });
+    if (sets.length > 0) {
+      sessionExercises.push({ plannedExerciseId: pe.id, exerciseName: pe.name, sets });
+    }
+  }
 
   const session: WorkoutSession = {
     id: sessionId,
