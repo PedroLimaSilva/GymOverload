@@ -127,6 +127,55 @@ export function loggedSetKey(plannedExerciseId: string, setIndex: number): strin
   return `${plannedExerciseId}:${setIndex}`;
 }
 
+/** Wall-clock end ISO from session start + duration (used when finishing or editing history). */
+export function completedAtFromStartAndDuration(startedAtIso: string, durationMs: number): string {
+  const startMs = new Date(startedAtIso).getTime();
+  const dur = Math.max(0, Math.round(Number.isFinite(durationMs) ? durationMs : 0));
+  if (!Number.isFinite(startMs)) return new Date().toISOString();
+  return new Date(startMs + dur).toISOString();
+}
+
+/**
+ * Recompute `completedAt` after a duration edit while keeping the same implied start when possible.
+ * Normalizes `startedAt` when it was missing or inconsistent with the previous end time.
+ */
+export function sessionTimingAfterDurationChange(
+  session: WorkoutSession,
+  durationMs: number,
+): Pick<WorkoutSession, "startedAt" | "completedAt" | "durationMs"> {
+  const dur = Math.max(0, Math.round(Number.isFinite(durationMs) ? durationMs : 0));
+  const endMs = new Date(session.completedAt).getTime();
+  const raw = session.startedAt?.trim();
+  let startMs: number | undefined;
+  if (raw) {
+    const t = new Date(raw).getTime();
+    if (Number.isFinite(t) && Number.isFinite(endMs) && t <= endMs) startMs = t;
+  }
+  if (startMs === undefined) {
+    const oldDur =
+      typeof session.durationMs === "number" && Number.isFinite(session.durationMs)
+        ? Math.max(0, Math.round(session.durationMs))
+        : 0;
+    if (Number.isFinite(endMs) && oldDur > 0) startMs = endMs - oldDur;
+    else if (Number.isFinite(endMs)) startMs = endMs;
+    else startMs = Date.now();
+  }
+  const startedAt = new Date(startMs).toISOString();
+  const completedAt = completedAtFromStartAndDuration(startedAt, dur);
+  return { startedAt, completedAt, durationMs: dur };
+}
+
+export function sessionTimingAfterStartChange(
+  startedAtIso: string,
+  durationMs: number,
+): Pick<WorkoutSession, "startedAt" | "completedAt"> {
+  const dur = Math.max(0, Math.round(Number.isFinite(durationMs) ? durationMs : 0));
+  return {
+    startedAt: startedAtIso,
+    completedAt: completedAtFromStartAndDuration(startedAtIso, dur),
+  };
+}
+
 export async function saveCompletedWorkout(
   workout: Workout,
   setStates: Record<string, { weight: number; reps: number }[]>,
@@ -135,12 +184,23 @@ export async function saveCompletedWorkout(
   opts?: { startedAtEpoch?: number },
 ): Promise<string> {
   const sessionId = newId();
-  const completedAt = new Date().toISOString();
   const startedAtEpoch =
     typeof opts?.startedAtEpoch === "number" && Number.isFinite(opts.startedAtEpoch)
       ? opts.startedAtEpoch
       : undefined;
-  const startedAt = startedAtEpoch != null ? new Date(startedAtEpoch).toISOString() : completedAt;
+  const dur =
+    typeof durationMs === "number" && Number.isFinite(durationMs) && durationMs >= 0
+      ? Math.round(durationMs)
+      : 0;
+  let startedAt: string;
+  let completedAt: string;
+  if (startedAtEpoch != null) {
+    startedAt = new Date(startedAtEpoch).toISOString();
+    completedAt = completedAtFromStartAndDuration(startedAt, dur);
+  } else {
+    completedAt = new Date().toISOString();
+    startedAt = completedAt;
+  }
   const sessionExercises: SessionExerciseSnapshot[] = [];
   for (const pe of workout.plannedExercises) {
     const states = setStates[pe.id] ?? [];
