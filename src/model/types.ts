@@ -109,6 +109,7 @@ export interface SessionExerciseSnapshot {
 export interface WorkoutSession {
   id: string;
   workoutId: string;
+  /** Wall-clock end of the session (ISO). After edits on session detail, derived from `startedAt` + `durationMs` when those are set. */
   completedAt: string;
   /** When the live session was first started (ISO). Drives history calendar day; falls back to `completedAt` if missing. */
   startedAt?: string;

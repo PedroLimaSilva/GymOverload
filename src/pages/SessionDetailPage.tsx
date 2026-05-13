@@ -11,6 +11,8 @@ import {
   getSessionById,
   getSessionExerciseBlocks,
   putSessionWithLoggedEntries,
+  sessionTimingAfterDurationChange,
+  sessionTimingAfterStartChange,
 } from "../db/workoutHistory";
 import { sessionCalendarPlacementIso } from "../lib/historyCalendar";
 import type { Exercise, SessionExerciseSnapshot, Workout, WorkoutSession } from "../model/types";
@@ -88,17 +90,14 @@ function parseDurationToMs(input: string): number | null {
 
 function SessionStartedAtEditModal({
   initialIso,
-  completedAtIso,
   onSave,
   onClose,
 }: {
   initialIso: string;
-  completedAtIso: string;
   onSave: (startedAtIso: string) => void;
   onClose: () => void;
 }) {
   const [value, setValue] = useState(() => localDateTimeInputValueFromIso(initialIso));
-  const [rangeError, setRangeError] = useState<string | null>(null);
   return (
     <ModalPortal>
       <div
@@ -119,28 +118,17 @@ function SessionStartedAtEditModal({
           </header>
           <div className="body">
             <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
-              Which calendar day and time this session counts as starting. Must be on or before when
-              you finished.
+              When the session started (calendar placement). Finish time is set from start plus
+              duration.
             </p>
             <input
               type="datetime-local"
               className="edit-card__textarea"
               style={{ marginTop: "0.75rem", minHeight: "2.75rem", width: "100%" }}
               value={value}
-              onChange={(e) => {
-                setValue(e.target.value);
-                setRangeError(null);
-              }}
+              onChange={(e) => setValue(e.target.value)}
               aria-label="Session start date and time"
             />
-            {rangeError ? (
-              <p
-                className="muted"
-                style={{ marginTop: "0.5rem", fontSize: "0.85rem", color: "var(--danger)" }}
-              >
-                {rangeError}
-              </p>
-            ) : null}
             <button
               type="button"
               className="btn btn-primary"
@@ -148,12 +136,6 @@ function SessionStartedAtEditModal({
               onClick={() => {
                 const iso = isoFromLocalDateTimeInputValue(value);
                 if (iso == null) return;
-                const end = new Date(completedAtIso).getTime();
-                const start = new Date(iso).getTime();
-                if (Number.isFinite(end) && Number.isFinite(start) && start > end) {
-                  setRangeError("Start time must be on or before the finish time.");
-                  return;
-                }
                 onSave(iso);
               }}
             >
@@ -217,65 +199,6 @@ function SessionNotesModal({
   );
 }
 
-function SessionDateEditModal({
-  initialIso,
-  onSave,
-  onClose,
-}: {
-  initialIso: string;
-  onSave: (completedAtIso: string) => void;
-  onClose: () => void;
-}) {
-  const [value, setValue] = useState(() => localDateTimeInputValueFromIso(initialIso));
-  return (
-    <ModalPortal>
-      <div
-        className="modal-backdrop"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="session-date-title"
-        onClick={(e) => {
-          if (e.target === e.currentTarget) onClose();
-        }}
-      >
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
-          <header>
-            <h2 id="session-date-title">Session date</h2>
-            <button type="button" className="btn btn-ghost" onClick={onClose}>
-              Cancel
-            </button>
-          </header>
-          <div className="body">
-            <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
-              When this session is shown on the calendar and in history.
-            </p>
-            <input
-              type="datetime-local"
-              className="edit-card__textarea"
-              style={{ marginTop: "0.75rem", minHeight: "2.75rem", width: "100%" }}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              aria-label="Session date and time"
-            />
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ width: "100%", marginTop: "0.75rem" }}
-              onClick={() => {
-                const iso = isoFromLocalDateTimeInputValue(value);
-                if (iso == null) return;
-                onSave(iso);
-              }}
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModalPortal>
-  );
-}
-
 function DurationEditModal({
   initialMs,
   onSave,
@@ -308,7 +231,8 @@ function DurationEditModal({
           </header>
           <div className="body">
             <p className="muted" style={{ marginTop: 0, fontSize: "0.85rem" }}>
-              Enter hours and minutes as h:mm (e.g. 1:15), or minutes only (e.g. 45).
+              Enter hours and minutes as h:mm (e.g. 1:15), or minutes only (e.g. 45). Finish time is
+              updated from start plus this duration.
             </p>
             <input
               className="edit-card__textarea"
@@ -365,7 +289,6 @@ export function SessionDetailPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [durationModalOpen, setDurationModalOpen] = useState(false);
   const [startedAtModalOpen, setStartedAtModalOpen] = useState(false);
-  const [dateModalOpen, setDateModalOpen] = useState(false);
   const [notesModalOpen, setNotesModalOpen] = useState(false);
 
   const session = loadState?.status === "ready" ? loadState.session : undefined;
@@ -437,9 +360,10 @@ export function SessionDetailPage() {
           : typeof current.durationMs === "number" && Number.isFinite(current.durationMs)
             ? current.durationMs
             : 0;
+      const timing = sessionTimingAfterDurationChange(current, d);
       await putSessionWithLoggedEntries({
         ...current,
-        durationMs: Math.max(0, Math.round(d)),
+        ...timing,
         sessionExercises: nextBlocks,
       });
     },
@@ -490,7 +414,7 @@ export function SessionDetailPage() {
 
   const topNavKey =
     loadState?.status === "ready" && blocksReady
-      ? `${loadState.session.id}\0${loadState.session.completedAt}\0${loadState.session.startedAt ?? ""}`
+      ? `${loadState.session.id}\0${loadState.session.completedAt}\0${loadState.session.startedAt ?? ""}\0${loadState.session.durationMs ?? ""}`
       : null;
 
   useTopNav(() => {
@@ -563,16 +487,6 @@ export function SessionDetailPage() {
             <span className="session-detail-stat__label">Started</span>
             <span className="session-detail-stat__value">
               {formatSessionHeaderDate(sessionCalendarPlacementIso(session))}
-            </span>
-          </button>
-          <button
-            type="button"
-            className="session-detail-stat session-detail-stat--tap"
-            onClick={() => setDateModalOpen(true)}
-          >
-            <span className="session-detail-stat__label">Date</span>
-            <span className="session-detail-stat__value">
-              {formatSessionHeaderDate(session.completedAt)}
             </span>
           </button>
           <button
@@ -773,39 +687,24 @@ export function SessionDetailPage() {
       {startedAtModalOpen ? (
         <SessionStartedAtEditModal
           initialIso={sessionCalendarPlacementIso(session)}
-          completedAtIso={session.completedAt}
           onSave={(startedAtIso) => {
             void (async () => {
               if (!sessionId) return;
               const current = await getSessionById(sessionId);
               if (!current) return;
+              const d =
+                typeof current.durationMs === "number" && Number.isFinite(current.durationMs)
+                  ? Math.max(0, Math.round(current.durationMs))
+                  : 0;
+              const timing = sessionTimingAfterStartChange(startedAtIso, d);
               await db.workoutSessions.put({
                 ...current,
-                startedAt: startedAtIso,
+                ...timing,
               });
               setStartedAtModalOpen(false);
             })();
           }}
           onClose={() => setStartedAtModalOpen(false)}
-        />
-      ) : null}
-
-      {dateModalOpen ? (
-        <SessionDateEditModal
-          initialIso={session.completedAt}
-          onSave={(completedAtIso) => {
-            void (async () => {
-              if (!sessionId) return;
-              const current = await getSessionById(sessionId);
-              if (!current) return;
-              await db.workoutSessions.put({
-                ...current,
-                completedAt: completedAtIso,
-              });
-              setDateModalOpen(false);
-            })();
-          }}
-          onClose={() => setDateModalOpen(false)}
         />
       ) : null}
 
