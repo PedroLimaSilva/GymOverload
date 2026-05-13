@@ -16,6 +16,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import { DecimalWeightInput } from "../components/DecimalWeightInput";
 import { ExerciseMultiPickerModal } from "../components/ExerciseMultiPickerModal";
 import { ModalPortal } from "../components/ModalPortal";
 import { db } from "../db/database";
@@ -1074,22 +1075,12 @@ function SessionSetRow({
       >
         {idxText}
       </span>
-      <input
+      <DecimalWeightInput
         className="workout-set-grid__input"
-        inputMode="decimal"
         aria-label={`Set ${setIndex + 1} weight`}
-        value={weight === 0 ? "" : String(weight)}
+        weight={weight}
+        onWeight={onWeight}
         onPointerDown={(e: PointerEvent) => e.stopPropagation()}
-        onChange={(e) => {
-          const raw = e.target.value.trim();
-          if (raw === "") {
-            onWeight(0);
-            return;
-          }
-          const n = parseFloat(raw.replace(",", "."));
-          if (!Number.isFinite(n) || n < 0) return;
-          onWeight(n);
-        }}
       />
       <input
         className="workout-set-grid__input"
@@ -1149,21 +1140,11 @@ function FragmentRow({
   return (
     <>
       <span className="workout-set-grid__idx">{setIndex + 1}</span>
-      <input
+      <DecimalWeightInput
         className="workout-set-grid__input"
-        inputMode="decimal"
         aria-label={`Set ${setIndex + 1} weight`}
-        value={weight === 0 ? "" : String(weight)}
-        onChange={(e) => {
-          const raw = e.target.value.trim();
-          if (raw === "") {
-            onWeight(0);
-            return;
-          }
-          const n = parseFloat(raw.replace(",", "."));
-          if (!Number.isFinite(n) || n < 0) return;
-          onWeight(n);
-        }}
+        weight={weight}
+        onWeight={onWeight}
       />
       <input
         className="workout-set-grid__input"
