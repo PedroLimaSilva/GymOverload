@@ -34,6 +34,16 @@ function formatSessionHeaderDate(iso: string): string {
   });
 }
 
+/** Top bar: persisted `startedAt` when valid; otherwise calendar placement (legacy rows). */
+function sessionDetailHeaderStartedAtIso(s: WorkoutSession): string {
+  const raw = s.startedAt?.trim();
+  if (raw) {
+    const t = new Date(raw).getTime();
+    if (Number.isFinite(t)) return raw;
+  }
+  return sessionCalendarPlacementIso(s);
+}
+
 /** Value for `<input type="datetime-local" />` in the user's local timezone. */
 function localDateTimeInputValueFromIso(iso: string): string {
   const d = new Date(iso);
@@ -432,7 +442,7 @@ export function SessionDetailPage() {
           <ChevronLeft size={20} aria-hidden strokeWidth={2.2} />
         </button>
       ),
-      center: formatSessionHeaderDate(sessionCalendarPlacementIso(s)),
+      center: formatSessionHeaderDate(sessionDetailHeaderStartedAtIso(s)),
       trailing: (
         <div className="workout-detail-header-actions">
           <button
@@ -486,7 +496,7 @@ export function SessionDetailPage() {
           >
             <span className="session-detail-stat__label">Started</span>
             <span className="session-detail-stat__value">
-              {formatSessionHeaderDate(sessionCalendarPlacementIso(session))}
+              {formatSessionHeaderDate(sessionDetailHeaderStartedAtIso(session))}
             </span>
           </button>
           <button
@@ -686,7 +696,7 @@ export function SessionDetailPage() {
 
       {startedAtModalOpen ? (
         <SessionStartedAtEditModal
-          initialIso={sessionCalendarPlacementIso(session)}
+          initialIso={sessionDetailHeaderStartedAtIso(session)}
           onSave={(startedAtIso) => {
             void (async () => {
               if (!sessionId) return;
