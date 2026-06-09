@@ -104,6 +104,10 @@ describe("lastPerformanceBySetForExercise", () => {
   });
 
   it("returns empty labels when history is missing", () => {
-    expect(lastPerformanceBySetForExercise(null, sessionCompletedAt, planned)).toEqual(["", "", ""]);
+    expect(lastPerformanceBySetForExercise(null, sessionCompletedAt, planned)).toEqual([
+      "",
+      "",
+      "",
+    ]);
   });
 });
