@@ -34,10 +34,10 @@ import {
 import {
   buildInitialSetStates,
   deleteSessionsForWorkout,
+  getHistoricalEntriesForExerciseNames,
   lastPerformanceBySetForExercise,
   lastSessionSummaryForExercise,
   loggedSetKey,
-  priorSessionId,
   saveCompletedWorkout,
 } from "../db/workoutHistory";
 import type { Exercise, PlannedExercise, Workout } from "../model/types";
@@ -114,17 +114,26 @@ export function WorkoutDetailPage() {
     return [...sessionsForWorkout].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
   }, [sessionsForWorkout]);
   const latestSession = sortedSessions[0];
-  const priorSid = priorSessionId(sortedSessions);
-  const priorEntries = useLiveQuery(
-    () => (priorSid ? db.loggedExerciseEntries.where("sessionId").equals(priorSid).toArray() : []),
-    [priorSid],
-  );
   const latestEntries = useLiveQuery(
     () =>
       latestSession
         ? db.loggedExerciseEntries.where("sessionId").equals(latestSession.id).toArray()
         : [],
     [latestSession?.id],
+  );
+  const allSessions = useLiveQuery(() => db.workoutSessions.toArray(), []);
+  const sessionCompletedAt = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const s of allSessions ?? []) m.set(s.id, s.completedAt);
+    return m;
+  }, [allSessions]);
+  const plannedExerciseNames = useMemo(
+    () => (draft ? draft.plannedExercises.map((pe) => pe.name) : []),
+    [draft],
+  );
+  const historicalEntries = useLiveQuery(
+    () => getHistoricalEntriesForExerciseNames(plannedExerciseNames),
+    [plannedExerciseNames.join("\0")],
   );
 
   const exerciseByName = useMemo(() => {
@@ -629,7 +638,8 @@ export function WorkoutDetailPage() {
               {draft.plannedExercises.map((pe) => {
                 const ex = exerciseByName.get(pe.name);
                 const lastForLog = lastPerformanceBySetForExercise(
-                  latestEntries && latestEntries.length > 0 ? latestEntries : null,
+                  historicalEntries ?? null,
+                  sessionCompletedAt,
                   pe,
                 );
                 const row = sessionSetStates[pe.id] ?? [];
@@ -659,8 +669,11 @@ export function WorkoutDetailPage() {
           <div className="workout-detail-exercises">
             {draft.plannedExercises.map((pe) => {
               const ex = exerciseByName.get(pe.name);
-              const priorForLast = priorSid ? (priorEntries ?? null) : null;
-              const lastBySet = lastPerformanceBySetForExercise(priorForLast, pe);
+              const lastBySet = lastPerformanceBySetForExercise(
+                historicalEntries ?? null,
+                sessionCompletedAt,
+                pe,
+              );
               const sessionSummary =
                 latestEntries && latestEntries.length > 0
                   ? lastSessionSummaryForExercise(latestEntries, pe)

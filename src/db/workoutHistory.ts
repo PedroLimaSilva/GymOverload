@@ -327,6 +327,11 @@ export async function getSessionExerciseBlocks(
   return snapshotFromEntries(workout, entries);
 }
 
+export function formatSetPerformanceLabel(weight: number, reps: number): string {
+  const w = Number.isInteger(weight) ? String(weight) : weight.toFixed(1);
+  return `${w}×${reps}`;
+}
+
 export function lastSessionSummaryForExercise(
   entries: LoggedExerciseEntry[],
   planned: PlannedExercise,
@@ -335,37 +340,49 @@ export function lastSessionSummaryForExercise(
   for (let i = 0; i < planned.sets; i++) {
     const e = entries.find((x) => x.plannedExerciseId === planned.id && x.setIndex === i);
     if (!e) break;
-    const w = Number.isInteger(e.weight) ? String(e.weight) : e.weight.toFixed(1);
-    parts.push(`${w}×${e.reps}`);
+    parts.push(formatSetPerformanceLabel(e.weight, e.reps));
   }
   return parts.length ? `Last: ${parts.join(", ")}` : null;
 }
 
-/** Second-newest session id for per-set “last” labels (needs at least two completed sessions). */
-export function priorSessionId(sessions: WorkoutSession[]): string | undefined {
-  if (sessions.length < 2) return undefined;
-  const sorted = [...sessions].sort((a, b) => (a.completedAt < b.completedAt ? 1 : -1));
-  return sorted[1]?.id;
+/** Logged sets for the given exercise names across all completed sessions. */
+export async function getHistoricalEntriesForExerciseNames(
+  exerciseNames: string[],
+): Promise<LoggedExerciseEntry[]> {
+  const nameSet = new Set(exerciseNames);
+  if (nameSet.size === 0) return [];
+  return db.loggedExerciseEntries.filter((e) => nameSet.has(e.exerciseName)).toArray();
 }
 
-/** Per-set "last time" label like `70×12`, or empty string when unknown. */
+/**
+ * Per-set "last time" label like `70×12`, or empty string when unknown.
+ * For each set index, uses the most recent completed set for this exercise name in any session.
+ */
 export function lastPerformanceBySetForExercise(
-  priorEntries: LoggedExerciseEntry[] | null,
+  historicalEntries: LoggedExerciseEntry[] | null,
+  sessionCompletedAt: ReadonlyMap<string, string>,
   planned: PlannedExercise,
 ): string[] {
   const labels: string[] = [];
-  for (let i = 0; i < planned.sets; i++) {
-    if (!priorEntries) {
+  for (let setIndex = 0; setIndex < planned.sets; setIndex++) {
+    if (!historicalEntries?.length) {
       labels.push("");
       continue;
     }
-    const e = priorEntries.find((x) => x.plannedExerciseId === planned.id && x.setIndex === i);
-    if (!e) {
+    const forSet = historicalEntries.filter(
+      (e) => e.exerciseName === planned.name && e.setIndex === setIndex,
+    );
+    if (forSet.length === 0) {
       labels.push("");
       continue;
     }
-    const w = Number.isInteger(e.weight) ? String(e.weight) : e.weight.toFixed(1);
-    labels.push(`${w}×${e.reps}`);
+    forSet.sort((a, b) => {
+      const ca = sessionCompletedAt.get(a.sessionId) ?? "";
+      const cb = sessionCompletedAt.get(b.sessionId) ?? "";
+      return ca < cb ? 1 : ca > cb ? -1 : 0;
+    });
+    const latest = forSet[0]!;
+    labels.push(formatSetPerformanceLabel(latest.weight, latest.reps));
   }
   return labels;
 }
