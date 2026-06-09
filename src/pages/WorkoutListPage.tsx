@@ -21,14 +21,26 @@ import { CSS } from "@dnd-kit/utilities";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronRight, GripVertical } from "lucide-react";
+import {
+  ArrowUp,
+  ChevronRight,
+  FileDown,
+  GripVertical,
+  MinusCircle,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Share2,
+} from "lucide-react";
 import { db } from "../db/database";
+import { exportGroupJsonBlob, triggerDownload } from "../db/profileData";
 import { useTopNav } from "../layout/TopNavContext";
 import { clearLiveWorkoutSessionDraft, getLiveWorkoutSessionDraft } from "../db/liveSessionDraft";
 import { deleteSessionsForWorkout } from "../db/workoutHistory";
 import { createWorkoutAndNavigate } from "../lib/navActions";
 import type { Workout, WorkoutGroup } from "../model/types";
 import { workoutGroupWithName } from "../model/types";
+import { OverflowMenu, type OverflowMenuItem } from "../components/OverflowMenu";
 import { WorkoutCreateChoiceModal } from "../components/WorkoutCreateChoiceModal";
 import { WorkoutGroupNameModal } from "../components/WorkoutGroupNameModal";
 
@@ -204,6 +216,92 @@ function WorkoutSortableRow({
   );
 }
 
+function groupExportBasename(name: string): string {
+  const safe = name.replace(/[/\\?%*:|"<>]/g, "-").trim();
+  return safe || "workout-group";
+}
+
+function WorkoutGroupActionsMenu({
+  group,
+  deleteMode,
+  canMoveToTop,
+  onMoveToTop,
+  onCreateWorkoutInGroup,
+  onShareGroup,
+  onExportGroup,
+  onRename,
+  onDelete,
+}: {
+  group: WorkoutGroup;
+  deleteMode: boolean;
+  canMoveToTop: boolean;
+  onMoveToTop: () => void;
+  onCreateWorkoutInGroup: () => void;
+  onShareGroup: () => void;
+  onExportGroup: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const items = useMemo((): OverflowMenuItem[] => {
+    return [
+      {
+        label: "Move to the top",
+        icon: <ArrowUp size={18} strokeWidth={2} aria-hidden />,
+        onSelect: onMoveToTop,
+        disabled: !canMoveToTop,
+      },
+      {
+        label: "Create workout",
+        icon: <Plus size={18} strokeWidth={2} aria-hidden />,
+        onSelect: onCreateWorkoutInGroup,
+      },
+      {
+        label: "Share group",
+        icon: <Share2 size={18} strokeWidth={2} aria-hidden />,
+        onSelect: onShareGroup,
+      },
+      {
+        label: "Export as JSON…",
+        icon: <FileDown size={18} strokeWidth={2} aria-hidden />,
+        onSelect: onExportGroup,
+      },
+      { divider: true },
+      {
+        label: "Rename group",
+        icon: <Pencil size={18} strokeWidth={2} aria-hidden />,
+        onSelect: onRename,
+      },
+      {
+        label: "Delete group",
+        icon: <MinusCircle size={18} strokeWidth={2} aria-hidden />,
+        onSelect: onDelete,
+        className: "overflow-menu__item--danger",
+      },
+    ];
+  }, [
+    canMoveToTop,
+    onMoveToTop,
+    onCreateWorkoutInGroup,
+    onShareGroup,
+    onExportGroup,
+    onRename,
+    onDelete,
+  ]);
+
+  if (deleteMode) return null;
+
+  return (
+    <div className="workout-group-row__menu" onClick={(e) => e.stopPropagation()}>
+      <OverflowMenu
+        label={`${group.name} group menu`}
+        items={items}
+        triggerClassName="btn btn-ghost workout-group-row__menu-trigger"
+        icon={<MoreHorizontal size={20} aria-hidden strokeWidth={2} />}
+      />
+    </div>
+  );
+}
+
 function SectionEmptyDropTarget({
   sectionKeyStr,
   deleteMode,
@@ -254,6 +352,7 @@ export function WorkoutListPage() {
   const [deleteMode, setDeleteMode] = useState(false);
   const [createChoiceOpen, setCreateChoiceOpen] = useState(false);
   const [groupNameModalOpen, setGroupNameModalOpen] = useState(false);
+  const [renameGroupTarget, setRenameGroupTarget] = useState<WorkoutGroup | null>(null);
   const [collapsedGroupIds, setCollapsedGroupIds] = useState<Record<string, boolean>>({});
   const [dragState, setDragState] = useState<Record<string, string[]> | null>(null);
   const dragStateRef = useRef<Record<string, string[]> | null>(null);
@@ -412,9 +511,9 @@ export function WorkoutListPage() {
     await db.workouts.delete(w.id);
   }
 
-  async function removeGroup(e: React.MouseEvent, g: WorkoutGroup) {
-    e.preventDefault();
-    e.stopPropagation();
+  async function removeGroup(g: WorkoutGroup, e?: React.MouseEvent) {
+    e?.preventDefault();
+    e?.stopPropagation();
     if (!confirm(`Delete group “${g.name}”? Workouts inside will move to the ungrouped list.`))
       return;
     const inGroup = (workouts ?? []).filter((w) => w.groupId === g.id);
@@ -425,6 +524,59 @@ export function WorkoutListPage() {
       }
       await db.workoutGroups.delete(g.id);
     });
+  }
+
+  async function moveGroupToTop(g: WorkoutGroup) {
+    if (!groups || sortedGroups.length === 0) return;
+    const others = sortedGroups.filter((x) => x.id !== g.id);
+    if (others.length === sortedGroups.length) return;
+    const minOrder = Math.min(
+      ...others.map((x) =>
+        typeof x.sortOrder === "number" && Number.isFinite(x.sortOrder) ? x.sortOrder : 0,
+      ),
+    );
+    await db.workoutGroups.put({ ...g, sortOrder: minOrder - 10 });
+  }
+
+  async function createWorkoutInGroup(g: WorkoutGroup) {
+    const inGroup = (workouts ?? []).filter((w) => w.groupId === g.id);
+    const maxIn =
+      inGroup.length === 0
+        ? -10
+        : Math.max(
+            ...inGroup.map((w) =>
+              typeof w.sortOrder === "number" && Number.isFinite(w.sortOrder) ? w.sortOrder : 0,
+            ),
+          );
+    await createWorkoutAndNavigate(navigate, { groupId: g.id, sortOrder: maxIn + 10 });
+  }
+
+  async function exportGroupAndDownload(g: WorkoutGroup) {
+    const blob = await exportGroupJsonBlob(g.id);
+    triggerDownload(blob, `${groupExportBasename(g.name)}.json`);
+  }
+
+  async function shareGroup(g: WorkoutGroup) {
+    const blob = await exportGroupJsonBlob(g.id);
+    const filename = `${groupExportBasename(g.name)}.json`;
+    const file = new File([blob], filename, { type: "application/json" });
+    try {
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: g.name });
+        return;
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
+    }
+    triggerDownload(blob, filename);
+  }
+
+  async function confirmRenameGroup(name: string) {
+    if (!renameGroupTarget) return;
+    const trimmed = name.trim();
+    const nextName = trimmed || renameGroupTarget.name;
+    await db.workoutGroups.put({ ...renameGroupTarget, name: nextName });
+    setRenameGroupTarget(null);
   }
 
   function toggleGroupCollapsed(groupId: string) {
@@ -544,12 +696,23 @@ export function WorkoutListPage() {
                     {section.group.name}
                   </span>
                 </button>
+                <WorkoutGroupActionsMenu
+                  group={section.group}
+                  deleteMode={deleteMode}
+                  canMoveToTop={sortedGroups[0]?.id !== section.group.id}
+                  onMoveToTop={() => void moveGroupToTop(section.group)}
+                  onCreateWorkoutInGroup={() => void createWorkoutInGroup(section.group)}
+                  onShareGroup={() => void shareGroup(section.group)}
+                  onExportGroup={() => void exportGroupAndDownload(section.group)}
+                  onRename={() => setRenameGroupTarget(section.group)}
+                  onDelete={() => void removeGroup(section.group)}
+                />
                 {deleteMode && (
                   <button
                     type="button"
                     className="btn btn-ghost workout-group-row__delete"
                     aria-label={`Delete group ${section.group.name}`}
-                    onClick={(ev) => void removeGroup(ev, section.group)}
+                    onClick={(ev) => void removeGroup(section.group, ev)}
                   >
                     ✕
                   </button>
@@ -646,6 +809,14 @@ export function WorkoutListPage() {
           title="Create new workout group"
           onClose={() => setGroupNameModalOpen(false)}
           onConfirm={(name) => void confirmCreateGroup(name)}
+        />
+      ) : null}
+      {renameGroupTarget ? (
+        <WorkoutGroupNameModal
+          title="Rename group"
+          initialName={renameGroupTarget.name}
+          onClose={() => setRenameGroupTarget(null)}
+          onConfirm={(name) => void confirmRenameGroup(name)}
         />
       ) : null}
     </div>

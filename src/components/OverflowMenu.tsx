@@ -2,11 +2,20 @@ import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Menu } from "lucide-react";
 
-export type OverflowMenuItem = {
-  label: string;
-  onSelect: () => void;
-  disabled?: boolean;
-};
+export type OverflowMenuItem =
+  | {
+      label: string;
+      onSelect: () => void;
+      disabled?: boolean;
+      icon?: ReactNode;
+      /** Merged onto the menuitem button (e.g. danger text color). */
+      className?: string;
+    }
+  | { divider: true };
+
+function isDividerItem(item: OverflowMenuItem): item is { divider: true } {
+  return "divider" in item && item.divider;
+}
 
 type Props = {
   label: string;
@@ -36,7 +45,8 @@ export function OverflowMenu({ label, items, triggerClassName, icon }: Props) {
     };
   }, [open]);
 
-  if (items.length === 0) return null;
+  const actionable = items.filter((i) => !isDividerItem(i));
+  if (actionable.length === 0) return null;
 
   const triggerCls = triggerClassName ?? "btn-icon-circle glass";
 
@@ -54,24 +64,42 @@ export function OverflowMenu({ label, items, triggerClassName, icon }: Props) {
       </button>
       {open && (
         <ul className="overflow-menu__panel" role="menu">
-          {items.map((item) => (
-            <li key={item.label} role="none">
-              <button
-                type="button"
-                role="menuitem"
-                className="overflow-menu__item"
-                disabled={item.disabled}
-                onClick={() => {
-                  if (!item.disabled) {
-                    item.onSelect();
-                    setOpen(false);
-                  }
-                }}
-              >
-                {item.label}
-              </button>
-            </li>
-          ))}
+          {items.map((item, idx) =>
+            isDividerItem(item) ? (
+              <li
+                key={`d-${idx}`}
+                className="overflow-menu__divider"
+                role="separator"
+                aria-hidden
+              />
+            ) : (
+              <li key={item.label} role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={["overflow-menu__item", item.className].filter(Boolean).join(" ")}
+                  disabled={item.disabled}
+                  onClick={() => {
+                    if (!item.disabled) {
+                      item.onSelect();
+                      setOpen(false);
+                    }
+                  }}
+                >
+                  {item.icon ? (
+                    <span className="overflow-menu__item-inner">
+                      <span className="overflow-menu__item-icon" aria-hidden>
+                        {item.icon}
+                      </span>
+                      <span className="overflow-menu__item-label">{item.label}</span>
+                    </span>
+                  ) : (
+                    item.label
+                  )}
+                </button>
+              </li>
+            ),
+          )}
         </ul>
       )}
     </div>

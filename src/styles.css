@@ -821,6 +821,13 @@ a.workout-detail-hero__action {
   z-index: 50;
 }
 
+.overflow-menu__divider {
+  height: 1px;
+  margin: 0.35rem 0.65rem;
+  background: var(--border);
+  list-style: none;
+}
+
 .overflow-menu__item {
   display: block;
   width: 100%;
@@ -831,6 +838,33 @@ a.workout-detail-hero__action {
   color: var(--text);
   font-size: 0.95rem;
   cursor: pointer;
+}
+
+.overflow-menu__item-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.overflow-menu__item-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.overflow-menu__item-label {
+  min-width: 0;
+}
+
+.overflow-menu__item--danger {
+  color: var(--danger);
+}
+
+.overflow-menu__item--danger .overflow-menu__item-icon {
+  color: var(--danger);
 }
 
 .overflow-menu__item:disabled {
@@ -1074,6 +1108,23 @@ a.workout-detail-hero__action {
   color: var(--accent);
   font-size: 1.1rem;
   line-height: 1;
+}
+
+.workout-group-row__menu {
+  flex-shrink: 0;
+}
+
+.workout-group-row__menu .overflow-menu__panel {
+  right: 0;
+  left: auto;
+  min-width: 12.5rem;
+}
+
+.workout-group-row__menu-trigger {
+  padding: 0.35rem 0.45rem;
+  min-width: auto;
+  border-radius: 0.5rem;
+  color: var(--muted);
 }
 
 .workout-list-section {
