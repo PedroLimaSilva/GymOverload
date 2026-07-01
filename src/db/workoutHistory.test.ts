@@ -3,6 +3,7 @@ import type { LoggedExerciseEntry, PlannedExercise, WorkoutSession } from "../mo
 import {
   completedAtFromStartAndDuration,
   formatSetPerformanceLabel,
+  lastLoggedValuesBySetForExercise,
   lastPerformanceBySetForExercise,
   sessionTimingAfterDurationChange,
   sessionTimingAfterStartChange,
@@ -108,6 +109,70 @@ describe("lastPerformanceBySetForExercise", () => {
       "",
       "",
       "",
+    ]);
+  });
+});
+
+describe("lastLoggedValuesBySetForExercise", () => {
+  const planned: PlannedExercise = {
+    id: "pe-current",
+    name: "Pec Fly Crossover",
+    sets: 3,
+    targetReps: 10,
+  };
+
+  const sessionCompletedAt = new Map<string, string>([
+    ["older", "2026-01-01T10:00:00.000Z"],
+    ["newer", "2026-02-01T10:00:00.000Z"],
+  ]);
+
+  const entries: LoggedExerciseEntry[] = [
+    {
+      id: "e1",
+      sessionId: "older",
+      plannedExerciseId: "pe-old",
+      exerciseName: "Pec Fly Crossover",
+      setIndex: 0,
+      weight: 20,
+      reps: 12,
+    },
+    {
+      id: "e2",
+      sessionId: "older",
+      plannedExerciseId: "pe-old",
+      exerciseName: "Pec Fly Crossover",
+      setIndex: 1,
+      weight: 20,
+      reps: 10,
+    },
+    {
+      id: "e3",
+      sessionId: "newer",
+      plannedExerciseId: "pe-other-workout",
+      exerciseName: "Pec Fly Crossover",
+      setIndex: 0,
+      weight: 25,
+      reps: 10,
+    },
+  ];
+
+  it("returns weight/reps pairs matching lastPerformanceBySetForExercise labels", () => {
+    const values = lastLoggedValuesBySetForExercise(entries, sessionCompletedAt, planned);
+    expect(values).toEqual([
+      { weight: 25, reps: 10 },
+      { weight: 20, reps: 10 },
+      null,
+    ]);
+    expect(
+      values.map((v) => (v ? formatSetPerformanceLabel(v.weight, v.reps) : "")),
+    ).toEqual(lastPerformanceBySetForExercise(entries, sessionCompletedAt, planned));
+  });
+
+  it("returns nulls when history is missing", () => {
+    expect(lastLoggedValuesBySetForExercise(null, sessionCompletedAt, planned)).toEqual([
+      null,
+      null,
+      null,
     ]);
   });
 });
