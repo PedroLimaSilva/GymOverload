@@ -49,45 +49,66 @@ function snapshotFromEntries(
   });
 }
 
-function entryMap(entries: LoggedExerciseEntry[]): Map<string, LoggedExerciseEntry> {
-  const m = new Map<string, LoggedExerciseEntry>();
-  for (const e of entries) {
-    m.set(`${e.plannedExerciseId}\0${e.setIndex}`, e);
+function latestLoggedEntryForSet(
+  historicalEntries: LoggedExerciseEntry[] | null | undefined,
+  sessionCompletedAt: ReadonlyMap<string, string>,
+  exerciseName: string,
+  setIndex: number,
+): LoggedExerciseEntry | null {
+  if (!historicalEntries?.length) return null;
+  const forSet = historicalEntries.filter(
+    (e) => e.exerciseName === exerciseName && e.setIndex === setIndex,
+  );
+  if (forSet.length === 0) return null;
+  forSet.sort((a, b) => {
+    const ca = sessionCompletedAt.get(a.sessionId) ?? "";
+    const cb = sessionCompletedAt.get(b.sessionId) ?? "";
+    return ca < cb ? 1 : ca > cb ? -1 : 0;
+  });
+  return forSet[0]!;
+}
+
+/** Per-set last logged weight/reps, or null when no history exists for that set index. */
+export function lastLoggedValuesBySetForExercise(
+  historicalEntries: LoggedExerciseEntry[] | null | undefined,
+  sessionCompletedAt: ReadonlyMap<string, string>,
+  planned: PlannedExercise,
+): ({ weight: number; reps: number } | null)[] {
+  const values: ({ weight: number; reps: number } | null)[] = [];
+  for (let setIndex = 0; setIndex < planned.sets; setIndex++) {
+    const latest = latestLoggedEntryForSet(
+      historicalEntries,
+      sessionCompletedAt,
+      planned.name,
+      setIndex,
+    );
+    values.push(latest ? { weight: latest.weight, reps: latest.reps } : null);
   }
-  return m;
+  return values;
 }
 
 export async function buildInitialSetStates(
   workout: Workout,
 ): Promise<Record<string, { weight: number; reps: number }[]>> {
-  const session = await getLatestCompletedSession(workout.id);
-  const entries = session ? await entriesForSession(session.id) : [];
-  const byKey = entryMap(entries);
+  const exerciseNames = workout.plannedExercises.map((pe) => pe.name);
+  const [historicalEntries, sessions] = await Promise.all([
+    getHistoricalEntriesForExerciseNames(exerciseNames),
+    db.workoutSessions.toArray(),
+  ]);
+  const sessionCompletedAt = new Map(sessions.map((s) => [s.id, s.completedAt]));
 
   const out: Record<string, { weight: number; reps: number }[]> = {};
   for (const pe of workout.plannedExercises) {
     const plannedRow = planRowDefaults(pe);
+    const lastValues = lastLoggedValuesBySetForExercise(
+      historicalEntries,
+      sessionCompletedAt,
+      pe,
+    );
     const row: { weight: number; reps: number }[] = [];
-    const snapBlock = session?.sessionExercises?.find((b) => b.plannedExerciseId === pe.id);
     for (let setIndex = 0; setIndex < pe.sets; setIndex++) {
-      const fromSnap = snapBlock?.sets[setIndex];
-      if (fromSnap) {
-        row.push({
-          weight:
-            typeof fromSnap.weight === "number" && Number.isFinite(fromSnap.weight)
-              ? fromSnap.weight
-              : 0,
-          reps:
-            typeof fromSnap.reps === "number" &&
-            Number.isFinite(fromSnap.reps) &&
-            fromSnap.reps >= 1
-              ? Math.round(fromSnap.reps)
-              : pe.targetReps,
-        });
-        continue;
-      }
-      const entry = byKey.get(`${pe.id}\0${setIndex}`);
-      if (entry) row.push({ weight: entry.weight, reps: entry.reps });
+      const fromHistory = lastValues[setIndex];
+      if (fromHistory) row.push(fromHistory);
       else {
         const fallback = plannedRow[setIndex];
         row.push(fallback ?? { weight: 0, reps: pe.targetReps });
@@ -363,26 +384,7 @@ export function lastPerformanceBySetForExercise(
   sessionCompletedAt: ReadonlyMap<string, string>,
   planned: PlannedExercise,
 ): string[] {
-  const labels: string[] = [];
-  for (let setIndex = 0; setIndex < planned.sets; setIndex++) {
-    if (!historicalEntries?.length) {
-      labels.push("");
-      continue;
-    }
-    const forSet = historicalEntries.filter(
-      (e) => e.exerciseName === planned.name && e.setIndex === setIndex,
-    );
-    if (forSet.length === 0) {
-      labels.push("");
-      continue;
-    }
-    forSet.sort((a, b) => {
-      const ca = sessionCompletedAt.get(a.sessionId) ?? "";
-      const cb = sessionCompletedAt.get(b.sessionId) ?? "";
-      return ca < cb ? 1 : ca > cb ? -1 : 0;
-    });
-    const latest = forSet[0]!;
-    labels.push(formatSetPerformanceLabel(latest.weight, latest.reps));
-  }
-  return labels;
+  return lastLoggedValuesBySetForExercise(historicalEntries, sessionCompletedAt, planned).map(
+    (v) => (v ? formatSetPerformanceLabel(v.weight, v.reps) : ""),
+  );
 }
